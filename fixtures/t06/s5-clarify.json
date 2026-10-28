@@ -1,0 +1,13 @@
+{
+  "clarification": "What should customers pay?",
+  "ops": [{
+    "op": "create",
+    "kind": "requirement",
+    "status": "stated",
+    "text": "customer price: €10 per month",
+    "quoteSpans": [
+      { "inputId": "a", "start": 0, "end": 32, "quote": "I was thinking ten euros a month" },
+      { "inputId": "$INPUT", "start": 0, "end": 18, "quote": "What customers pay" }
+    ]
+  }]
+}

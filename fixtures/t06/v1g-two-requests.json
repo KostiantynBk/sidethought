@@ -1,0 +1,24 @@
+{
+  "ops": [{
+    "op": "create",
+    "localRef": "new:1",
+    "kind": "requirement",
+    "status": "stated",
+    "text": "Use local storage",
+    "quoteSpans": [{ "inputId": "$INPUT", "start": 0, "end": 17, "quote": "Use local storage" }]
+  }],
+  "researchRequests": [
+    {
+      "inputId": "$INPUT",
+      "question": "Does local storage work?",
+      "publicQuery": "local storage feasibility",
+      "depItemIds": ["new:1"]
+    },
+    {
+      "inputId": "$INPUT",
+      "question": "What are cloud risks?",
+      "publicQuery": "cloud storage risks",
+      "depItemIds": ["r1", "new:1"]
+    }
+  ]
+}

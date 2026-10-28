@@ -1,0 +1,201 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "reducerVersion": "4",
+    "configVersion": "0.3.3",
+    "fixtureVersion": "1"
+  },
+  "sessionId": "s",
+  "initialState": {
+    "domain": {
+      "replyPending": true,
+      "awaitingUserAnswer": true,
+      "userWait": true,
+      "clientConnected": true,
+      "reservations": [
+        "checking"
+      ],
+      "timers": [
+        {
+          "timerId": "replyDebounce",
+          "purpose": "replyDebounce",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "interpreterSoftWait",
+          "purpose": "interpreterSoftWait",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "firstTokenTimeout",
+          "purpose": "firstTokenTimeout",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "streamStall",
+          "purpose": "streamStall",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "callDeadline",
+          "purpose": "callDeadline",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "floorGap",
+          "purpose": "floorGap",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "rateLimit",
+          "purpose": "rateLimit",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "answerWait",
+          "purpose": "answerWait",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "userWait",
+          "purpose": "userWait",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "candidateExpiry",
+          "purpose": "candidateExpiry",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "checkTimeout",
+          "purpose": "checkTimeout",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "deliberationDebounce",
+          "purpose": "deliberationDebounce",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "jobDeadline",
+          "purpose": "jobDeadline",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "waitExpiry",
+          "purpose": "waitExpiry",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "voiceGrace",
+          "purpose": "voiceGrace",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "deliveryAck",
+          "purpose": "deliveryAck",
+          "dueAt": 20000
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "at": 1,
+      "event": {
+        "eventId": "recover",
+        "sessionId": "s",
+        "type": "session.recovered",
+        "payload": {}
+      }
+    }
+  ],
+  "fakes": [],
+  "endAt": 2,
+  "expected": {
+    "decisions": [
+      {
+        "seq": 1,
+        "kind": "kernel",
+        "reason": "session:recovered"
+      }
+    ],
+    "effects": [
+      {
+        "type": "timer.set",
+        "timerId": "rateLimit",
+        "purpose": "rateLimit",
+        "dueAt": 20000
+      },
+      {
+        "type": "timer.set",
+        "timerId": "answerWait",
+        "purpose": "answerWait",
+        "dueAt": 20000
+      },
+      {
+        "type": "timer.set",
+        "timerId": "userWait",
+        "purpose": "userWait",
+        "dueAt": 20000
+      },
+      {
+        "type": "timer.set",
+        "timerId": "candidateExpiry",
+        "purpose": "candidateExpiry",
+        "dueAt": 20000
+      },
+      {
+        "type": "timer.set",
+        "timerId": "waitExpiry",
+        "purpose": "waitExpiry",
+        "dueAt": 20000
+      },
+      {
+        "type": "timer.set",
+        "timerId": "deliveryAck",
+        "purpose": "deliveryAck",
+        "dueAt": 20000
+      }
+    ],
+    "final": {
+      "seq": 1,
+      "pendingTimers": [
+        {
+          "timerId": "rateLimit",
+          "purpose": "rateLimit",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "answerWait",
+          "purpose": "answerWait",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "userWait",
+          "purpose": "userWait",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "candidateExpiry",
+          "purpose": "candidateExpiry",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "waitExpiry",
+          "purpose": "waitExpiry",
+          "dueAt": 20000
+        },
+        {
+          "timerId": "deliveryAck",
+          "purpose": "deliveryAck",
+          "dueAt": 20000
+        }
+      ],
+      "inFlight": null,
+      "uninterpreted": [],
+      "reservations": [],
+      "replyPending": false
+    }
+  }
+}

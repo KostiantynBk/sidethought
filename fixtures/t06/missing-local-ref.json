@@ -1,0 +1,8 @@
+{
+  "researchRequests": [{
+    "inputId": "$INPUT",
+    "question": "Can local storage work?",
+    "publicQuery": "local storage feasibility",
+    "depItemIds": ["new:missing"]
+  }]
+}

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "reducerVersion": "4",
+    "configVersion": "0.3.3",
+    "fixtureVersion": "1"
+  },
+  "sessionId": "s",
+  "faults": [
+    {
+      "afterSeq": 1,
+      "kind": "sinkThrows"
+    }
+  ],
+  "events": [
+    {
+      "at": 0,
+      "event": {
+        "eventId": "e1",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "m1",
+          "text": "hello",
+          "modality": "text"
+        }
+      }
+    },
+    {
+      "at": 1,
+      "event": {
+        "eventId": "recover",
+        "sessionId": "s",
+        "type": "session.recovered",
+        "payload": {}
+      }
+    },
+    {
+      "at": 2,
+      "event": {
+        "eventId": "e1",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "m1",
+          "text": "hello",
+          "modality": "text"
+        }
+      }
+    }
+  ],
+  "fakes": [],
+  "endAt": 3,
+  "expected": {
+    "decisions": [
+      {
+        "seq": 1,
+        "kind": "harness",
+        "reason": "fault:sinkThrows"
+      },
+      {
+        "seq": 2,
+        "kind": "kernel",
+        "reason": "session:recovered"
+      },
+      {
+        "seq": 2,
+        "kind": "kernel",
+        "reason": "dup:eventId"
+      }
+    ],
+    "effects": [],
+    "final": {
+      "seq": 2,
+      "pendingTimers": [],
+      "inFlight": null,
+      "uninterpreted": [
+        {
+          "id": "s.1.1",
+          "text": "hello",
+          "status": "needs_retry"
+        }
+      ],
+      "reservations": [],
+      "replyPending": false
+    }
+  }
+}

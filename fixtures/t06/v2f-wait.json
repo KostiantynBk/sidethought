@@ -1,0 +1,8 @@
+{
+  "inputKinds": [
+    {
+      "inputId": "$INPUT",
+      "kind": "wait"
+    }
+  ]
+}

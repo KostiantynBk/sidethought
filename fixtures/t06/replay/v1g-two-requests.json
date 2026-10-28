@@ -1,0 +1,205 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "reducerVersion": "4",
+    "configVersion": "0.3.3",
+    "fixtureVersion": "1"
+  },
+  "sessionId": "s",
+  "events": [
+    {
+      "at": 0,
+      "event": {
+        "eventId": "recovery",
+        "sessionId": "s",
+        "type": "session.recovered",
+        "payload": {}
+      }
+    },
+    {
+      "at": 1,
+      "event": {
+        "eventId": "m1",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "m1",
+          "text": "Use local storage. Never use cloud.",
+          "modality": "text"
+        }
+      }
+    }
+  ],
+  "fakes": [
+    {
+      "role": "interpreter",
+      "offset": 1,
+      "type": "interpretation.ready",
+      "output": {
+        "inputKinds": [
+          {
+            "inputId": "s.2.1",
+            "kind": "direct_question"
+          }
+        ],
+        "ops": [
+          {
+            "op": "create",
+            "kind": "requirement",
+            "status": "stated",
+            "text": "Use local storage",
+            "quoteSpans": [
+              {
+                "inputId": "s.2.1",
+                "start": 0,
+                "end": 17,
+                "quote": "Use local storage"
+              }
+            ],
+            "localRef": "new:1"
+          }
+        ],
+        "replacementGroups": [],
+        "researchRequests": [
+          {
+            "inputId": "s.2.1",
+            "question": "Can local storage work?",
+            "publicQuery": "local storage feasibility",
+            "depItemIds": [
+              "new:1"
+            ]
+          },
+          {
+            "inputId": "s.2.1",
+            "question": "What are cloud risks?",
+            "publicQuery": "cloud storage risks",
+            "depItemIds": [
+              "r1",
+              "new:1"
+            ]
+          }
+        ],
+        "deprioritizedTopics": [],
+        "voiceConfirmValues": []
+      }
+    }
+  ],
+  "endAt": 10,
+  "expected": {
+    "decisions": [
+      {
+        "seq": 1,
+        "kind": "kernel",
+        "reason": "session:recovered"
+      },
+      {
+        "seq": 2,
+        "kind": "kernel",
+        "reason": "input:committed"
+      },
+      {
+        "seq": 3,
+        "kind": "kernel",
+        "reason": "interpreter:ready"
+      },
+      {
+        "seq": 3,
+        "kind": "item",
+        "reason": "span:valid"
+      }
+    ],
+    "effects": [
+      {
+        "type": "timer.set",
+        "timerId": "s.2.2",
+        "purpose": "replyDebounce",
+        "dueAt": 801
+      },
+      {
+        "type": "llm.call",
+        "role": "interpreter",
+        "requestId": "s.2.3",
+        "callId": "s.2.4",
+        "basisRev": 1,
+        "capturedInputs": [
+          {
+            "itemId": "r1",
+            "contentVersion": 1
+          }
+        ]
+      }
+    ],
+    "final": {
+      "seq": 3,
+      "pendingTimers": [
+        {
+          "timerId": "s.2.2",
+          "purpose": "replyDebounce",
+          "dueAt": 801
+        }
+      ],
+      "inFlight": null,
+      "uninterpreted": [],
+      "reservations": [],
+      "replyPending": true,
+      "project": {
+        "items": [
+          {
+            "id": "r1",
+            "kind": "requirement",
+            "status": "stated",
+            "text": "Use cloud",
+            "contentVersion": 1,
+            "private": false,
+            "provenance": {
+              "origin": "user",
+              "quoteSpans": []
+            },
+            "voiceConfirmNeeded": false
+          },
+          {
+            "id": "s.3.1",
+            "kind": "requirement",
+            "status": "stated",
+            "text": "Use local storage",
+            "contentVersion": 1,
+            "private": false,
+            "provenance": {
+              "origin": "user",
+              "quoteSpans": [
+                {
+                  "inputId": "s.2.1",
+                  "start": 0,
+                  "end": 17,
+                  "quote": "Use local storage"
+                }
+              ]
+            },
+            "voiceConfirmNeeded": false
+          }
+        ],
+        "projectRev": 2
+      }
+    }
+  },
+  "initialState": {
+    "domain": {
+      "items": {
+        "r1": {
+          "id": "r1",
+          "kind": "requirement",
+          "status": "stated",
+          "text": "Use cloud",
+          "contentVersion": 1,
+          "private": false,
+          "provenance": {
+            "origin": "user",
+            "quoteSpans": []
+          },
+          "voiceConfirmNeeded": false
+        }
+      },
+      "projectRev": 1
+    }
+  }
+}

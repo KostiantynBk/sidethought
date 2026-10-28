@@ -1,0 +1,23 @@
+{
+  "ops": [{
+    "op": "supersede",
+    "itemId": "r1",
+    "quoteSpans": [{
+      "inputId": "$INPUT",
+      "start": 19,
+      "end": 34,
+      "quote": "Never use cloud"
+    }],
+    "replacement": {
+      "kind": "requirement",
+      "status": "stated",
+      "text": "  Use cloud  ",
+      "quoteSpans": [{
+        "inputId": "$INPUT",
+        "start": 19,
+        "end": 34,
+        "quote": "Never use cloud"
+      }]
+    }
+  }]
+}

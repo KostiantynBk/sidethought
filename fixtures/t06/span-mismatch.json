@@ -1,0 +1,9 @@
+{
+  "ops": [{
+    "op": "create",
+    "kind": "requirement",
+    "status": "stated",
+    "text": "Offline notes",
+    "quoteSpans": [{ "inputId": "$INPUT", "start": 0, "end": 2, "quote": "zz" }]
+  }]
+}

@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "reducerVersion": "4",
+    "configVersion": "0.3.3",
+    "fixtureVersion": "1"
+  },
+  "sessionId": "s",
+  "generate": {
+    "repeatCommits": 5001
+  },
+  "assertions": {
+    "decisionCount": 5002,
+    "lastDecision": "dup:eventId",
+    "finalSeq": 5001
+  },
+  "events": [
+    {
+      "at": 1,
+      "event": {
+        "eventId": "generated-0",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "generated-message",
+          "text": "generated input",
+          "modality": "text"
+        }
+      }
+    }
+  ],
+  "fakes": [],
+  "endAt": 2,
+  "expected": {
+    "decisions": [],
+    "effects": [
+      {
+        "type": "timer.set",
+        "timerId": "s.1.2",
+        "purpose": "replyDebounce",
+        "dueAt": 800
+      },
+      {
+        "type": "llm.call",
+        "role": "interpreter",
+        "requestId": "s.1.3",
+        "callId": "s.1.4",
+        "basisRev": 0,
+        "capturedInputs": []
+      }
+    ],
+    "final": {
+      "seq": 5001,
+      "pendingTimers": [
+        {
+          "timerId": "s.1.2",
+          "purpose": "replyDebounce",
+          "dueAt": 800
+        }
+      ],
+      "inFlight": {
+        "requestId": "s.1.3",
+        "callId": "s.1.4",
+        "attempt": 1,
+        "inputIds": [
+          "s.1.1"
+        ],
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      "uninterpreted": [
+        {
+          "id": "s.1.1",
+          "text": "generated input",
+          "status": "inflight"
+        }
+      ],
+      "reservations": [],
+      "replyPending": true
+    }
+  }
+}

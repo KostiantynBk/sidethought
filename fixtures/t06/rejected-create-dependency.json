@@ -1,0 +1,16 @@
+{
+  "ops": [{
+    "op": "create",
+    "localRef": "new:1",
+    "kind": "requirement",
+    "status": "stated",
+    "text": "Use cloud",
+    "quoteSpans": [{ "inputId": "$INPUT", "start": 25, "end": 34, "quote": "use cloud" }]
+  }],
+  "researchRequests": [{
+    "inputId": "$INPUT",
+    "question": "What about cloud?",
+    "publicQuery": "cloud storage risks",
+    "depItemIds": ["new:1"]
+  }]
+}

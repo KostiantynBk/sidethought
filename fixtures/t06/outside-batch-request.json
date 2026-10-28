@@ -1,0 +1,8 @@
+{
+  "researchRequests": [{
+    "inputId": "$INPUT",
+    "question": "Is offline sync supported?",
+    "publicQuery": "offline sync support",
+    "depItemIds": []
+  }]
+}

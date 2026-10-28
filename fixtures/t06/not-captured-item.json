@@ -1,0 +1,7 @@
+{
+  "ops": [{
+    "op": "retract",
+    "itemId": "uncaptured",
+    "quoteSpans": [{ "inputId": "$INPUT", "start": 0, "end": 17, "quote": "Use local storage" }]
+  }]
+}

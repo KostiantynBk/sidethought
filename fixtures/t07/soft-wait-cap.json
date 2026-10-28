@@ -1,0 +1,183 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "reducerVersion": "4",
+    "configVersion": "0.3.3",
+    "fixtureVersion": "1"
+  },
+  "sessionId": "s",
+  "events": [
+    {
+      "at": 0,
+      "event": {
+        "eventId": "m1",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "m1",
+          "text": "Use local storage.",
+          "modality": "text"
+        }
+      }
+    },
+    {
+      "at": 1500,
+      "event": {
+        "eventId": "checkpoint",
+        "sessionId": "s",
+        "type": "budget.global",
+        "payload": {
+          "spentTodayUsd": 0,
+          "reservedUsd": 0,
+          "reserveUsd": 40
+        }
+      }
+    }
+  ],
+  "fakes": [
+    {
+      "role": "interpreter",
+      "offset": 2000,
+      "type": "interpretation.ready",
+      "output": {
+        "inputKinds": [
+          {
+            "inputId": "s.1.1",
+            "kind": "statement"
+          }
+        ],
+        "ops": [],
+        "replacementGroups": [],
+        "researchRequests": [],
+        "deprioritizedTopics": [],
+        "voiceConfirmValues": []
+      }
+    },
+    {
+      "role": "responder",
+      "offset": 50,
+      "type": "reply.chunk",
+      "payload": {
+        "text": "A complete sentence. Next"
+      }
+    }
+  ],
+  "endAt": 1500,
+  "expected": {
+    "decisions": [
+      {
+        "seq": 1,
+        "kind": "kernel",
+        "reason": "input:committed"
+      },
+      {
+        "seq": 2,
+        "kind": "kernel",
+        "reason": "reply:waiting_interpreter"
+      },
+      {
+        "seq": 3,
+        "kind": "kernel",
+        "reason": "reply:started"
+      },
+      {
+        "seq": 4,
+        "kind": "kernel",
+        "reason": "reply:buffered"
+      },
+      {
+        "seq": 5,
+        "kind": "kernel",
+        "reason": "noop:unhandled"
+      }
+    ],
+    "effects": [
+      {
+        "type": "timer.set",
+        "timerId": "s.1.2",
+        "purpose": "replyDebounce",
+        "dueAt": 800
+      },
+      {
+        "type": "llm.call",
+        "role": "interpreter",
+        "requestId": "s.1.3",
+        "callId": "s.1.4",
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.2.1",
+        "purpose": "interpreterSoftWait",
+        "dueAt": 1400
+      },
+      {
+        "type": "llm.call",
+        "role": "responder",
+        "requestId": "s.3.1",
+        "callId": "s.3.2",
+        "basisRev": 0,
+        "capturedInputs": []
+      }
+    ],
+    "final": {
+      "seq": 5,
+      "pendingTimers": [],
+      "inFlight": {
+        "requestId": "s.1.3",
+        "callId": "s.1.4",
+        "attempt": 1,
+        "inputIds": [
+          "s.1.1"
+        ],
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      "uninterpreted": [
+        {
+          "id": "s.1.1",
+          "text": "Use local storage.",
+          "status": "inflight"
+        }
+      ],
+      "reservations": [],
+      "replyPending": true,
+      "reply": {
+        "requestId": "s.3.1",
+        "callId": "s.3.2",
+        "attempt": 1,
+        "inputIds": [
+          "s.1.1"
+        ],
+        "basisRev": 0,
+        "capturedInputs": [],
+        "deliveryId": "s.3.3",
+        "overridesSnapshotInputIds": [
+          "s.1.1"
+        ],
+        "buffer": "Next",
+        "status": "streaming"
+      },
+      "deliveries": {
+        "s.3.3": {
+          "id": "s.3.3",
+          "callId": "s.3.2",
+          "basisRev": 0,
+          "state": "delivering",
+          "chunks": [
+            {
+              "text": "A complete sentence. ",
+              "state": "pending",
+              "claimIds": [],
+              "sentenceFinished": true
+            }
+          ],
+          "deliveredChars": 0,
+          "claimsDelivered": []
+        }
+      },
+      "replyStartWaiting": false
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "ops": [
+    {
+      "op": "create",
+      "kind": "requirement",
+      "status": "stated",
+      "text": "offline-first note app for freelancers",
+      "quoteSpans": [{
+        "inputId": "$INPUT",
+        "start": 0,
+        "end": 41,
+        "quote": "An offline-first note app for freelancers"
+      }]
+    },
+    {
+      "op": "create",
+      "localRef": "new:1",
+      "kind": "option",
+      "status": "considering",
+      "text": "Provider A for sync",
+      "quoteSpans": [{
+        "inputId": "$INPUT",
+        "start": 43,
+        "end": 71,
+        "quote": "Provider A might handle sync"
+      }]
+    }
+  ],
+  "researchRequests": [{
+    "inputId": "$INPUT",
+    "question": "Does Provider A's client work without a network connection?",
+    "publicQuery": "Provider A client offline support",
+    "depItemIds": ["new:1"]
+  }]
+}

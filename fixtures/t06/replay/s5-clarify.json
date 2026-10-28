@@ -1,0 +1,291 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "reducerVersion": "4",
+    "configVersion": "0.3.3",
+    "fixtureVersion": "2"
+  },
+  "sessionId": "s",
+  "events": [
+    {
+      "at": 0,
+      "event": {
+        "eventId": "m1",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "m1",
+          "text": "I was thinking ten euros a month.",
+          "modality": "text"
+        }
+      }
+    },
+    {
+      "at": 8000,
+      "event": {
+        "eventId": "m2",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "m2",
+          "text": "What customers pay. I haven't decided my operating budget.",
+          "modality": "text"
+        }
+      }
+    }
+  ],
+  "fakes": [
+    {
+      "role": "interpreter",
+      "offset": 800,
+      "type": "interpretation.ready",
+      "output": {
+        "inputKinds": [
+          {
+            "inputId": "s.1.1",
+            "kind": "statement"
+          }
+        ],
+        "ops": [],
+        "replacementGroups": [],
+        "researchRequests": [],
+        "deprioritizedTopics": [],
+        "voiceConfirmValues": [],
+        "clarification": "Your operating budget, or what customers would pay?"
+      }
+    },
+    {
+      "role": "responder",
+      "offset": 1,
+      "type": "reply.done",
+      "payload": {}
+    },
+    {
+      "role": "interpreter",
+      "offset": 900,
+      "type": "interpretation.ready",
+      "output": {
+        "inputKinds": [
+          {
+            "inputId": "s.5.1",
+            "kind": "answer"
+          }
+        ],
+        "ops": [
+          {
+            "op": "create",
+            "kind": "requirement",
+            "status": "stated",
+            "text": "customer price: €10 per month",
+            "quoteSpans": [
+              {
+                "inputId": "s.1.1",
+                "start": 0,
+                "end": 32,
+                "quote": "I was thinking ten euros a month"
+              },
+              {
+                "inputId": "s.5.1",
+                "start": 0,
+                "end": 18,
+                "quote": "What customers pay"
+              }
+            ]
+          },
+          {
+            "op": "create",
+            "kind": "open_question",
+            "status": "considering",
+            "text": "operating budget",
+            "quoteSpans": [
+              {
+                "inputId": "s.5.1",
+                "start": 20,
+                "end": 57,
+                "quote": "I haven't decided my operating budget"
+              }
+            ]
+          }
+        ],
+        "replacementGroups": [],
+        "researchRequests": [],
+        "deprioritizedTopics": [],
+        "voiceConfirmValues": []
+      }
+    }
+  ],
+  "endAt": 8900,
+  "expected": {
+    "decisions": [
+      {
+        "seq": 1,
+        "kind": "kernel",
+        "reason": "input:committed"
+      },
+      {
+        "seq": 2,
+        "kind": "kernel",
+        "reason": "interpreter:ready"
+      },
+      {
+        "seq": 3,
+        "kind": "kernel",
+        "reason": "reply:started"
+      },
+      {
+        "seq": 4,
+        "kind": "kernel",
+        "reason": "reply:done"
+      },
+      {
+        "seq": 5,
+        "kind": "kernel",
+        "reason": "input:committed"
+      },
+      {
+        "seq": 6,
+        "kind": "kernel",
+        "reason": "reply:waiting_interpreter"
+      },
+      {
+        "seq": 7,
+        "kind": "kernel",
+        "reason": "interpreter:ready"
+      },
+      {
+        "seq": 7,
+        "kind": "item",
+        "reason": "status:forced_considering:hedge"
+      },
+      {
+        "seq": 7,
+        "kind": "item",
+        "reason": "span:valid"
+      }
+    ],
+    "effects": [
+      {
+        "type": "timer.set",
+        "timerId": "s.1.2",
+        "purpose": "replyDebounce",
+        "dueAt": 800
+      },
+      {
+        "type": "llm.call",
+        "role": "interpreter",
+        "requestId": "s.1.3",
+        "callId": "s.1.4",
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      {
+        "type": "llm.call",
+        "role": "responder",
+        "requestId": "s.3.1",
+        "callId": "s.3.2",
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.5.2",
+        "purpose": "replyDebounce",
+        "dueAt": 8800
+      },
+      {
+        "type": "llm.call",
+        "role": "interpreter",
+        "requestId": "s.5.3",
+        "callId": "s.5.4",
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.6.1",
+        "purpose": "interpreterSoftWait",
+        "dueAt": 9400
+      },
+      {
+        "type": "timer.clear",
+        "timerId": "s.6.1"
+      },
+      {
+        "type": "llm.call",
+        "role": "responder",
+        "requestId": "s.7.3",
+        "callId": "s.7.4",
+        "basisRev": 1,
+        "capturedInputs": [
+          {
+            "itemId": "s.7.1",
+            "contentVersion": 1
+          },
+          {
+            "itemId": "s.7.2",
+            "contentVersion": 1
+          }
+        ]
+      }
+    ],
+    "final": {
+      "seq": 7,
+      "pendingTimers": [],
+      "inFlight": null,
+      "uninterpreted": [],
+      "reservations": [],
+      "replyPending": true,
+      "project": {
+        "items": [
+          {
+            "id": "s.7.1",
+            "kind": "requirement",
+            "status": "considering",
+            "text": "customer price: €10 per month",
+            "contentVersion": 1,
+            "private": false,
+            "provenance": {
+              "origin": "user",
+              "quoteSpans": [
+                {
+                  "inputId": "s.1.1",
+                  "start": 0,
+                  "end": 32,
+                  "quote": "I was thinking ten euros a month"
+                },
+                {
+                  "inputId": "s.5.1",
+                  "start": 0,
+                  "end": 18,
+                  "quote": "What customers pay"
+                }
+              ]
+            },
+            "voiceConfirmNeeded": false
+          },
+          {
+            "id": "s.7.2",
+            "kind": "open_question",
+            "status": "considering",
+            "text": "operating budget",
+            "contentVersion": 1,
+            "private": false,
+            "provenance": {
+              "origin": "user",
+              "quoteSpans": [
+                {
+                  "inputId": "s.5.1",
+                  "start": 20,
+                  "end": 57,
+                  "quote": "I haven't decided my operating budget"
+                }
+              ]
+            },
+            "voiceConfirmNeeded": false
+          }
+        ],
+        "projectRev": 1
+      }
+    }
+  }
+}

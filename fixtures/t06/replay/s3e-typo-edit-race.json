@@ -1,0 +1,278 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "reducerVersion": "4",
+    "configVersion": "0.3.3",
+    "fixtureVersion": "1"
+  },
+  "sessionId": "s",
+  "events": [
+    {
+      "at": 0,
+      "event": {
+        "eventId": "recovery",
+        "sessionId": "s",
+        "type": "session.recovered",
+        "payload": {}
+      }
+    },
+    {
+      "at": 1,
+      "event": {
+        "eventId": "m1",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "m5",
+          "text": "Actually no cloud. Notes must stay on the phone.",
+          "modality": "text"
+        }
+      }
+    },
+    {
+      "at": 2,
+      "event": {
+        "eventId": "edit",
+        "sessionId": "s",
+        "type": "item.action",
+        "payload": {
+          "itemId": "r2",
+          "expectedVersion": 1,
+          "action": "edit",
+          "text": "cloud sync via Provider B cloud"
+        }
+      }
+    }
+  ],
+  "fakes": [
+    {
+      "role": "interpreter",
+      "offset": 2,
+      "type": "interpretation.ready",
+      "output": {
+        "inputKinds": [
+          {
+            "inputId": "s.2.1",
+            "kind": "correction"
+          }
+        ],
+        "ops": [
+          {
+            "op": "supersede",
+            "itemId": "r2",
+            "quoteSpans": [
+              {
+                "inputId": "s.2.1",
+                "start": 19,
+                "end": 47,
+                "quote": "Notes must stay on the phone"
+              }
+            ],
+            "replacement": {
+              "kind": "requirement",
+              "status": "stated",
+              "text": "notes stay on the phone; no cloud",
+              "quoteSpans": [
+                {
+                  "inputId": "s.2.1",
+                  "start": 19,
+                  "end": 47,
+                  "quote": "Notes must stay on the phone"
+                }
+              ]
+            }
+          }
+        ],
+        "replacementGroups": [],
+        "researchRequests": [],
+        "deprioritizedTopics": [],
+        "voiceConfirmValues": []
+      }
+    },
+    {
+      "role": "interpreter",
+      "offset": 1,
+      "type": "interpretation.ready",
+      "output": {
+        "inputKinds": [
+          {
+            "inputId": "s.2.1",
+            "kind": "correction"
+          }
+        ],
+        "ops": [
+          {
+            "op": "supersede",
+            "itemId": "r2",
+            "quoteSpans": [
+              {
+                "inputId": "s.2.1",
+                "start": 19,
+                "end": 47,
+                "quote": "Notes must stay on the phone"
+              }
+            ],
+            "replacement": {
+              "kind": "requirement",
+              "status": "stated",
+              "text": "notes stay on the phone; no cloud",
+              "quoteSpans": [
+                {
+                  "inputId": "s.2.1",
+                  "start": 19,
+                  "end": 47,
+                  "quote": "Notes must stay on the phone"
+                }
+              ]
+            }
+          }
+        ],
+        "replacementGroups": [],
+        "researchRequests": [],
+        "deprioritizedTopics": [],
+        "voiceConfirmValues": []
+      }
+    }
+  ],
+  "endAt": 10,
+  "expected": {
+    "decisions": [
+      {
+        "seq": 1,
+        "kind": "kernel",
+        "reason": "session:recovered"
+      },
+      {
+        "seq": 2,
+        "kind": "kernel",
+        "reason": "input:committed"
+      },
+      {
+        "seq": 3,
+        "kind": "kernel",
+        "reason": "item:edited"
+      },
+      {
+        "seq": 4,
+        "kind": "kernel",
+        "reason": "patch:conflict_reinterpret"
+      },
+      {
+        "seq": 5,
+        "kind": "kernel",
+        "reason": "interpreter:ready"
+      },
+      {
+        "seq": 5,
+        "kind": "item",
+        "reason": "item:superseded"
+      }
+    ],
+    "effects": [
+      {
+        "type": "timer.set",
+        "timerId": "s.2.2",
+        "purpose": "replyDebounce",
+        "dueAt": 801
+      },
+      {
+        "type": "llm.call",
+        "role": "interpreter",
+        "requestId": "s.2.3",
+        "callId": "s.2.4",
+        "basisRev": 5,
+        "capturedInputs": [
+          {
+            "itemId": "r2",
+            "contentVersion": 1
+          }
+        ]
+      },
+      {
+        "type": "llm.call",
+        "role": "interpreter",
+        "requestId": "s.4.1",
+        "callId": "s.4.2",
+        "basisRev": 6,
+        "capturedInputs": [
+          {
+            "itemId": "r2",
+            "contentVersion": 2
+          }
+        ]
+      }
+    ],
+    "final": {
+      "seq": 5,
+      "pendingTimers": [
+        {
+          "timerId": "s.2.2",
+          "purpose": "replyDebounce",
+          "dueAt": 801
+        }
+      ],
+      "inFlight": null,
+      "uninterpreted": [],
+      "reservations": [],
+      "replyPending": true,
+      "project": {
+        "items": [
+          {
+            "id": "r2",
+            "kind": "requirement",
+            "status": "superseded",
+            "text": "cloud sync via Provider B cloud",
+            "contentVersion": 2,
+            "private": false,
+            "provenance": {
+              "origin": "user",
+              "quoteSpans": []
+            },
+            "voiceConfirmNeeded": false
+          },
+          {
+            "id": "s.5.1",
+            "kind": "requirement",
+            "status": "stated",
+            "text": "notes stay on the phone; no cloud",
+            "contentVersion": 1,
+            "private": false,
+            "provenance": {
+              "origin": "user",
+              "quoteSpans": [
+                {
+                  "inputId": "s.2.1",
+                  "start": 19,
+                  "end": 47,
+                  "quote": "Notes must stay on the phone"
+                }
+              ]
+            },
+            "voiceConfirmNeeded": false
+          }
+        ],
+        "projectRev": 7
+      }
+    }
+  },
+  "initialState": {
+    "domain": {
+      "items": {
+        "r2": {
+          "id": "r2",
+          "kind": "requirement",
+          "status": "stated",
+          "text": "cloud sync via Provider B clud",
+          "contentVersion": 1,
+          "private": false,
+          "provenance": {
+            "origin": "user",
+            "quoteSpans": []
+          },
+          "voiceConfirmNeeded": false
+        }
+      },
+      "projectRev": 5
+    }
+  }
+}

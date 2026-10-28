@@ -1,0 +1,16 @@
+{
+  "ops": [
+    {
+      "op": "create",
+      "kind": "requirement",
+      "status": "stated",
+      "text": "Use local storage",
+      "quoteSpans": [{ "inputId": "$INPUT", "start": 0, "end": 17, "quote": "Use local storage" }]
+    },
+    {
+      "op": "retract",
+      "itemId": "r1",
+      "quoteSpans": [{ "inputId": "$INPUT", "start": 19, "end": 34, "quote": "Never use cloud" }]
+    }
+  ]
+}

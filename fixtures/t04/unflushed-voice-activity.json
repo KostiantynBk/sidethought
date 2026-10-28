@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "reducerVersion": "4",
+    "configVersion": "0.3.3",
+    "fixtureVersion": "1"
+  },
+  "sessionId": "s",
+  "events": [
+    {
+      "at": 0,
+      "event": {
+        "eventId": "e1",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "m1",
+          "text": "hello",
+          "modality": "text"
+        }
+      }
+    },
+    {
+      "at": 1,
+      "event": {
+        "eventId": "voice-ping",
+        "sessionId": "s",
+        "type": "voice.activity",
+        "payload": {
+          "turnId": "turn1",
+          "active": true
+        }
+      }
+    }
+  ],
+  "fakes": [],
+  "endAt": 2,
+  "expected": {
+    "decisions": [
+      {
+        "seq": 1,
+        "kind": "kernel",
+        "reason": "input:committed"
+      },
+      {
+        "seq": 2,
+        "kind": "kernel",
+        "reason": "noop:unhandled"
+      }
+    ],
+    "effects": [
+      {
+        "type": "timer.set",
+        "timerId": "s.1.2",
+        "purpose": "replyDebounce",
+        "dueAt": 800
+      },
+      {
+        "type": "llm.call",
+        "role": "interpreter",
+        "requestId": "s.1.3",
+        "callId": "s.1.4",
+        "basisRev": 0,
+        "capturedInputs": []
+      }
+    ],
+    "final": {
+      "seq": 2,
+      "pendingTimers": [
+        {
+          "timerId": "s.1.2",
+          "purpose": "replyDebounce",
+          "dueAt": 800
+        }
+      ],
+      "inFlight": {
+        "requestId": "s.1.3",
+        "callId": "s.1.4",
+        "attempt": 1,
+        "inputIds": ["s.1.1"],
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      "uninterpreted": [
+        {
+          "id": "s.1.1",
+          "text": "hello",
+          "status": "inflight"
+        }
+      ],
+      "reservations": [],
+      "replyPending": true
+    }
+  }
+}

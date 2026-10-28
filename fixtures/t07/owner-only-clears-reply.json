@@ -1,0 +1,271 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "reducerVersion": "4",
+    "configVersion": "0.3.3",
+    "fixtureVersion": "1"
+  },
+  "sessionId": "s",
+  "events": [
+    {
+      "at": 0,
+      "event": {
+        "eventId": "m1",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "m1",
+          "text": "Use local storage.",
+          "modality": "text"
+        }
+      }
+    },
+    {
+      "at": 900,
+      "event": {
+        "eventId": "m2",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "m2",
+          "text": "Use local storage.",
+          "modality": "text"
+        }
+      }
+    },
+    {
+      "at": 1705,
+      "event": {
+        "eventId": "current-delta",
+        "sessionId": "s",
+        "type": "reply.chunk",
+        "payload": {
+          "requestId": "s.7.1",
+          "callId": "s.7.2",
+          "text": "Current sentence. "
+        }
+      }
+    },
+    {
+      "at": 1710,
+      "event": {
+        "eventId": "old-done",
+        "sessionId": "s",
+        "type": "reply.done",
+        "payload": {
+          "requestId": "s.3.1",
+          "callId": "s.3.2"
+        }
+      }
+    },
+    {
+      "at": 1720,
+      "event": {
+        "eventId": "old-failed",
+        "sessionId": "s",
+        "type": "reply.failed",
+        "payload": {
+          "requestId": "s.3.1",
+          "callId": "s.3.2",
+          "reason": "late failure"
+        }
+      }
+    }
+  ],
+  "fakes": [
+    {
+      "role": "interpreter",
+      "offset": 10,
+      "type": "interpretation.ready",
+      "output": {
+        "inputKinds": [
+          {
+            "inputId": "s.1.1",
+            "kind": "statement"
+          }
+        ],
+        "ops": [],
+        "replacementGroups": [],
+        "researchRequests": [],
+        "deprioritizedTopics": [],
+        "voiceConfirmValues": []
+      }
+    },
+    {
+      "role": "responder",
+      "offset": 10,
+      "type": "reply.done",
+      "payload": {}
+    },
+    {
+      "role": "interpreter",
+      "offset": 10,
+      "type": "interpretation.ready",
+      "output": {
+        "inputKinds": [
+          {
+            "inputId": "s.5.1",
+            "kind": "statement"
+          }
+        ],
+        "ops": [],
+        "replacementGroups": [],
+        "researchRequests": [],
+        "deprioritizedTopics": [],
+        "voiceConfirmValues": []
+      }
+    }
+  ],
+  "endAt": 1720,
+  "expected": {
+    "decisions": [
+      {
+        "seq": 1,
+        "kind": "kernel",
+        "reason": "input:committed"
+      },
+      {
+        "seq": 2,
+        "kind": "kernel",
+        "reason": "interpreter:ready"
+      },
+      {
+        "seq": 3,
+        "kind": "kernel",
+        "reason": "reply:started"
+      },
+      {
+        "seq": 4,
+        "kind": "kernel",
+        "reason": "reply:done"
+      },
+      {
+        "seq": 5,
+        "kind": "kernel",
+        "reason": "input:committed"
+      },
+      {
+        "seq": 6,
+        "kind": "kernel",
+        "reason": "interpreter:ready"
+      },
+      {
+        "seq": 7,
+        "kind": "kernel",
+        "reason": "reply:started"
+      },
+      {
+        "seq": 8,
+        "kind": "kernel",
+        "reason": "reply:buffered"
+      },
+      {
+        "seq": 9,
+        "kind": "kernel",
+        "reason": "late:retired_reply"
+      },
+      {
+        "seq": 10,
+        "kind": "kernel",
+        "reason": "late:retired_reply"
+      }
+    ],
+    "effects": [
+      {
+        "type": "timer.set",
+        "timerId": "s.1.2",
+        "purpose": "replyDebounce",
+        "dueAt": 800
+      },
+      {
+        "type": "llm.call",
+        "role": "interpreter",
+        "requestId": "s.1.3",
+        "callId": "s.1.4",
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      {
+        "type": "llm.call",
+        "role": "responder",
+        "requestId": "s.3.1",
+        "callId": "s.3.2",
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.5.2",
+        "purpose": "replyDebounce",
+        "dueAt": 1700
+      },
+      {
+        "type": "llm.call",
+        "role": "interpreter",
+        "requestId": "s.5.3",
+        "callId": "s.5.4",
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      {
+        "type": "llm.call",
+        "role": "responder",
+        "requestId": "s.7.1",
+        "callId": "s.7.2",
+        "basisRev": 0,
+        "capturedInputs": []
+      }
+    ],
+    "final": {
+      "seq": 10,
+      "pendingTimers": [],
+      "inFlight": null,
+      "uninterpreted": [],
+      "reservations": [],
+      "replyPending": true,
+      "reply": {
+        "requestId": "s.7.1",
+        "callId": "s.7.2",
+        "attempt": 1,
+        "inputIds": [
+          "s.1.1",
+          "s.5.1"
+        ],
+        "basisRev": 0,
+        "capturedInputs": [],
+        "deliveryId": "s.7.3",
+        "overridesSnapshotInputIds": [],
+        "buffer": "",
+        "status": "streaming"
+      },
+      "deliveries": {
+        "s.3.3": {
+          "id": "s.3.3",
+          "callId": "s.3.2",
+          "basisRev": 0,
+          "state": "delivering",
+          "chunks": [],
+          "deliveredChars": 0,
+          "claimsDelivered": []
+        },
+        "s.7.3": {
+          "id": "s.7.3",
+          "callId": "s.7.2",
+          "basisRev": 0,
+          "state": "delivering",
+          "chunks": [
+            {
+              "text": "Current sentence. ",
+              "state": "pending",
+              "claimIds": [],
+              "sentenceFinished": true
+            }
+          ],
+          "deliveredChars": 0,
+          "claimsDelivered": []
+        }
+      },
+      "replyStartWaiting": false
+    }
+  }
+}
