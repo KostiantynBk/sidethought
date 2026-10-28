@@ -1,0 +1,3 @@
+# Keep LF everywhere so fixtures and tests are byte-stable on Windows checkouts.
+* text=auto eol=lf
+*.db binary
