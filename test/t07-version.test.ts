@@ -5,7 +5,7 @@ import { MemoryStore, type Snapshot } from '../src/store/index.js';
 import { config } from './t03-helpers.js';
 
 it('refuses a reducer v3 snapshot without A1 reply and delivery state', () => {
-  expect(REDUCER_VERSION).toBe('5');
+  expect(REDUCER_VERSION).toBe('6');
   const state = initialState('s', config);
   const { reply, deliveries, replyStartWaiting, ...oldDomain } = state.domain;
   const store = new MemoryStore();

@@ -2,7 +2,7 @@ import type { Config } from '../config/index.js';
 import { AppliedPatchBatchSchema, type InterpreterOutput, type Item } from '../contract/index.js';
 import type { Call, Context } from './index.js';
 import { createItem, setStatus, supersedeItem, updateItem, verbalAgreement, type QuoteInput } from './items/index.js';
-import { normalize, spansMatch } from './items/spans.js';
+import { normalize, resolveQuoteSpan, spansMatch } from './items/spans.js';
 
 type Op = InterpreterOutput['ops'][number];
 type Local = Map<string, string>;
@@ -24,6 +24,35 @@ function inputs(context: Context, call: Call): QuoteInput[] {
 
 function allOps(output: InterpreterOutput): Op[] {
   return [...output.ops, ...output.replacementGroups.flatMap(group => group.ops)];
+}
+
+function resolveOutput(context: Context, output: InterpreterOutput, call: Call): InterpreterOutput {
+  const sources = inputs(context, call);
+  const resolve = (span: Op['quoteSpans'][number]) => {
+    const result = resolveQuoteSpan(span, sources.find(input => input.id === span.inputId));
+    if (result.decision) context.itemDecisions.push(result.decision);
+    return result.span;
+  };
+  const resolveOp = (op: Op): Op => {
+    const quoteSpans = op.quoteSpans.map(resolve);
+    if (op.op !== 'supersede') return { ...op, quoteSpans };
+    return {
+      ...op,
+      quoteSpans,
+      replacement: {
+        ...op.replacement,
+        quoteSpans: op.replacement.quoteSpans.map(resolve),
+      },
+    };
+  };
+  return {
+    ...output,
+    ops: output.ops.map(resolveOp),
+    replacementGroups: output.replacementGroups.map(group => ({
+      ...group,
+      ops: group.ops.map(resolveOp),
+    })),
+  };
 }
 
 function refFor(op: Op): string | undefined {
@@ -199,6 +228,7 @@ function applyRequests(context: Context, output: InterpreterOutput, call: Call, 
 
 export function applyInterpretation(context: Context, output: InterpreterOutput, call: Call, config: Config):
   'invalid' | 'conflict' | 'applied' {
+  output = resolveOutput(context, output, call);
   if (!validate(context, output, call)) return 'invalid';
   if (conflict(context, output, call)) return 'conflict';
   const local: Local = new Map();

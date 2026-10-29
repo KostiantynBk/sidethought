@@ -1,0 +1,156 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "reducerVersion": "6",
+    "configVersion": "0.3.4",
+    "fixtureVersion": "1"
+  },
+  "sessionId": "s",
+  "events": [
+    {
+      "at": 0,
+      "event": {
+        "eventId": "recovery",
+        "sessionId": "s",
+        "type": "session.recovered",
+        "payload": {}
+      }
+    },
+    {
+      "at": 1,
+      "event": {
+        "eventId": "m1",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "m5",
+          "text": "Use local storage",
+          "modality": "text"
+        }
+      }
+    }
+  ],
+  "fakes": [
+    {
+      "role": "interpreter",
+      "offset": 1,
+      "type": "interpretation.ready",
+      "output": {
+        "inputKinds": [
+          {
+            "inputId": "s.2.1",
+            "kind": "statement"
+          }
+        ],
+        "ops": [
+          {
+            "op": "create",
+            "kind": "requirement",
+            "status": "stated",
+            "text": "Use local storage",
+            "quoteSpans": [
+              {
+                "inputId": "s.2.1",
+                "start": 0,
+                "end": 1,
+                "quote": "Use local storage"
+              }
+            ]
+          }
+        ],
+        "replacementGroups": [],
+        "researchRequests": [],
+        "deprioritizedTopics": [],
+        "voiceConfirmValues": []
+      }
+    }
+  ],
+  "endAt": 10,
+  "expected": {
+    "decisions": [
+      {
+        "seq": 1,
+        "kind": "kernel",
+        "reason": "session:recovered"
+      },
+      {
+        "seq": 2,
+        "kind": "kernel",
+        "reason": "input:committed"
+      },
+      {
+        "seq": 3,
+        "kind": "kernel",
+        "reason": "interpreter:ready"
+      },
+      {
+        "seq": 3,
+        "kind": "item",
+        "reason": "span:resolved_by_quote"
+      },
+      {
+        "seq": 3,
+        "kind": "item",
+        "reason": "span:valid"
+      }
+    ],
+    "effects": [
+      {
+        "type": "timer.set",
+        "timerId": "s.2.2",
+        "purpose": "replyDebounce",
+        "dueAt": 801
+      },
+      {
+        "type": "llm.call",
+        "role": "interpreter",
+        "requestId": "s.2.3",
+        "callId": "s.2.4",
+        "basisRev": 0,
+        "capturedInputs": []
+      }
+    ],
+    "final": {
+      "seq": 3,
+      "pendingTimers": [
+        {
+          "timerId": "s.2.2",
+          "purpose": "replyDebounce",
+          "dueAt": 801
+        }
+      ],
+      "inFlight": null,
+      "uninterpreted": [],
+      "reservations": [],
+      "replyPending": true,
+      "project": {
+        "items": [
+          {
+            "id": "s.3.1",
+            "kind": "requirement",
+            "status": "stated",
+            "text": "Use local storage",
+            "contentVersion": 1,
+            "private": false,
+            "provenance": {
+              "origin": "user",
+              "quoteSpans": [
+                {
+                  "inputId": "s.2.1",
+                  "start": 0,
+                  "end": 17,
+                  "quote": "Use local storage"
+                }
+              ]
+            },
+            "voiceConfirmNeeded": false
+          }
+        ],
+        "projectRev": 1
+      }
+    }
+  },
+  "initialState": {
+    "domain": {}
+  }
+}

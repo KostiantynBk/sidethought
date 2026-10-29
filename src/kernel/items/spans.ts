@@ -1,6 +1,10 @@
 import type { Config } from '../../config/index.js';
 import type { QuoteSpan } from '../../contract/index.js';
 import { extractAmounts } from './amounts.js';
+import { normalize } from './normalize.js';
+import { quoteMatches } from './quote-search.js';
+
+export { normalize } from './normalize.js';
 
 export type QuoteInput = {
   id: string;
@@ -19,21 +23,35 @@ export type SpanDecision = {
   reason: string;
 };
 
-export function normalize(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[‘’]/g, "'")
-    .replace(/[“”]/g, '"')
-    .replace(/[‐‑‒–—―]/g, '-')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-// AD-5: keep offset verification isolated; no quote-search fallback is authorized.
+// AD-5 v0.3.3 E1: offsets are checked first; quote resolution is a separate reducer step.
 function resolveSpan(span: QuoteSpan, input: QuoteInput | undefined): string | undefined {
   if (!input || span.start < 0 || span.end > input.text.length || span.end <= span.start) return undefined;
   const slice = input.text.slice(span.start, span.end);
   return normalize(slice) === normalize(span.quote) ? slice : undefined;
+}
+
+type QuoteResolution = {
+  span: QuoteSpan;
+  decision?: 'span:resolved_by_quote' | 'span:quote_not_found' | 'span:quote_ambiguous';
+};
+
+export function resolveQuoteSpan(span: QuoteSpan, input: QuoteInput | undefined): QuoteResolution {
+  if (!input || input.id !== span.inputId || resolveSpan(span, input) !== undefined) return { span };
+  const quote = normalize(span.quote);
+  const matches = quote ? quoteMatches(input.text, quote, span.quote.trim()) : [];
+  if (matches.length !== 1) {
+    return {
+      span,
+      decision: matches.length ? 'span:quote_ambiguous' : 'span:quote_not_found',
+    };
+  }
+  return {
+    span: {
+      ...span,
+      ...matches[0]!,
+    },
+    decision: 'span:resolved_by_quote',
+  };
 }
 
 export function spansMatch(spans: QuoteSpan[], inputs: QuoteInput[]): boolean {
