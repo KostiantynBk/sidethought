@@ -2,6 +2,7 @@ import { CREDENTIAL_TERM, DEFAULT_CREDENTIAL_REQUEST_PATTERNS, REQUEST_VERB } fr
 import type { Config } from '../config/index.js';
 
 const term = new RegExp(`\\b${CREDENTIAL_TERM}\\b`, 'iu');
+const politeCredential = new RegExp(`^your\\s+${CREDENTIAL_TERM}\\s*,?\\s*please\\s*$`, 'iu');
 const requestStart = new RegExp(`^(?:please\\s+)?${REQUEST_VERB}\\b`, 'iu');
 const questionVerb = new RegExp(`^(?:can|could|would|will)\\s+you\\s+(?:please\\s+)?${REQUEST_VERB}\\b`, 'iu');
 const caution = /\b(?:never|don't|do not|avoid|shouldn't|must not|no one|nobody)\b/iu;
@@ -39,7 +40,7 @@ function matchesClause(clause: string, config: Config): boolean {
   for (const pattern of config.credentialRequestPatterns) {
     if (!new RegExp(pattern, 'iu').test(clause)) continue;
     if (!DEFAULT_CREDENTIAL_REQUEST_PATTERNS.includes(pattern)) return true;
-    if (directed(clause) || /^your\b/iu.test(clause)) return true;
+    if (directed(clause) || politeCredential.test(clause)) return true;
   }
   return false;
 }
