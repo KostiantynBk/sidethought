@@ -266,6 +266,11 @@ export const ClientMessageSchema = z.discriminatedUnion('type', [
     text: z.string(),
   }),
   obj({
+    type: z.literal('assistant.done'),
+    deliveryId: id,
+    chunkCount: count,
+  }),
+  obj({
     type: z.literal('assistant.stopped'),
     deliveryId: id,
     reason: text,

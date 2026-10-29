@@ -185,6 +185,10 @@ const clients: Record<string, object> = {
     chunkIdx: 0,
     text: 'x',
   },
+  'assistant.done': {
+    deliveryId: 'd',
+    chunkCount: 1,
+  },
   'assistant.stopped': {
     deliveryId: 'd',
     reason: 'stop',

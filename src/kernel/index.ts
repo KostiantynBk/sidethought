@@ -6,6 +6,8 @@ import { interpret, startWaiting } from './interpretation-lifecycle.js';
 import { clearReplyWait, replyEvent, replyTimer } from './reply.js';
 import { interruptReply } from './reply-abort.js';
 import { clearComposer } from './composer.js';
+import { replyDeadline } from './reply-failure.js';
+import { deliveryProgress } from './delivery-progress.js';
 
 export { initialState } from './state.js';
 export type { Call, Context, Decision, State, Timer } from './state.js';
@@ -93,6 +95,10 @@ function fireTimer(
   if (timer.purpose === 'replyDebounce' || timer.purpose === 'interpreterSoftWait') {
     return replyTimer(context, timer.purpose, event.acceptedAt!, state.config);
   }
+  if (['firstTokenTimeout', 'streamStall', 'callDeadline'].includes(timer.purpose)) {
+    return replyDeadline(context, timer.purpose as 'firstTokenTimeout' | 'streamStall' | 'callDeadline',
+      event.acceptedAt!, state.config);
+  }
   return 'timer:fired';
 }
 
@@ -127,6 +133,8 @@ function applyEvent(context: Context, state: State, event: KernelEvent): string 
     case 'interpretation.ready':
     case 'interpretation.failed':
       return interpret(context, event, state.config);
+    case 'delivery.progress':
+      return deliveryProgress(context, event);
     case 'reply.chunk':
     case 'reply.done':
     case 'reply.failed':
@@ -154,6 +162,7 @@ function applyAcceptedEvent(
   const seq = next.meta.seq;
   let n = 0;
   const context: Context = {
+    config: state.config,
     domain: {
       ...state.domain,
       inputs: state.domain.inputs.map(input => ({ ...input })),

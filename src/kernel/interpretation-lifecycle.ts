@@ -4,8 +4,13 @@ import type { Call, Context, Timer } from './index.js';
 import { clearWait } from './index.js';
 import { applyInterpretation } from './interpretation.js';
 import { resumeReplyWait } from './reply.js';
+import { captureQuoteWitness } from '../context/quote-sources.js';
 
-function dispatch(context: Context, call: Call): void {
+function dispatch(context: Context, draft: Omit<Call, 'quoteWitness'>): void {
+  const call: Call = {
+    ...draft,
+    quoteWitness: captureQuoteWitness(context.domain, draft.inputIds, context.config.recentWindowTurns),
+  };
   context.domain.call = call;
   context.effects.push({
     type: 'llm.call',
@@ -85,7 +90,7 @@ function finish(
   if (applied) applyWait(context, call, event.acceptedAt!, config);
   context.domain.call = null;
   startWaiting(context);
-  const replyDecision = resumeReplyWait(context);
+  const replyDecision = resumeReplyWait(context, event.acceptedAt!, config);
   return replyDecision ?? (applied ? 'interpreter:ready' : 'interpreter:needs_retry');
 }
 

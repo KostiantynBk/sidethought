@@ -131,7 +131,7 @@ export const InterpreterOutputSchema = z
       }
     }
   });
-export const ResponderPassSchema = z.literal('pass');
+export const ResponderPassSchema = z.literal('[PASS]');
 const scores = z.strictObject({
   consequence: z.number().int().min(0).max(3),
   uncertainty: z.number().int().min(0).max(3),

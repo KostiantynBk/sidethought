@@ -1,8 +1,8 @@
 {
   "meta": {
     "schemaVersion": 1,
-    "reducerVersion": "7",
-    "configVersion": "0.3.5",
+    "reducerVersion": "9",
+    "configVersion": "0.3.6",
     "fixtureVersion": "2"
   },
   "sessionId": "s",
@@ -17,6 +17,18 @@
           "clientMsgId": "m1",
           "text": "I was thinking ten euros a month.",
           "modality": "text"
+        }
+      }
+    },
+    {
+      "at": 820,
+      "event": {
+        "eventId": "first-done",
+        "sessionId": "s",
+        "type": "reply.done",
+        "payload": {
+          "requestId": "s.3.1",
+          "callId": "s.3.2"
         }
       }
     },
@@ -57,8 +69,10 @@
     {
       "role": "responder",
       "offset": 1,
-      "type": "reply.done",
-      "payload": {}
+      "type": "reply.chunk",
+      "payload": {
+        "text": "[PASS]"
+      }
     },
     {
       "role": "interpreter",
@@ -67,7 +81,7 @@
       "output": {
         "inputKinds": [
           {
-            "inputId": "s.5.1",
+            "inputId": "s.6.1",
             "kind": "answer"
           }
         ],
@@ -85,7 +99,7 @@
                 "quote": "I was thinking ten euros a month"
               },
               {
-                "inputId": "s.5.1",
+                "inputId": "s.6.1",
                 "start": 0,
                 "end": 18,
                 "quote": "What customers pay"
@@ -99,7 +113,7 @@
             "text": "operating budget",
             "quoteSpans": [
               {
-                "inputId": "s.5.1",
+                "inputId": "s.6.1",
                 "start": 20,
                 "end": 57,
                 "quote": "I haven't decided my operating budget"
@@ -135,30 +149,35 @@
       {
         "seq": 4,
         "kind": "kernel",
-        "reason": "reply:done"
+        "reason": "reply:buffered"
       },
       {
         "seq": 5,
         "kind": "kernel",
-        "reason": "input:committed"
+        "reason": "reply:pass"
       },
       {
         "seq": 6,
         "kind": "kernel",
-        "reason": "reply:waiting_interpreter"
+        "reason": "input:committed"
       },
       {
         "seq": 7,
         "kind": "kernel",
+        "reason": "reply:waiting_interpreter"
+      },
+      {
+        "seq": 8,
+        "kind": "kernel",
         "reason": "interpreter:ready"
       },
       {
-        "seq": 7,
+        "seq": 8,
         "kind": "item",
         "reason": "status:forced_considering:hedge"
       },
       {
-        "seq": 7,
+        "seq": 8,
         "kind": "item",
         "reason": "span:valid"
       }
@@ -188,49 +207,102 @@
       },
       {
         "type": "timer.set",
-        "timerId": "s.5.2",
+        "timerId": "s.3.4",
+        "purpose": "firstTokenTimeout",
+        "dueAt": 8800
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.3.5",
+        "purpose": "callDeadline",
+        "dueAt": 20800
+      },
+      {
+        "type": "timer.clear",
+        "timerId": "s.3.4"
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.4.1",
+        "purpose": "streamStall",
+        "dueAt": 5801
+      },
+      {
+        "type": "timer.clear",
+        "timerId": "s.3.5"
+      },
+      {
+        "type": "timer.clear",
+        "timerId": "s.4.1"
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.6.2",
         "purpose": "replyDebounce",
         "dueAt": 8800
       },
       {
         "type": "llm.call",
         "role": "interpreter",
-        "requestId": "s.5.3",
-        "callId": "s.5.4",
+        "requestId": "s.6.3",
+        "callId": "s.6.4",
         "basisRev": 0,
         "capturedInputs": []
       },
       {
         "type": "timer.set",
-        "timerId": "s.6.1",
+        "timerId": "s.7.1",
         "purpose": "interpreterSoftWait",
         "dueAt": 9400
       },
       {
         "type": "timer.clear",
-        "timerId": "s.6.1"
+        "timerId": "s.7.1"
       },
       {
         "type": "llm.call",
         "role": "responder",
-        "requestId": "s.7.3",
-        "callId": "s.7.4",
+        "requestId": "s.8.3",
+        "callId": "s.8.4",
         "basisRev": 1,
         "capturedInputs": [
           {
-            "itemId": "s.7.1",
+            "itemId": "s.8.1",
             "contentVersion": 1
           },
           {
-            "itemId": "s.7.2",
+            "itemId": "s.8.2",
             "contentVersion": 1
           }
         ]
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.8.6",
+        "purpose": "firstTokenTimeout",
+        "dueAt": 16900
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.8.7",
+        "purpose": "callDeadline",
+        "dueAt": 28900
       }
     ],
     "final": {
-      "seq": 7,
-      "pendingTimers": [],
+      "seq": 8,
+      "pendingTimers": [
+        {
+          "timerId": "s.8.6",
+          "purpose": "firstTokenTimeout",
+          "dueAt": 16900
+        },
+        {
+          "timerId": "s.8.7",
+          "purpose": "callDeadline",
+          "dueAt": 28900
+        }
+      ],
       "inFlight": null,
       "uninterpreted": [],
       "reservations": [],
@@ -238,7 +310,7 @@
       "project": {
         "items": [
           {
-            "id": "s.7.1",
+            "id": "s.8.1",
             "kind": "requirement",
             "status": "considering",
             "text": "customer price: €10 per month",
@@ -254,7 +326,7 @@
                   "quote": "I was thinking ten euros a month"
                 },
                 {
-                  "inputId": "s.5.1",
+                  "inputId": "s.6.1",
                   "start": 0,
                   "end": 18,
                   "quote": "What customers pay"
@@ -264,7 +336,7 @@
             "voiceConfirmNeeded": false
           },
           {
-            "id": "s.7.2",
+            "id": "s.8.2",
             "kind": "open_question",
             "status": "considering",
             "text": "operating budget",
@@ -274,7 +346,7 @@
               "origin": "user",
               "quoteSpans": [
                 {
-                  "inputId": "s.5.1",
+                  "inputId": "s.6.1",
                   "start": 20,
                   "end": 57,
                   "quote": "I haven't decided my operating budget"

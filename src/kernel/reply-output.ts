@@ -48,9 +48,12 @@ export function releaseReplySentences(
   delivery: Delivery,
   config: Config,
 ): boolean {
+  // The sentinel is control data, never user-facing text, even after earlier output.
+  delivery.chunks = delivery.chunks.filter(chunk => chunk.state !== 'pending' || chunk.text.trim() !== '[PASS]');
   for (const [chunkIdx, chunk] of delivery.chunks.entries()) {
     if (chunk.state !== 'pending') continue;
-    const previous = delivery.chunks.slice(0, chunkIdx).findLast(item => item.state === 'sent');
+    const previous = delivery.chunks.slice(0, chunkIdx)
+      .findLast(item => ['sent', 'rendered', 'played'].includes(item.state));
     const reason = outputFailure(chunk.text, config)
       ?? (previous ? outputFailure(`${previous.text} ${chunk.text}`, config) : undefined);
     if (reason) {

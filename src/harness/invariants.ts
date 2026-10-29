@@ -2,6 +2,8 @@ import { isDeepStrictEqual } from 'node:util';
 import type { KernelEvent, Effect } from '../contract/index.js';
 import { hasUninterpretedInput, type State, type Decision } from '../kernel/index.js';
 import { validateSpans, type QuoteInput } from '../kernel/items/index.js';
+import { deliveredContextInvariant } from './context-invariant.js';
+import { deliveredQuoteInputs } from '../context/quote-sources.js';
 
 type Invariant = (
   before: State,
@@ -127,6 +129,7 @@ export const invariantRegistry: Invariant[] = [
   retiredReplyResult,
   replyCaptures,
   noPostAbortChunks,
+  deliveredContextInvariant,
 ];
 
 const itemAuthority: Invariant = (before, event, after) => {
@@ -134,12 +137,14 @@ const itemAuthority: Invariant = (before, event, after) => {
   for (const item of Object.values(after.domain.items)) {
     const previous = before.domain.items[item.id];
     if (item.status === 'stated' && previous?.status !== 'stated') {
-      const inputs: QuoteInput[] = after.domain.inputs.map(input => ({
+      const inputs: QuoteInput[] = after.domain.inputs.filter(input => (input.origin ?? 'user') === 'user')
+        .map(input => ({
         id: input.id,
         text: input.text,
         origin: input.origin ?? 'user',
         modality: input.modality ?? 'text',
       }));
+      inputs.push(...deliveredQuoteInputs(after.domain));
       const result = validateSpans({
         text: item.text,
         status: 'stated',

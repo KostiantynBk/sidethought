@@ -31,6 +31,28 @@ function replay(name: string, kind: 'memory' | 'sqlite') {
     expect(result.ok).toBe(true);
     expect(result.unflushedTelemetry).toEqual([]);
     expect(journal.length).toBeGreaterThan(0);
+    if (name === 'quote-resolved') {
+      const ready = journal.find(event => event.type === 'interpretation.ready');
+      expect(ready).toMatchObject({
+        payload: {
+          output: {
+            ops: [{
+              quoteSpans: [{
+                start: 0,
+                end: 1,
+                quote: 'Use local storage',
+              }],
+            }],
+          },
+        },
+      });
+      const item = Object.values(result.snapshot!.state.domain.items)[0]!;
+      expect(item.provenance.quoteSpans[0]).toMatchObject({
+        start: 0,
+        end: 17,
+        quote: 'Use local storage',
+      });
+    }
     const replayed = journal.reduce((state, event) => reduce(state, event).state, initialState('s', config));
     expect(replayed).toEqual(result.snapshot!.state);
     return result;

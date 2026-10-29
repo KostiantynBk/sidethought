@@ -1,5 +1,7 @@
 import type { Delivery, Effect, Item, Dep, InterpreterOutput, ReplyGeneration } from '../contract/index.js';
 import type { Config } from '../config/index.js';
+import type { RecentTurn } from '../context/recent.js';
+import type { QuoteInput } from './items/index.js';
 
 export type Decision = {
   seq: number;
@@ -23,6 +25,10 @@ export type Call = {
   inputIds: string[];
   basisRev: number;
   capturedInputs: Dep[];
+  quoteWitness: {
+    recent: RecentTurn[];
+    sources: QuoteInput[];
+  };
 };
 export type Timer = {
   timerId: string;
@@ -65,6 +71,7 @@ export type State = {
       deps: Dep[];
       promised: true;
     }>;
+    deprioritizedTopics: string[];
     clarifications: Array<{
       inputIds: string[];
       clarification: string | undefined;
@@ -77,6 +84,7 @@ export type Result = {
   decisions: Decision[];
 };
 export type Context = {
+  config: Config;
   domain: State['domain'];
   effects: Effect[];
   itemDecisions: string[];
@@ -113,6 +121,7 @@ export function initialState(sessionId: string, config: Config): State {
       interruptedCalls: [],
       reservations: [],
       pendingRequests: [],
+      deprioritizedTopics: [],
       clarifications: [],
     },
   };

@@ -3,7 +3,7 @@ import { eventSchemaWithEvidenceLimits, TELEMETRY_EVENT_TYPES, type Effect } fro
 import { initialState, reduce, type Decision, type State } from '../kernel/index.js';
 import { DuplicateEventError, type JournalEvent, type SessionStore, type Snapshot } from '../store/index.js';
 
-export const REDUCER_VERSION = '7';
+export const REDUCER_VERSION = '9';
 
 export class ReducerVersionMismatchError extends Error {
   constructor(readonly found: string) {

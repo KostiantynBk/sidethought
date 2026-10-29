@@ -9,7 +9,7 @@ const number = (defaultValue: number, maximum: number) => z.number().positive().
 const textLexicon = () => z.string().min(1);
 
 export const ConfigSchema = z.strictObject({
-  configVersion: z.string().min(1).default('0.3.5'),
+  configVersion: z.string().min(1).default('0.3.6'),
   credentialRequestPatterns: CredentialRequestPatternsSchema,
   hedgeLexicon: z.array(textLexicon()).default([
     'might', 'maybe', 'perhaps', 'thinking about', 'I was thinking', 'not sure', 'possibly',
@@ -21,6 +21,7 @@ export const ConfigSchema = z.strictObject({
   // §5.3, §8.1: short turn coordination; 5 s avoids stalled conversations.
   replyDebounceMs: int(800, 5000), // Avoid a sluggish text reply.
   voiceGraceMs: int(300, 5000), // Avoid a sluggish voice reply.
+  recentWindowTurns: int(20, 100), // Finite context and quote-source window.
   interpreterSoftWaitMs: int(600, 5000), // Bound waiting for interpretation.
   // Failure detection: Checker must remain quick; longer role deadlines remain bounded.
   firstTokenTimeoutMs: int(8000, 60000), // Bound waiting for initial output.

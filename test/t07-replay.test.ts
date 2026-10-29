@@ -36,9 +36,9 @@ it('replays owner-only-clears-reply with retired done and failed leaving the new
   const result = replay('owner-only-clears-reply');
   const domain = result.snapshot!.state.domain;
   expect(domain.replyPending).toBe(true);
-  expect(domain.reply?.callId).toBe('s.7.2');
+  expect(domain.reply?.callId).toBe('s.8.2');
   expect(domain.reply?.status).toBe('streaming');
-  expect(domain.deliveries['s.7.3']?.chunks[0]?.text).toBe('Current sentence. ');
+  expect(domain.deliveries['s.8.3']?.chunks[0]?.text).toBe('Current sentence. ');
   expect(result.projection?.decisions.slice(-2).map(decision => decision.reason))
     .toEqual(['late:retired_reply', 'late:retired_reply']);
 });

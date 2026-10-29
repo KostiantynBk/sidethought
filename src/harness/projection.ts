@@ -10,11 +10,24 @@ function projectedDeliveries(state: State, fixture: Fixture) {
   }));
 }
 
+function projectedCall(call: State['domain']['call']) {
+  if (!call) return null;
+  // Fixture call projections assert the established identity fields; witness races have dedicated tests.
+  return {
+    requestId: call.requestId,
+    callId: call.callId,
+    attempt: call.attempt,
+    inputIds: call.inputIds,
+    basisRev: call.basisRev,
+    capturedInputs: call.capturedInputs,
+  };
+}
+
 export function finalProjection(state: State, fixture: Fixture) {
   return {
     seq: state.meta.seq,
     pendingTimers: state.domain.timers,
-    inFlight: state.domain.call,
+    inFlight: projectedCall(state.domain.call),
     uninterpreted: state.domain.inputs.filter(input => input.status !== 'interpreted')
       .map(({ floorEpoch: _floorEpoch, ...input }) => input),
     reservations: state.domain.reservations,

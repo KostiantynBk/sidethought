@@ -32,6 +32,16 @@ it('starts the Responder at debounce when interpretation has finished, with immu
       itemId: 'r1',
       contentVersion: 3,
     }],
+  }, {
+    type: 'timer.set',
+    timerId: 's.3.4',
+    purpose: 'firstTokenTimeout',
+    dueAt: 8800,
+  }, {
+    type: 'timer.set',
+    timerId: 's.3.5',
+    purpose: 'callDeadline',
+    dueAt: 20800,
   }]);
   expect(reply.requestId).not.toBe(reply.callId);
   expect(reply.overridesSnapshotInputIds).toEqual([]);
@@ -111,6 +121,7 @@ it('offers a no-cap hook for later Hold integration without starting while input
   const state = committed();
   let id = 0;
   const context: Context = {
+    config: state.config,
     domain: state.domain,
     effects: [],
     itemDecisions: [],
@@ -120,7 +131,7 @@ it('offers a no-cap hook for later Hold integration without starting while input
   expect(context.effects).toEqual([]);
   expect(context.domain.replyStartWaiting).toBe(true);
   context.domain.inputs[0]!.status = 'interpreted';
-  resumeReplyWait(context);
+  resumeReplyWait(context, 900, config);
   expect(context.domain.reply?.status).toBe('streaming');
 });
 

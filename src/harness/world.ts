@@ -10,6 +10,7 @@ import { invariantRegistry } from './invariants.js';
 import { readPersistence, verifyPersistence, type Persistence } from './persistence.js';
 import { fakePayload, type Fixture } from './schema.js';
 import { finalProjection } from './projection.js';
+import { contextCheckpoint, unusedContextCheckpoints } from './context-checkpoint.js';
 import { FixtureError, type Failure, type Options, type Projection, type TraceEntry } from './types.js';
 
 type Scheduled = {
@@ -232,6 +233,7 @@ export class World {
         });
       }
     }
+    this.failures.push(...contextCheckpoint(this.fixture, event, this.state, result.effects));
     for (const effect of result.effects) this.processEffect(effect, at);
   }
 
@@ -285,6 +287,7 @@ export class World {
     this.checkPersisted();
     if (this.fakeIndex < this.fixture.fakes.length) throw new FixtureError('unused fake script');
     if (this.firedFaults.size !== (this.fixture.faults?.length ?? 0)) throw new FixtureError('unused fault');
+    this.failures.push(...unusedContextCheckpoints(this.fixture, this.trace));
     void this.fakeBudget;
     return {
       failures: this.failures,

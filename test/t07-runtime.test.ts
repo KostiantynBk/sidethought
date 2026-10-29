@@ -64,13 +64,13 @@ function runtime(store = new MemoryStore()) {
   };
 }
 
-it('journals a sentence and its preceding buffer-only delta before sending its chunk', () => {
+it('journals deadline renewal and then sentence release before either effect reaches its sink', () => {
   const world = runtime();
-  expect(world.delta(900, 'Hello').effects).toEqual([]);
-  expect(world.store.loadSnapshot('s')?.seq).toBe(3);
-  expect(world.runner.persistenceState().unflushed).toHaveLength(1);
+  expect(world.delta(900, 'Hello').effects.map(effect => effect.type)).toEqual(['timer.clear', 'timer.set']);
+  expect(world.store.loadSnapshot('s')?.seq).toBe(4);
+  expect(world.runner.persistenceState().unflushed).toHaveLength(0);
   const result = world.delta(910, '. ');
-  expect(result.effects[0]?.type).toBe('client.send');
+  expect(result.effects.at(-1)?.type).toBe('client.send');
   expect(world.batches.at(-1)?.persistedSeq).toBe(5);
   expect(world.store.readJournal('s').slice(-2).map(event => event.type)).toEqual(['reply.chunk', 'reply.chunk']);
   expect(world.runner.persistenceState().unflushed).toEqual([]);
@@ -81,8 +81,8 @@ it('journals a sentence and its preceding buffer-only delta before sending its c
 it('an interrupt never flushes a queued sentence chunk alongside its abort', () => {
   const world = runtime();
   world.delta(900, 'Already sent. ');
-  world.delta(950, 'Still buffered');
   const sentBatch = world.batches.at(-1)!;
+  world.delta(950, 'Still buffered');
   expect(sentBatch.effects.some(effect => effect.type === 'client.send'
     && effect.message.type === 'assistant.chunk')).toBe(true);
   const result = world.accept(1000, 'input.committed', {
@@ -116,7 +116,7 @@ it('never emits a sentence whose durable transaction failed', () => {
   store.fail = true;
   expect(() => world.delta(910, '. ')).toThrow('injected commit failure');
   expect(world.batches).toHaveLength(batchesBefore);
-  expect(store.loadSnapshot('s')?.seq).toBe(3);
+  expect(store.loadSnapshot('s')?.seq).toBe(4);
   expect(world.runner.current().domain.reply?.buffer).toBe('Buffered');
 });
 

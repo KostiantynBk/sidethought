@@ -95,7 +95,7 @@ it('flushes the final buffered sentence on owner done and clears only generation
   });
 });
 
-it('preserves sent sentences and discards and the incomplete tail on owner failure', () => {
+it('discards unacknowledged sentences and the incomplete tail on owner failure', () => {
   const partial = replyResult(streaming(), 'reply.chunk', 'First. An unfinished').state;
   const result = replyResult(partial, 'reply.failed');
   const reply = result.state.domain.reply!;
@@ -103,8 +103,9 @@ it('preserves sent sentences and discards and the incomplete tail on owner failu
   expect(result.state.domain.replyPending).toBe(false);
   expect(reply.status).toBe('failed');
   expect(reply.buffer).toBe('');
-  expect(delivery.chunks.map(chunk => chunk.state)).toEqual(['sent', 'discarded']);
-  expect(delivery.chunks[1]?.sentenceFinished).toBe(false);
+  expect(delivery.chunks.map(chunk => chunk.state)).toEqual(['discarded']);
+  expect(delivery.chunks[0]?.sentenceFinished).toBe(false);
+  expect(delivery.interruptedPrefix).toBe('');
   expect(delivery.deliveredChars).toBe(0);
   expect(delivery.claimsDelivered).toEqual([]);
 });
@@ -127,7 +128,8 @@ it('ignores a done event whose requestId does not belong to the current call', (
 });
 
 it('ignores repeated terminal events after the owner has completed', () => {
-  const completed = replyResult(streaming(), 'reply.done').state;
+  const answered = replyResult(streaming(), 'reply.chunk', 'Finished.').state;
+  const completed = replyResult(answered, 'reply.done').state;
   const result = replyResult(completed, 'reply.failed');
   expect(result.state.domain).toEqual(completed.domain);
   expect(result.effects).toEqual([]);

@@ -109,11 +109,19 @@ const finalSchema = z.strictObject({
 export const fixtureSchema = z.strictObject({
   meta: z.strictObject({
     schemaVersion: z.literal(1),
-    reducerVersion: z.literal('7'),
-    configVersion: z.literal('0.3.5'),
+    reducerVersion: z.literal('9'),
+    configVersion: z.literal('0.3.6'),
     fixtureVersion: z.string().min(1),
   }),
   sessionId: z.string().min(1),
+  contextCheckpoints: z.array(z.strictObject({
+    afterEventId: z.string(),
+    role: z.enum(['interpreter', 'responder']),
+    expected: z.strictObject({
+      instructions: z.string(),
+      input: z.string(),
+    }),
+  })).optional(),
   initialState: z.strictObject({
     domain: z.strictObject({
       timers: z.array(timerSchema).optional(),

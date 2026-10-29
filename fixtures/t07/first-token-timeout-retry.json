@@ -1,0 +1,296 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "reducerVersion": "9",
+    "configVersion": "0.3.6",
+    "fixtureVersion": "1"
+  },
+  "sessionId": "s",
+  "events": [
+    {
+      "at": 0,
+      "event": {
+        "eventId": "initial-commit",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "initial",
+          "text": "Use local storage.",
+          "modality": "text"
+        }
+      }
+    },
+    {
+      "at": 8910,
+      "event": {
+        "eventId": "retry-done",
+        "sessionId": "s",
+        "type": "reply.done",
+        "payload": {
+          "requestId": "s.3.1",
+          "callId": "s.4.1"
+        }
+      }
+    },
+    {
+      "at": 8920,
+      "event": {
+        "eventId": "retry-rendered",
+        "sessionId": "s",
+        "type": "delivery.progress",
+        "payload": {
+          "deliveryId": "s.4.2",
+          "chunkIdx": 0,
+          "chars": 16,
+          "final": true,
+          "reason": "rendered"
+        }
+      }
+    }
+  ],
+  "fakes": [
+    {
+      "role": "interpreter",
+      "offset": 10,
+      "type": "interpretation.ready",
+      "output": {
+        "inputKinds": [
+          {
+            "inputId": "s.1.1",
+            "kind": "statement"
+          }
+        ],
+        "ops": [],
+        "replacementGroups": [],
+        "researchRequests": [],
+        "deprioritizedTopics": [],
+        "voiceConfirmValues": []
+      }
+    },
+    {
+      "role": "responder",
+      "offset": 25000,
+      "type": "reply.chunk",
+      "payload": {
+        "text": "Too late. "
+      }
+    },
+    {
+      "role": "responder",
+      "offset": 100,
+      "type": "reply.chunk",
+      "payload": {
+        "text": "Retry succeeded."
+      }
+    }
+  ],
+  "endAt": 8920,
+  "expected": {
+    "decisions": [
+      {
+        "seq": 1,
+        "kind": "kernel",
+        "reason": "input:committed"
+      },
+      {
+        "seq": 2,
+        "kind": "kernel",
+        "reason": "interpreter:ready"
+      },
+      {
+        "seq": 3,
+        "kind": "kernel",
+        "reason": "reply:started"
+      },
+      {
+        "seq": 4,
+        "kind": "kernel",
+        "reason": "reply:retry"
+      },
+      {
+        "seq": 5,
+        "kind": "kernel",
+        "reason": "reply:buffered"
+      },
+      {
+        "seq": 6,
+        "kind": "kernel",
+        "reason": "reply:done"
+      },
+      {
+        "seq": 7,
+        "kind": "kernel",
+        "reason": "delivery:final"
+      }
+    ],
+    "effects": [
+      {
+        "type": "timer.set",
+        "timerId": "s.1.2",
+        "purpose": "replyDebounce",
+        "dueAt": 800
+      },
+      {
+        "type": "llm.call",
+        "role": "interpreter",
+        "requestId": "s.1.3",
+        "callId": "s.1.4",
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      {
+        "type": "llm.call",
+        "role": "responder",
+        "requestId": "s.3.1",
+        "callId": "s.3.2",
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.3.4",
+        "purpose": "firstTokenTimeout",
+        "dueAt": 8800
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.3.5",
+        "purpose": "callDeadline",
+        "dueAt": 20800
+      },
+      {
+        "type": "timer.clear",
+        "timerId": "s.3.5"
+      },
+      {
+        "type": "llm.abort",
+        "callId": "s.3.2"
+      },
+      {
+        "type": "audio.stop",
+        "deliveryId": "s.3.3"
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "assistant.stopped",
+          "deliveryId": "s.3.3",
+          "reason": "interrupted"
+        }
+      },
+      {
+        "type": "llm.call",
+        "role": "responder",
+        "requestId": "s.3.1",
+        "callId": "s.4.1",
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.4.3",
+        "purpose": "firstTokenTimeout",
+        "dueAt": 16800
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.4.4",
+        "purpose": "callDeadline",
+        "dueAt": 28800
+      },
+      {
+        "type": "timer.clear",
+        "timerId": "s.4.3"
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.5.1",
+        "purpose": "streamStall",
+        "dueAt": 13900
+      },
+      {
+        "type": "timer.clear",
+        "timerId": "s.4.4"
+      },
+      {
+        "type": "timer.clear",
+        "timerId": "s.5.1"
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "assistant.chunk",
+          "deliveryId": "s.4.2",
+          "chunkIdx": 0,
+          "text": "Retry succeeded."
+        }
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "assistant.done",
+          "deliveryId": "s.4.2",
+          "chunkCount": 1
+        }
+      }
+    ],
+    "final": {
+      "seq": 7,
+      "pendingTimers": [],
+      "inFlight": null,
+      "uninterpreted": [],
+      "reservations": [],
+      "replyPending": false,
+      "reply": {
+        "requestId": "s.3.1",
+        "callId": "s.4.1",
+        "attempt": 2,
+        "inputIds": [
+          "s.1.1"
+        ],
+        "basisRev": 0,
+        "capturedInputs": [],
+        "deliveryId": "s.4.2",
+        "overridesSnapshotInputIds": [],
+        "buffer": "",
+        "status": "done",
+        "receivedToken": true
+      },
+      "deliveries": {
+        "s.3.3": {
+          "id": "s.3.3",
+          "callId": "s.3.2",
+          "basisRev": 0,
+          "state": "interrupted",
+          "chunks": [],
+          "deliveredChars": 0,
+          "sentChars": 0,
+          "finalAcknowledged": false,
+          "aborted": true,
+          "claimsDelivered": [],
+          "interruptedPrefix": ""
+        },
+        "s.4.2": {
+          "id": "s.4.2",
+          "callId": "s.4.1",
+          "basisRev": 0,
+          "state": "delivered",
+          "chunks": [
+            {
+              "text": "Retry succeeded.",
+              "state": "rendered",
+              "claimIds": [],
+              "sentenceFinished": true
+            }
+          ],
+          "deliveredChars": 16,
+          "sentChars": 16,
+          "finalAcknowledged": true,
+          "aborted": false,
+          "claimsDelivered": [],
+          "doneSent": true
+        }
+      }
+    }
+  }
+}
