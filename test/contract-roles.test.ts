@@ -293,7 +293,7 @@ describe('role outputs', () => {
     expect(CheckerOutputSchema.safeParse({ applies: 'yes' }).success).toBe(false);
   });
   it('validates responder pass sentinel', () => {
-    expect(ResponderPassSchema.safeParse('pass').success).toBe(true);
+    expect(ResponderPassSchema.safeParse('[PASS]').success).toBe(true);
     expect(ResponderPassSchema.safeParse('other').success).toBe(false);
   });
 });

@@ -1,8 +1,8 @@
 {
   "meta": {
     "schemaVersion": 1,
-    "reducerVersion": "7",
-    "configVersion": "0.3.5",
+    "reducerVersion": "8",
+    "configVersion": "0.3.6",
     "fixtureVersion": "2"
   },
   "sessionId": "s",
@@ -83,11 +83,34 @@
         "callId": "s.3.2",
         "basisRev": 0,
         "capturedInputs": []
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.3.4",
+        "purpose": "firstTokenTimeout",
+        "dueAt": 8800
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.3.5",
+        "purpose": "callDeadline",
+        "dueAt": 20800
       }
     ],
     "final": {
       "seq": 3,
-      "pendingTimers": [],
+      "pendingTimers": [
+        {
+          "timerId": "s.3.4",
+          "purpose": "firstTokenTimeout",
+          "dueAt": 8800
+        },
+        {
+          "timerId": "s.3.5",
+          "purpose": "callDeadline",
+          "dueAt": 20800
+        }
+      ],
       "inFlight": null,
       "uninterpreted": [],
       "reservations": [],

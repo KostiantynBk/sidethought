@@ -1,3 +1,4 @@
+import { deliveredSeed } from './t07-delivered-seed.js';
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../src/config/index.js';
 import { invariantRegistry } from '../src/harness/index.js';
@@ -45,6 +46,7 @@ function reducerCase(userText: string, assistantText = '€10 per month.', itemT
     status: 'interpreted',
     origin: 'assistant',
   });
+  initial.domain.deliveries.assistant = deliveredSeed('assistant', assistantText);
   const commit = parse({
     eventId: 'user-event',
     sessionId: 's',

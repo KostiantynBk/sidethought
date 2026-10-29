@@ -1,4 +1,5 @@
 import type { Config } from '../config/index.js';
+import { allowedQuoteInputs } from '../context/quote-sources.js';
 import { AppliedPatchBatchSchema, type InterpreterOutput, type Item } from '../contract/index.js';
 import type { Call, Context } from './index.js';
 import { createItem, setStatus, supersedeItem, updateItem, verbalAgreement, type QuoteInput } from './items/index.js';
@@ -11,23 +12,16 @@ type Work = {
   projectRev: number;
 };
 
-function inputs(context: Context, call: Call): QuoteInput[] {
-  return context.domain.inputs
-    .filter(input => call.inputIds.includes(input.id) || input.status === 'interpreted')
-    .map(input => ({
-      id: input.id,
-      text: input.text,
-      origin: input.origin ?? 'user',
-      modality: input.modality ?? 'text',
-    }));
+function inputs(context: Context, call: Call, config: Config): QuoteInput[] {
+  return allowedQuoteInputs(context.domain, call.inputIds, config.recentWindowTurns);
 }
 
 function allOps(output: InterpreterOutput): Op[] {
   return [...output.ops, ...output.replacementGroups.flatMap(group => group.ops)];
 }
 
-function resolveOutput(context: Context, output: InterpreterOutput, call: Call): InterpreterOutput {
-  const sources = inputs(context, call);
+function resolveOutput(context: Context, output: InterpreterOutput, call: Call, config: Config): InterpreterOutput {
+  const sources = inputs(context, call, config);
   const resolve = (span: Op['quoteSpans'][number]) => {
     const result = resolveQuoteSpan(span, sources.find(input => input.id === span.inputId));
     if (result.decision) context.itemDecisions.push(result.decision);
@@ -71,7 +65,7 @@ function missingRequiredSpans(op: Op): boolean {
   return false;
 }
 
-function validate(context: Context, output: InterpreterOutput, call: Call): boolean {
+function validate(context: Context, output: InterpreterOutput, call: Call, config: Config): boolean {
   const ops = allOps(output);
   const kinds = output.inputKinds.map(entry => entry.inputId);
   if (kinds.length !== call.inputIds.length || new Set(kinds).size !== kinds.length
@@ -87,7 +81,7 @@ function validate(context: Context, output: InterpreterOutput, call: Call): bool
   const spans = ops.flatMap(op => op.op === 'supersede'
     ? [...op.quoteSpans, ...op.replacement.quoteSpans]
     : op.quoteSpans);
-  if (ops.some(missingRequiredSpans) || !spansMatch(spans, inputs(context, call))) {
+  if (ops.some(missingRequiredSpans) || !spansMatch(spans, inputs(context, call, config))) {
     context.itemDecisions.push('span:mismatch');
     return false;
   }
@@ -132,7 +126,7 @@ function create(work: Work, op: Extract<Op, { op: 'create' }>, context: Context,
   const result = createItem(work, {
     ...proposal(op),
     voiceOrigin: context.domain.inputs.some(input => call.inputIds.includes(input.id) && input.modality === 'voice'),
-  }, inputs(context, call), config, {
+  }, inputs(context, call, config), config, {
     sessionId: sessionId!,
     seq: Number(seq),
     n: Number(n),
@@ -153,7 +147,7 @@ function applyOne(work: Work, op: Op, local: Local, context: Context, call: Call
   if (op.op === 'update') return updateItem(work, target, op.text, 'interpreter');
   if (op.op === 'retract' || op.op === 'reject') {
     return setStatus(work, target, op.op === 'retract' ? 'retracted' : 'rejected',
-      'interpreter', op.quoteSpans, inputs(context, call), config);
+      'interpreter', op.quoteSpans, inputs(context, call, config), config);
   }
   const old = work.items[target];
   if (!old) return {
@@ -166,7 +160,7 @@ function applyOne(work: Work, op: Op, local: Local, context: Context, call: Call
       decisions: ['patch:noop_identical'],
     };
   }
-  const status = setStatus(work, target, 'superseded', 'interpreter', op.quoteSpans, inputs(context, call), config);
+  const status = setStatus(work, target, 'superseded', 'interpreter', op.quoteSpans, inputs(context, call, config), config);
   if (status.state === work) return status;
   const fresh = create(work, {
     op: 'create',
@@ -174,7 +168,7 @@ function applyOne(work: Work, op: Op, local: Local, context: Context, call: Call
   }, context, call, config);
   if (fresh.state === work) return fresh;
   const replacement = fresh.state.items[fresh.id]!;
-  const result = supersedeItem(work, target, replacement, 'interpreter', inputs(context, call), config);
+  const result = supersedeItem(work, target, replacement, 'interpreter', inputs(context, call, config), config);
   if (result.state !== work && op.replacement.localRef) local.set(op.replacement.localRef, fresh.id);
   return result;
 }
@@ -228,8 +222,8 @@ function applyRequests(context: Context, output: InterpreterOutput, call: Call, 
 
 export function applyInterpretation(context: Context, output: InterpreterOutput, call: Call, config: Config):
   'invalid' | 'conflict' | 'applied' {
-  output = resolveOutput(context, output, call);
-  if (!validate(context, output, call)) return 'invalid';
+  output = resolveOutput(context, output, call, config);
+  if (!validate(context, output, call, config)) return 'invalid';
   if (conflict(context, output, call)) return 'conflict';
   const local: Local = new Map();
   let work: Work = {
@@ -256,6 +250,10 @@ export function applyInterpretation(context: Context, output: InterpreterOutput,
       clarification: output.clarification,
     });
   }
+  context.domain.deprioritizedTopics = [...new Set([
+    ...context.domain.deprioritizedTopics,
+    ...output.deprioritizedTopics,
+  ])];
   applyRequests(context, output, call, local, config);
   return 'applied';
 }

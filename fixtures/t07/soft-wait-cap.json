@@ -1,8 +1,8 @@
 {
   "meta": {
     "schemaVersion": 1,
-    "reducerVersion": "7",
-    "configVersion": "0.3.5",
+    "reducerVersion": "8",
+    "configVersion": "0.3.6",
     "fixtureVersion": "2"
   },
   "sessionId": "s",
@@ -121,6 +121,28 @@
         "capturedInputs": []
       },
       {
+        "type": "timer.set",
+        "timerId": "s.3.4",
+        "purpose": "firstTokenTimeout",
+        "dueAt": 9400
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.3.5",
+        "purpose": "callDeadline",
+        "dueAt": 21400
+      },
+      {
+        "type": "timer.clear",
+        "timerId": "s.3.4"
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.4.1",
+        "purpose": "streamStall",
+        "dueAt": 6450
+      },
+      {
         "type": "client.send",
         "message": {
           "type": "assistant.chunk",
@@ -132,7 +154,18 @@
     ],
     "final": {
       "seq": 5,
-      "pendingTimers": [],
+      "pendingTimers": [
+        {
+          "timerId": "s.3.5",
+          "purpose": "callDeadline",
+          "dueAt": 21400
+        },
+        {
+          "timerId": "s.4.1",
+          "purpose": "streamStall",
+          "dueAt": 6450
+        }
+      ],
       "inFlight": {
         "requestId": "s.1.3",
         "callId": "s.1.4",
@@ -166,7 +199,8 @@
           "s.1.1"
         ],
         "buffer": "Next",
-        "status": "streaming"
+        "status": "streaming",
+        "receivedToken": true
       },
       "deliveries": {
         "s.3.3": {
@@ -183,10 +217,10 @@
             }
           ],
           "deliveredChars": 0,
-          "claimsDelivered": [],
           "sentChars": 21,
           "finalAcknowledged": false,
-          "aborted": false
+          "aborted": false,
+          "claimsDelivered": []
         }
       },
       "replyStartWaiting": false

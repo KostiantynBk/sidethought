@@ -1,5 +1,6 @@
 import type { Delivery } from '../contract/index.js';
 import type { Context } from './state.js';
+import { clearReplyTimers } from './reply-timers.js';
 
 export function wholeWordPrefix(sentText: string, count: number): string {
   const prefix = sentText.slice(0, count);
@@ -49,8 +50,10 @@ export function interruptReply(context: Context, renderedUpTo: number | undefine
   // Decisions 7–8: a completed generation is not evidence that its text was rendered.
   const latest = Object.values(context.domain.deliveries).findLast(delivery => !delivery.finalAcknowledged);
   // Generation retirement is distinct from settlement of its client delivery.
-  if (!latest || latest.settled) return;
-  if (!streaming && renderedUpTo === undefined) return;
+  if (!latest || latest.settled || (!streaming && renderedUpTo === undefined)) {
+    if (streaming) clearReplyTimers(context);
+    return;
+  }
   recordPrefix(latest, renderedUpTo);
   context.effects.push({
     type: 'audio.stop',
@@ -64,4 +67,5 @@ export function interruptReply(context: Context, renderedUpTo: number | undefine
       reason: 'interrupted',
     },
   });
+  if (streaming) clearReplyTimers(context);
 }

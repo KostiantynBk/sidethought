@@ -1,3 +1,4 @@
+import { deliveredSeed } from './t07-delivered-seed.js';
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../src/config/index.js';
 import { invariantRegistry } from '../src/harness/index.js';
@@ -14,6 +15,7 @@ function croppedCase(userText: string) {
     status: 'interpreted',
     origin: 'assistant',
   });
+  initial.domain.deliveries.assistant = deliveredSeed('assistant', '€10');
   const commit = parse({
     eventId: 'input',
     sessionId: 's',

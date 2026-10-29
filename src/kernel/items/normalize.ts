@@ -7,4 +7,3 @@ export function normalize(value: string): string {
     .replace(/\s+/g, ' ')
     .trim();
 }
-

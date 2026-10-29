@@ -83,4 +83,3 @@ export function quoteMatches(text: string, quote: string, boundaryQuote: string)
   }
   return matches;
 }
-

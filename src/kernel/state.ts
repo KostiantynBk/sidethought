@@ -65,6 +65,7 @@ export type State = {
       deps: Dep[];
       promised: true;
     }>;
+    deprioritizedTopics: string[];
     clarifications: Array<{
       inputIds: string[];
       clarification: string | undefined;
@@ -113,6 +114,7 @@ export function initialState(sessionId: string, config: Config): State {
       interruptedCalls: [],
       reservations: [],
       pendingRequests: [],
+      deprioritizedTopics: [],
       clarifications: [],
     },
   };

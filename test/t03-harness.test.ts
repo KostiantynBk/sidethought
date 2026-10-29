@@ -138,8 +138,27 @@ function timedFixture(endAt: number, offset: number) {
       basisRev: 0,
       capturedInputs: [],
     });
+    fixture.expected.effects.push({
+      type: 'timer.set',
+      timerId: 's.3.4',
+      purpose: 'firstTokenTimeout',
+      dueAt: 8800,
+    }, {
+      type: 'timer.set',
+      timerId: 's.3.5',
+      purpose: 'callDeadline',
+      dueAt: 20800,
+    });
     fixture.expected.final.seq = 3;
-    fixture.expected.final.pendingTimers = [];
+    fixture.expected.final.pendingTimers = [{
+      timerId: 's.3.4',
+      purpose: 'firstTokenTimeout',
+      dueAt: 8800,
+    }, {
+      timerId: 's.3.5',
+      purpose: 'callDeadline',
+      dueAt: 20800,
+    }];
   }
   return fixture;
 }
@@ -175,7 +194,17 @@ async function withTemporaryAsync(short: string, long: string): Promise<void> {
       at: 4,
     });
     expect(parallelA.projection?.final).toMatchObject({ pendingTimers: [{ dueAt: 800 }] });
-    expect(parallelB.projection?.final).toMatchObject({ pendingTimers: [] });
+    expect(parallelB.projection?.final).toMatchObject({
+      pendingTimers: [{
+        timerId: 's.3.4',
+        purpose: 'firstTokenTimeout',
+        dueAt: 8800,
+      }, {
+        timerId: 's.3.5',
+        purpose: 'callDeadline',
+        dueAt: 20800,
+      }],
+    });
     expect(parallelB.trace).toContainEqual({
       eventId: 'timer-1',
       type: 'timer.fired',
