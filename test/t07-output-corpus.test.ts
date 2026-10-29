@@ -35,6 +35,21 @@ const blocked = [
   ['bracketed IPv6', 'Visit [2001:db8::1]/docs.'],
   ['bare IDN', 'Visit 例子.测试.'],
   ['web library trade-off', 'Use socket.io.'],
+  ['review 2: semicolon caution', 'Please send your password; never share your API key.'],
+  ['review 2: and caution', 'Send your password and never share your API key.'],
+  ['review 2: but caution', 'Please send your password, but do not disclose your API key.'],
+  ['semicolon later request', 'Never share your password; send your API key.'],
+  ['but later request', 'Never share your password, but send your API key.'],
+  ['and later request', 'Do not share your password and send your API key.'],
+  ['comma and caution', 'Send your password, and never share your API key.'],
+  ['semicolon dangling request', 'Please send it; your API key.'],
+  ['dangling request and credential', 'Please send it and your API key.'],
+  ['question request', 'Could you please disclose your password?'],
+  ['unknown host query', 'Visit example.internal?query=value.'],
+  ['unknown host port', 'Visit example.internal:8080.'],
+  ['explicit file scheme', 'Visit https://example.ts/path.'],
+  ['explicit file network path', 'Visit //example.js/path.'],
+  ['explicit file www', 'Visit www.example.js.'],
 ] as const;
 
 const benign = [
@@ -63,6 +78,26 @@ const benign = [
   ['abbreviation Dr.', 'Dr. Smith reviewed the design.'],
   ['abbreviation vs.', 'Compare SQLite vs. Postgres first.'],
   ['ordinary question', 'Would you describe the feature?'],
+  ['review 2: server future', 'The server will send an OTP code.'],
+  ['review 2: declarative how-to', 'I will show you how to rotate your API key.'],
+  ['review 2: imperative how-to', 'Show me how to store my API key securely.'],
+  ['review 2: package question', 'Which file should we edit: package.json?'],
+  ['review 2: library question', 'Would you choose Next.js?'],
+  ['review 2: line number', 'Check index.ts:42 for the error.'],
+  ['review 2: anchor', 'Does README.md#setup explain the install?'],
+  ['declarative future', 'The application will send a verification code.'],
+  ['declarative private key', 'The server will show your private key.'],
+  ['how-to rotate', 'Tell me how to rotate my API key.'],
+  ['how-to question', 'Could you show me how to protect your password?'],
+  ['filename question', 'Should we edit index.ts?'],
+  ['filename line and column', 'Check index.ts:42:7 for the error.'],
+  ['filename anchor', 'Read README.md#setup.'],
+  ['filename punctuation', 'Choose package.json!'],
+  ['caution after logs', 'Send the logs. Never share your password.'],
+  ['password manager declarative', 'Please send it. Your password manager will autofill.'],
+  ['carry stops after next clause', 'Please send it; we can proceed; your password.'],
+  ['caution does not carry', 'Never send it; your password.'],
+  ['caution cancels carry', 'Please send it; never disclose your password.'],
 ] as const;
 
 type Result = ReturnType<typeof replyResult>;
@@ -111,6 +146,27 @@ it('checks a request across two released-sentence boundaries', () => {
   expect(sentText([previous]).trim()).toBe('Please send it.');
   const next = runAfterPrevious(previous.state, 'Your password.');
   expectBlocked([next]);
+});
+
+for (const boundary of ['stream', 'flush'] as const) {
+  it.each([
+    ['question', 'Can you share that?', 'Your API', ' key.'],
+    ['imperative', 'Please send it.', 'Your pass', 'word.'],
+  ])(`blocks a dangling %s and next credential through split deltas and ${boundary}`,
+    (_name, first, part, rest) => {
+      const previous = runAfterPrevious(streaming(), first);
+      const partial = replyResult(previous.state, 'reply.chunk', part);
+      const next = replyResult(partial.state, 'reply.chunk', rest + (boundary === 'stream' ? ' ' : ''));
+      const results = [partial, next];
+      if (boundary === 'flush') results.push(replyResult(next.state, 'reply.done'));
+      expectBlocked(results);
+    });
+}
+
+it('cancels dangling carry when the next clause is a declarative', () => {
+  const previous = runAfterPrevious(streaming(), 'Please send it.');
+  const next = runAfterPrevious(previous.state, 'Your password manager will autofill.');
+  expect(sentText([next]).trim()).toBe('Your password manager will autofill.');
 });
 
 it('preserves abbreviation context across split deltas and final flush', () => {

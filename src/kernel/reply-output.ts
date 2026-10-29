@@ -2,20 +2,14 @@ import type { Config } from '../config/index.js';
 import type { Delivery, ReplyGeneration } from '../contract/index.js';
 import type { Context } from './state.js';
 import { normalizeOutput, removeAbbreviationDots } from './output-normalization.js';
+import { containsCredentialRequest } from './output-credentials.js';
 import { containsUrl } from './output-url.js';
 
 export const OUTPUT_CHECK_NOTICE = 'I stopped this reply because it failed an output safety check.';
 
 export function outputFailure(text: string, config: Config): 'credential' | 'url' | undefined {
   const normalized = removeAbbreviationDots(normalizeOutput(text));
-  for (const pattern of config.credentialRequestPatterns) {
-    for (const match of normalized.matchAll(new RegExp(pattern, 'giu'))) {
-      const earlier = normalized.slice(0, match.index).split(/[.!?;:]/u).at(-1) ?? '';
-      const caution = /\b(?:never|don't|do not|avoid|shouldn't|must not|no one|nobody)\b/u;
-      if (caution.test(earlier) || caution.test(match[0])) continue;
-      return 'credential';
-    }
-  }
+  if (containsCredentialRequest(normalized, config)) return 'credential';
   if (containsUrl(text)) return 'url';
   return undefined;
 }
