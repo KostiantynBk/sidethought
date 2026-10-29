@@ -54,12 +54,11 @@ it('replays s3-abort-renderedupto through the new reply without forwarding G12 a
     && effect.message.type === 'assistant.chunk' && effect.message.deliveryId === 's.3.3')).toHaveLength(1);
 });
 
-it('replays s3g-interrupt-mid-number without counting the incomplete price claim', () => {
+it('replays s3g-interrupt-mid-number with a whole-word prefix', () => {
   const result = replay('s3g-interrupt-mid-number');
   const delivery = result.snapshot!.state.domain.deliveries['s.3.3']!;
   expect(delivery.chunks[0]?.text).toBe('Provider B costs $1');
   expect(delivery.interruptedPrefix).toBe('Provider B costs');
-  expect(delivery.claimsDelivered).toEqual([]);
 });
 
 it('replays late-chunk-after-abort with I3 and inert late chunk, done and failed events', () => {

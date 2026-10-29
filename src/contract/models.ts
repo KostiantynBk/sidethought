@@ -213,6 +213,7 @@ export const DeliverySchema = z.strictObject({
   sentChars: count,
   finalAcknowledged: z.boolean(),
   aborted: z.boolean(),
+  settled: z.boolean().optional(),
   interruptedPrefix: z.string().optional(),
   claimsDelivered: z.array(id),
 });

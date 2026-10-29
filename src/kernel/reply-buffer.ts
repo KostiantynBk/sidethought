@@ -1,4 +1,5 @@
 import type { Delivery, ReplyGeneration } from '../contract/index.js';
+import { ABBREVIATION } from './output-normalization.js';
 
 function appendPending(delivery: Delivery, text: string): void {
   delivery.chunks.push({
@@ -17,6 +18,7 @@ export function bufferReplyDelta(reply: ReplyGeneration, delivery: Delivery, del
   let consumed = 0;
   for (const match of reply.buffer.matchAll(boundaries)) {
     const end = match.index + match[0].length;
+    if (ABBREVIATION.test(reply.buffer.slice(consumed, end).trimEnd())) continue;
     appendPending(delivery, reply.buffer.slice(consumed, end));
     consumed = end;
   }

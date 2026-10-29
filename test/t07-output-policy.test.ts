@@ -49,6 +49,14 @@ it('rejects credentials requested in a question', () => {
   expect(outputFailure('What is your password?', loadConfig())).toBe('credential');
 });
 
+it('blocks asking what the user PIN is', () => {
+  expect(outputFailure('What is your PIN?', loadConfig())).toBe('credential');
+});
+
+it('blocks asking for the user PIN with please', () => {
+  expect(outputFailure('Your PIN, please.', loadConfig())).toBe('credential');
+});
+
 it('applies configured patterns before release', () => {
   const state = streaming();
   state.config = loadConfig({ credentialRequestPatterns: ['forbidden phrase'] });

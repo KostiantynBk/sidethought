@@ -15,6 +15,7 @@ function recordPrefix(delivery: Delivery, renderedUpTo: number | undefined): voi
   const reported = renderedUpTo === undefined ? delivery.deliveredChars : Math.min(renderedUpTo, delivery.sentChars);
   delivery.deliveredChars = Math.max(delivery.deliveredChars, reported);
   delivery.interruptedPrefix = wholeWordPrefix(sentText, delivery.deliveredChars);
+  delivery.settled = true;
   let remaining = delivery.deliveredChars;
   const claims = new Set<string>();
   for (const chunk of delivery.chunks) {
@@ -47,7 +48,8 @@ export function interruptReply(context: Context, renderedUpTo: number | undefine
   }
   // Decisions 7–8: a completed generation is not evidence that its text was rendered.
   const latest = Object.values(context.domain.deliveries).findLast(delivery => !delivery.finalAcknowledged);
-  if (!latest || latest.aborted) return;
+  // Generation retirement is distinct from settlement of its client delivery.
+  if (!latest || latest.settled) return;
   if (!streaming && renderedUpTo === undefined) return;
   recordPrefix(latest, renderedUpTo);
   context.effects.push({

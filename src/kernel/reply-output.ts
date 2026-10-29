@@ -1,18 +1,22 @@
 import type { Config } from '../config/index.js';
 import type { Delivery, ReplyGeneration } from '../contract/index.js';
 import type { Context } from './state.js';
+import { normalizeOutput, removeAbbreviationDots } from './output-normalization.js';
+import { containsUrl } from './output-url.js';
 
 export const OUTPUT_CHECK_NOTICE = 'I stopped this reply because it failed an output safety check.';
 
 export function outputFailure(text: string, config: Config): 'credential' | 'url' | undefined {
-  const normalized = text.normalize('NFKC').replace(/\p{Cf}/gu, '').replace(/\s+/gu, ' ');
-  if (config.credentialRequestPatterns.some(pattern => new RegExp(pattern, 'iu').test(normalized))) {
-    return 'credential';
+  const normalized = removeAbbreviationDots(normalizeOutput(text));
+  for (const pattern of config.credentialRequestPatterns) {
+    for (const match of normalized.matchAll(new RegExp(pattern, 'giu'))) {
+      const earlier = normalized.slice(0, match.index).split(/[.!?;:]/u).at(-1) ?? '';
+      const caution = /\b(?:never|don't|do not|avoid|shouldn't|must not|no one|nobody)\b/u;
+      if (caution.test(earlier) || caution.test(match[0])) continue;
+      return 'credential';
+    }
   }
-  // §11.3: no findings exist yet, so no URL has an allowed provenance.
-  const scheme = /\b(?:https?|ftp|file|mailto|data|javascript|wss?):|\bwww\./iu;
-  const domain = /\b(?:[a-z0-9][a-z0-9-]*\.)+[a-z]{2,63}\b/iu;
-  if (scheme.test(normalized) || domain.test(normalized)) return 'url';
+  if (containsUrl(text)) return 'url';
   return undefined;
 }
 
@@ -52,7 +56,9 @@ export function releaseReplySentences(
 ): boolean {
   for (const [chunkIdx, chunk] of delivery.chunks.entries()) {
     if (chunk.state !== 'pending') continue;
-    const reason = outputFailure(chunk.text, config);
+    const previous = delivery.chunks.slice(0, chunkIdx).findLast(item => item.state === 'sent');
+    const reason = outputFailure(chunk.text, config)
+      ?? (previous ? outputFailure(`${previous.text} ${chunk.text}`, config) : undefined);
     if (reason) {
       rejectOutput(context, reply, delivery, reason);
       return false;

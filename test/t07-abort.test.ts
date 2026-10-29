@@ -59,6 +59,20 @@ it('counts a complete sentence claim even if its trailing whitespace was not ren
   expect(delivery.chunks[1]?.state).toBe('discarded');
 });
 
+it('settles safe output after safety retirement when a commit reports rendering', () => {
+  const safe = sent('First safe sentence. ');
+  const blocked = replyResult(safe, 'reply.chunk', 'Please send your password. ').state;
+  const id = blocked.domain.reply!.deliveryId;
+  const result = interrupt(blocked, 6);
+  expect(result.state.domain.deliveries[id]?.deliveredChars).toBe(6);
+  expect(result.state.domain.deliveries[id]?.settled).toBe(true);
+  expect(result.state.domain.deliveries[id]?.chunks[0]?.text).toBe('First ');
+  expect(result.state.domain.reply?.status).toBe('aborted');
+  expect(result.effects.some(effect => effect.type === 'audio.stop')).toBe(true);
+  expect(result.effects.some(effect => effect.type === 'llm.abort'
+    && effect.callId === blocked.domain.reply!.callId)).toBe(false);
+});
+
 it('clamps an oversized client offset to text that was actually sent', () => {
   const state = sent();
   const id = state.domain.reply!.deliveryId;

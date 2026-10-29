@@ -176,17 +176,23 @@ describe('prototype policy bounds', () => {
   });
 });
 
-const credential = '(?:credentials?|passwords?|passphrases?|(?:api[ _-]?)?keys?|(?:access|auth|api)[ _-]?tokens?)';
+const credential = '(?:passwords?|passcodes?|passphrases?|(?:api|secret|private|access|ssh)[ -]+keys?'
+  + '|(?:api|access|auth|bearer)[ -]+tokens?|credentials?|login[ -]+details'
+  + '|(?:seed|recovery)[ -]+phrases?|(?:2fa|otp|verification|one[ -]+time)[ -]+codes?|your[ -]+pin|(?<=your )pin)';
+const verb = '(?:send|share|give|provide|disclose|tell|paste|enter|type|post|reveal|upload|submit'
+  + '|forward|show|read[ -]+out)';
+const gap = '(?:[^\\p{L}\\p{N}]+[\\p{L}\\p{N}]+){0,8}[^\\p{L}\\p{N}]*';
 const expectedCredentialPatterns = [
-  '\\b(?:send|share|give|paste|enter|provide|upload|reveal|tell|type|supply|submit|forward|show)'
-    + '\\b[^.!?\\n]{0,160}\\b' + credential + '\\b',
-  '\\b' + credential + '\\b[^.!?\\n]{0,80}\\b(?:please|required|needed|here)\\b',
-  '\\b(?:what(?:\'s| is)|need|require)\\b[^.!?\\n]{0,80}\\b' + credential + '\\b',
+  `\\b${verb}\\b${gap}\\b${credential}\\b`,
+  `\\b(?:can|could|may)\\s+i\\s+(?:have|get|see|use)\\b${gap}\\b${credential}\\b`,
+  `\\b(?:what\\s+is|what's)\\s+your\\b${gap}\\b${credential}\\b`,
+  `\\b(?:i|we)\\s+need\\s+your\\b${gap}\\b${credential}\\b`,
+  `\\byour\\s+${credential}\\b${gap}\\bplease\\b`,
 ];
 
 it('matches the literal policy inventory and default values', () => {
   expect(loadConfig()).toEqual({
-    configVersion: '0.3.4',
+    configVersion: '0.3.5',
     credentialRequestPatterns: expectedCredentialPatterns,
     hedgeLexicon: ['might', 'maybe', 'perhaps', 'thinking about', 'I was thinking', 'not sure', 'possibly'],
     negationLexicon: ['not', 'no', 'never', "don't", "doesn't", "isn't", "won't", "can't"],

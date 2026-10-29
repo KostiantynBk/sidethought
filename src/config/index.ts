@@ -9,7 +9,7 @@ const number = (defaultValue: number, maximum: number) => z.number().positive().
 const textLexicon = () => z.string().min(1);
 
 export const ConfigSchema = z.strictObject({
-  configVersion: z.string().min(1).default('0.3.4'),
+  configVersion: z.string().min(1).default('0.3.5'),
   credentialRequestPatterns: CredentialRequestPatternsSchema,
   hedgeLexicon: z.array(textLexicon()).default([
     'might', 'maybe', 'perhaps', 'thinking about', 'I was thinking', 'not sure', 'possibly',

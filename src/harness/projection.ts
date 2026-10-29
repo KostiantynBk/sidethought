@@ -1,6 +1,15 @@
 import type { State } from '../kernel/index.js';
 import type { Fixture } from './schema.js';
 
+function projectedDeliveries(state: State, fixture: Fixture) {
+  return Object.fromEntries(Object.entries(state.domain.deliveries).map(([id, delivery]) => {
+    // Older fixture expectations omit the optional settlement flag; targeted tests assert it.
+    if (fixture.expected.final.deliveries?.[id]?.settled !== undefined) return [id, delivery];
+    const { settled: _settled, ...rest } = delivery;
+    return [id, rest];
+  }));
+}
+
 export function finalProjection(state: State, fixture: Fixture) {
   return {
     seq: state.meta.seq,
@@ -11,7 +20,7 @@ export function finalProjection(state: State, fixture: Fixture) {
     reservations: state.domain.reservations,
     replyPending: state.domain.replyPending,
     ...(fixture.expected.final.reply !== undefined ? { reply: state.domain.reply } : {}),
-    ...(fixture.expected.final.deliveries !== undefined ? { deliveries: state.domain.deliveries } : {}),
+    ...(fixture.expected.final.deliveries !== undefined ? { deliveries: projectedDeliveries(state, fixture) } : {}),
     ...(fixture.expected.final.replyStartWaiting !== undefined
       ? { replyStartWaiting: state.domain.replyStartWaiting } : {}),
     ...(fixture.expected.final.project ? {
