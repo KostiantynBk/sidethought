@@ -60,14 +60,7 @@ export function projectState(state: State) {
     deliveries,
     streamingChunks,
     possiblyDelivered,
-    items: Object.values(state.domain.items).map(item => ({
-      id: item.id,
-      kind: item.kind,
-      status: item.status,
-      text: item.text,
-      contentVersion: item.contentVersion,
-      quoteSpans: item.provenance.quoteSpans,
-    })),
+    items: Object.values(state.domain.items).map(item => structuredClone(item)),
     replyStatus: state.domain.reply?.status ?? 'idle',
   };
 }

@@ -35,7 +35,11 @@ describe('login gateway', () => {
     const settings = config();
     const server = await gateway(settings);
     try {
-      const response = await server.app.inject({ method: 'POST', url: '/login', payload: { passcode: settings.passcode } });
+      const response = await server.app.inject({
+        method: 'POST',
+        url: '/login',
+        payload: { passcode: settings.passcode },
+      });
       expect(response.statusCode).toBe(200);
       expect(response.headers['set-cookie']).toMatch(/HttpOnly/);
       expect(response.headers['set-cookie']).toMatch(/Secure/);
@@ -84,7 +88,11 @@ describe('login gateway', () => {
     await first.app.close();
     const second = await gateway(settings);
     try {
-      const response = await second.app.inject({ method: 'POST', url: '/login', payload: { passcode: settings.passcode } });
+      const response = await second.app.inject({
+        method: 'POST',
+        url: '/login',
+        payload: { passcode: settings.passcode },
+      });
       expect(response.statusCode).toBe(429);
     } finally {
       await second.app.close();

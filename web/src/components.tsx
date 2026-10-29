@@ -71,7 +71,7 @@ type ComposerProps = {
 export function Composer({ draft, onTyping, onBlur, onCommit }: ComposerProps) {
   return <form onSubmit={event => { event.preventDefault(); onCommit(); }}>
     <label>Message
-      <input value={draft} onChange={event => onTyping(event.target.value)} onBlur={onBlur} />
+      <input value={draft} onChange={event => onTyping(event.target.value)} onBlur={() => onBlur()} />
     </label>
     <button>Send</button>
   </form>;

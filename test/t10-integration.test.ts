@@ -62,10 +62,13 @@ describe('dev-model vertical slice', () => {
       send(ws, 'input.committed', { clientMsgId: 'first', text: 'Hello', modality: 'text' });
       const first = await waitFor(messages, message => message.type === 'assistant.chunk');
       send(ws, 'input.committed', { clientMsgId: 'second', text: 'Interrupt', modality: 'text', renderedUpTo: 0 });
-      await waitFor(messages, message => message.type === 'assistant.stopped' && message.deliveryId === first.deliveryId);
-      const count = messages.filter(message => message.type === 'assistant.chunk' && message.deliveryId === first.deliveryId).length;
+      await waitFor(messages, message =>
+        message.type === 'assistant.stopped' && message.deliveryId === first.deliveryId);
+      const isOldChunk = (message: Message) =>
+        message.type === 'assistant.chunk' && message.deliveryId === first.deliveryId;
+      const count = messages.filter(isOldChunk).length;
       await new Promise(resolve => setTimeout(resolve, 800));
-      const oldChunks = messages.filter(message => message.type === 'assistant.chunk' && message.deliveryId === first.deliveryId);
+      const oldChunks = messages.filter(isOldChunk);
       expect(oldChunks).toHaveLength(count);
       expect(oldChunks.map(message => message.chunkIdx)).toEqual(oldChunks.map((_, index) => index));
     } finally {

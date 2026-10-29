@@ -51,6 +51,18 @@ export function renderedUpTo(chunks: Chunk[], renderedChunkIdx: number, charsInC
   return total;
 }
 
+export function visibleOffset(chunks: Chunk[], visibleChars: number): number {
+  let preceding = 0;
+  for (const chunk of [...chunks].sort((a, b) => a.chunkIdx - b.chunkIdx)) {
+    if (visibleChars <= preceding + chunk.text.length) {
+      return renderedUpTo(chunks, chunk.chunkIdx, visibleChars - preceding);
+    }
+    preceding += chunk.text.length;
+  }
+  const last = chunks.at(-1);
+  return last ? renderedUpTo(chunks, last.chunkIdx, last.text.length) : 0;
+}
+
 export function pendingProgress(delivery: TranscriptDelivery, lastAcknowledged: number): RenderProgress[] {
   let chars = 0;
   let expected = 0;

@@ -46,7 +46,7 @@ describe('delivery completion', () => {
     });
   });
 
-  it('does not acknowledge a stopped or already completed delivery again', () => {
+  it('returns no final progress for stopped or already completed deliveries', () => {
     const delivery: TranscriptDelivery = {
       deliveryId: 'one',
       chunks: [{ chunkIdx: 0, text: 'hello' }],
@@ -61,7 +61,7 @@ describe('delivery completion', () => {
     expect(finalProgress({ deliveryId: 'one', chunks: [], stopped: false, chunkCount: 0 })).toBeUndefined();
   });
 
-  it('reports cumulative UTF-16 offsets monotonically across chunks and reconnect', () => {
+  it('computes cumulative UTF-16 offsets after a previous acknowledged index', () => {
     const delivery: TranscriptDelivery = {
       deliveryId: 'one',
       chunks: [

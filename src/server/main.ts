@@ -6,7 +6,9 @@ async function main(): Promise<void> {
   const runtime = await createRuntime(config);
   await runtime.app.listen({ host: '127.0.0.1', port: config.port });
   console.log('dev model: no real AI');
-  const stop = () => { void runtime.close(); };
+  const stop = () => {
+    void runtime.close();
+  };
   process.once('SIGINT', stop);
   process.once('SIGTERM', stop);
 }
