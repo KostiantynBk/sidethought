@@ -1,0 +1,9 @@
+body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 52rem; padding: 0 1rem; }
+main { display: grid; gap: 1rem; }
+section { border: 1px solid #ccc; border-radius: .4rem; padding: 1rem; }
+input { padding: .4rem; margin: .4rem; }
+button { padding: .4rem .7rem; }
+small { font-size: .6em; color: #666; }
+.uncertain { color: #666; background: #eee; padding: .6rem; }
+article { border-bottom: 1px solid #eee; }
+mark { margin-right: .3rem; }
