@@ -1,3 +1,5 @@
+import { modelConfiguration, type MetaConnection } from '../model/meta/config.js';
+
 export type ServerConfig = {
   passcode: string;
   cookieSecret: string;
@@ -5,7 +7,8 @@ export type ServerConfig = {
   insecureCookie: boolean;
   dbPath: string;
   port: number;
-  model: 'dev';
+  model: 'dev' | 'meta';
+  meta?: MetaConnection;
 };
 
 export function serverConfig(env: NodeJS.ProcessEnv): ServerConfig {
@@ -19,8 +22,7 @@ export function serverConfig(env: NodeJS.ProcessEnv): ServerConfig {
   if (!origins.length) throw new Error('SIDETHOUGHT_ALLOWED_ORIGINS is required');
   const port = Number(env.PORT || '3000');
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('invalid PORT');
-  const model = env.SIDETHOUGHT_MODEL || (env.MODEL_API_KEY ? 'meta' : 'dev');
-  if (model !== 'dev') throw new Error('SIDETHOUGHT_MODEL or MODEL_API_KEY selects an unavailable model');
+  const model = modelConfiguration(env);
   return {
     passcode,
     cookieSecret,
@@ -28,6 +30,6 @@ export function serverConfig(env: NodeJS.ProcessEnv): ServerConfig {
     insecureCookie: env.SIDETHOUGHT_DEV_INSECURE_COOKIE === '1',
     dbPath: env.SIDETHOUGHT_DB_PATH || 'sidethought.sqlite',
     port,
-    model,
+    ...model,
   };
 }

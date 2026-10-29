@@ -11,8 +11,11 @@ by the repository's `.npmrc`; the installed platform-specific prebuilt SQLite bi
 Copy `.env.example` to `.env` and provide `SIDETHOUGHT_PASSCODE`, a `SIDETHOUGHT_COOKIE_SECRET` of at least
 32 characters, and comma-separated `SIDETHOUGHT_ALLOWED_ORIGINS`. Do not share or commit this file. Configure
 `SIDETHOUGHT_DB_PATH` and `PORT` if the defaults are unsuitable. The model defaults to `dev` without a model key;
-T10 supports only the clearly labelled network-free dev model and refuses to start with a real model selected.
-`MODEL_API_KEY` is reserved for the later real executor and is never sent to the browser.
+set `SIDETHOUGHT_MODEL=meta` and `MODEL_API_KEY` to use Meta Spark. A key also selects Meta when the model
+selector is unset. Explicit `dev` remains network-free even with a key present. Meta without a key fails startup.
+Keys stay in server-only configuration and are never sent to the browser. `/health` reports the selected model.
+The current UI's fixed dev badge is not yet wired to that endpoint; do not use that badge to identify the backend.
+See [Meta policy and smoke-run notes](META_POLICY.md) for caps, pricing, transport assumptions and manual verification.
 
 Run `npm run dev` for the gateway and Vite. Add the exact Vite origin to the allowed origins. For local HTTP on
 `127.0.0.1` **only**, set `SIDETHOUGHT_DEV_INSECURE_COOKIE` to `1`; it is off by default. Never use this option
@@ -27,6 +30,8 @@ Run `tailscale serve reset` to disable the proxy. Judge access is a separate, un
 
 ## Current limitations
 
-The dev model produces synthetic replies and does no network calls. Research jobs are unsupported in this cut.
+The dev model produces synthetic replies and does no network calls. The Meta model implements Interpreter and
+Responder only; research jobs, Deliberator and Checker are unsupported in this cut. Meta integration is tested
+with fake HTTP streams only until a separately authorized live smoke run is performed.
 Until the delivery-progress integration lands, reconnecting after a reply can show a dimmed
 “may not have been shown” card instead of confirmed transcript text.

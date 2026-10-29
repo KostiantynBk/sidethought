@@ -5,7 +5,7 @@ async function main(): Promise<void> {
   const config = serverConfig(process.env);
   const runtime = await createRuntime(config);
   await runtime.app.listen({ host: '127.0.0.1', port: config.port });
-  console.log('dev model: no real AI');
+  console.log(config.model === 'dev' ? 'dev model: no real AI' : 'meta model: Spark');
   const stop = () => {
     void runtime.close();
   };
