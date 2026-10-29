@@ -121,6 +121,7 @@ it('offers a no-cap hook for later Hold integration without starting while input
   const state = committed();
   let id = 0;
   const context: Context = {
+    config: state.config,
     domain: state.domain,
     effects: [],
     itemDecisions: [],

@@ -109,7 +109,7 @@ const finalSchema = z.strictObject({
 export const fixtureSchema = z.strictObject({
   meta: z.strictObject({
     schemaVersion: z.literal(1),
-    reducerVersion: z.literal('8'),
+    reducerVersion: z.literal('9'),
     configVersion: z.literal('0.3.6'),
     fixtureVersion: z.string().min(1),
   }),

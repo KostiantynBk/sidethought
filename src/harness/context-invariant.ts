@@ -4,9 +4,29 @@ import type { State } from '../kernel/index.js';
 import { assembleContext } from '../context/index.js';
 import { recentTurns } from '../context/recent.js';
 
-function acknowledged(delivery: Delivery): string {
+function sent(delivery: Delivery): string {
   return delivery.chunks.filter(chunk => ['sent', 'rendered', 'played'].includes(chunk.state))
-    .map(chunk => chunk.text).join('').slice(0, delivery.deliveredChars);
+    .map(chunk => chunk.text).join('');
+}
+
+function acknowledged(delivery: Delivery): string {
+  return sent(delivery).slice(0, delivery.deliveredChars);
+}
+
+// Independent D3 oracle: inspect the pre-trim suffix, not the production trimming helper.
+function interruptionProblems(before: State, after: State): string[] {
+  const problems: string[] = [];
+  for (const [id, current] of Object.entries(after.domain.deliveries)) {
+    const previous = before.domain.deliveries[id];
+    if (!previous || previous.settled || !current.settled || current.interruptedPrefix === undefined) continue;
+    const full = sent(previous);
+    const raw = full.slice(0, current.deliveredChars);
+    const cutsWord = current.deliveredChars < full.length
+      && !/\s/u.test(full[current.deliveredChars]!) && !/\s$/u.test(raw);
+    const expected = (cutsWord ? raw.replace(/\S+$/u, '') : raw).trimEnd();
+    if (current.interruptedPrefix !== expected) problems.push('I9 interrupted marker cuts a word');
+  }
+  return problems;
 }
 
 function checkLedger(delivery: Delivery): string[] {
@@ -45,7 +65,8 @@ function checkTurns(state: State, turns: Turn[]): string[] {
     const raw = acknowledged(delivery);
     const marker = turn.text.startsWith('[interrupted after: ') && turn.text.endsWith(']');
     const text = marker ? turn.text.slice('[interrupted after: '.length, -1) : turn.text;
-    if (!raw.startsWith(text) || (text.length < raw.length && text.length > 0 && !/\s/u.test(raw[text.length]!))) {
+    const full = sent(delivery);
+    if (!raw.startsWith(text) || (text.length < full.length && text.length > 0 && !/\s/u.test(full[text.length]!))) {
       problems.push('I9 context contains undelivered assistant text');
     }
     // A partial word may be omitted, but no interior whitespace permits trimming whole delivered words.
@@ -57,12 +78,13 @@ function checkTurns(state: State, turns: Turn[]): string[] {
 }
 
 export function deliveredContextInvariant(
-  _before: State,
+  before: State,
   _event: KernelEvent,
   after: State,
   effects: Effect[],
 ): string[] {
   const problems = Object.values(after.domain.deliveries).flatMap(checkLedger);
+  problems.push(...interruptionProblems(before, after));
   problems.push(...checkTurns(after, recentTurns(after.domain, after.config.recentWindowTurns)));
   for (const effect of effects) {
     if (effect.type !== 'llm.call' || !['interpreter', 'responder'].includes(effect.role)) continue;

@@ -4,8 +4,13 @@ import type { Call, Context, Timer } from './index.js';
 import { clearWait } from './index.js';
 import { applyInterpretation } from './interpretation.js';
 import { resumeReplyWait } from './reply.js';
+import { captureQuoteWitness } from '../context/quote-sources.js';
 
-function dispatch(context: Context, call: Call): void {
+function dispatch(context: Context, draft: Omit<Call, 'quoteWitness'>): void {
+  const call: Call = {
+    ...draft,
+    quoteWitness: captureQuoteWitness(context.domain, draft.inputIds, context.config.recentWindowTurns),
+  };
   context.domain.call = call;
   context.effects.push({
     type: 'llm.call',

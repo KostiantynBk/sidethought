@@ -78,10 +78,23 @@ it('includes exactly captured item versions, preserving private flags for reason
 it('rejects duplicate captures rather than silently deduplicating them', () => {
   const state = streaming();
   const dispatch = effect(state);
-  dispatch.capturedInputs = [{
-    itemId: 'missing',
+  state.domain.items.valid = {
+    id: 'valid',
+    kind: 'requirement',
+    status: 'proposed',
+    text: 'Example',
     contentVersion: 1,
-  }];
+    private: false,
+    provenance: {
+      origin: 'assistant',
+      quoteSpans: [],
+    },
+    voiceConfirmNeeded: false,
+  };
+  dispatch.capturedInputs = [
+    { itemId: 'valid', contentVersion: 1 },
+    { itemId: 'valid', contentVersion: 1 },
+  ];
   expect(() => assembleContext(state, dispatch)).toThrow('context:capture_mismatch');
 });
 
@@ -154,6 +167,30 @@ it('detects an injected undelivered interrupted marker through the I9 registry f
   });
   expect(deliveredContextInvariant(result.state, event, state, [])).toContain(
     'I9 interrupted marker contains undelivered text',
+  );
+});
+
+it('I9 detects an interrupted marker containing a cut-off amount from pre-trim text', () => {
+  const before = sent('Provider B costs $12 per month. ');
+  const result = interrupt(before, 19);
+  const mutated = structuredClone(result.state);
+  const delivery = mutated.domain.deliveries[before.domain.reply!.deliveryId]!;
+  delivery.interruptedPrefix = 'Provider B costs $1';
+  const event = parse({
+    eventId: 'interrupt-probe',
+    sessionId: 's',
+    acceptedAt: 2000,
+    type: 'input.committed',
+    payload: {
+      clientMsgId: 'probe',
+      text: 'Actually no cloud.',
+      modality: 'text',
+      renderedUpTo: 19,
+    },
+  });
+  expect(deliveredContextInvariant(before, event, result.state, result.effects)).toEqual([]);
+  expect(deliveredContextInvariant(before, event, mutated, result.effects)).toContain(
+    'I9 interrupted marker cuts a word',
   );
 });
 

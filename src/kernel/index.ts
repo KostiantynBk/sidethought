@@ -162,6 +162,7 @@ function applyAcceptedEvent(
   const seq = next.meta.seq;
   let n = 0;
   const context: Context = {
+    config: state.config,
     domain: {
       ...state.domain,
       inputs: state.domain.inputs.map(input => ({ ...input })),

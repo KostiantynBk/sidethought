@@ -1,5 +1,4 @@
 import type { Config } from '../config/index.js';
-import { allowedQuoteInputs } from '../context/quote-sources.js';
 import { AppliedPatchBatchSchema, type InterpreterOutput, type Item } from '../contract/index.js';
 import type { Call, Context } from './index.js';
 import { createItem, setStatus, supersedeItem, updateItem, verbalAgreement, type QuoteInput } from './items/index.js';
@@ -12,8 +11,8 @@ type Work = {
   projectRev: number;
 };
 
-function inputs(context: Context, call: Call, config: Config): QuoteInput[] {
-  return allowedQuoteInputs(context.domain, call.inputIds, config.recentWindowTurns);
+function inputs(_context: Context, call: Call, _config: Config): QuoteInput[] {
+  return call.quoteWitness.sources;
 }
 
 function allOps(output: InterpreterOutput): Op[] {
@@ -160,7 +159,9 @@ function applyOne(work: Work, op: Op, local: Local, context: Context, call: Call
       decisions: ['patch:noop_identical'],
     };
   }
-  const status = setStatus(work, target, 'superseded', 'interpreter', op.quoteSpans, inputs(context, call, config), config);
+  const status = setStatus(
+    work, target, 'superseded', 'interpreter', op.quoteSpans, inputs(context, call, config), config,
+  );
   if (status.state === work) return status;
   const fresh = create(work, {
     op: 'create',

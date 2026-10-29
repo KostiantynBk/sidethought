@@ -23,7 +23,7 @@ function capturedItems(state: State, effect: CallEffect): Item[] {
   });
 }
 
-function owner(state: State, effect: CallEffect): Call {
+function owner(state: State, effect: CallEffect): Pick<Call, 'callId' | 'requestId' | 'basisRev' | 'inputIds'> {
   const call = effect.role === 'interpreter' ? state.domain.call : state.domain.reply;
   if (!call || call.callId !== effect.callId || call.requestId !== effect.requestId
     || call.basisRev !== effect.basisRev) throw new Error('context:owner_mismatch');
@@ -78,7 +78,9 @@ export function assembleContext(state: State, effect: CallEffect): RolePrompt {
         jobs: [],
         findings: [],
       },
-      recentWindow: recentTurns(state.domain, state.config.recentWindowTurns),
+      recentWindow: effect.role === 'interpreter'
+        ? state.domain.call!.quoteWitness.recent
+        : recentTurns(state.domain, state.config.recentWindowTurns),
       task: task(state, effect),
     }, null, 2),
   };
