@@ -46,6 +46,7 @@ export type State = {
     call: Call | null;
     timers: Timer[];
     replyPending: boolean;
+    composerActive: boolean;
     replyStartWaiting: boolean;
     reply: ReplyGeneration | null;
     deliveries: Record<string, Delivery>;
@@ -100,6 +101,7 @@ export function initialState(sessionId: string, config: Config): State {
       call: null,
       timers: [],
       replyPending: false,
+      composerActive: false,
       replyStartWaiting: false,
       reply: null,
       deliveries: {},

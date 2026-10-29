@@ -78,19 +78,20 @@ export function disconnectedFloorViolation(state: State, contributionGranted: bo
   return !state.domain.clientConnected && contributionGranted ? ['floor granted while client disconnected'] : [];
 }
 
-const retiredReplyTerminal: Invariant = (before, event, after, effects, decisions) => {
+const retiredReplyResult: Invariant = (before, event, after, effects, decisions) => {
   if (duplicateReason(before, event)) return [];
-  if (event.type !== 'reply.done' && event.type !== 'reply.failed') return [];
+  if (event.type !== 'reply.chunk' && event.type !== 'reply.done' && event.type !== 'reply.failed') return [];
   const reply = before.domain.reply;
   const late = !reply || reply.status !== 'streaming'
     || reply.callId !== event.payload.callId || reply.requestId !== event.payload.requestId;
   if (!late || inertResult(before, after, effects, decisions, 'late:retired_reply')) return [];
-  return ['reply owner: retired terminal changed domain, effects or decision'];
+  return ['reply owner: retired result changed domain, effects or decision'];
 };
 
 const replyCaptures: Invariant = (_before, _event, after, effects) => {
   for (const effect of effects) {
     if (effect.type !== 'llm.call' || effect.role !== 'responder') continue;
+    if (after.domain.composerActive) return ['reply start while composer active'];
     const reply = after.domain.reply;
     const expected = Object.values(after.domain.items).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
       .map(item => ({
@@ -106,13 +107,26 @@ const replyCaptures: Invariant = (_before, _event, after, effects) => {
   return [];
 };
 
+const noPostAbortChunks: Invariant = (before, _event, after, effects) => {
+  const aborted = new Set(Object.values(before.domain.deliveries)
+    .filter(delivery => delivery.aborted).map(delivery => delivery.callId));
+  for (const effect of effects) {
+    if (effect.type === 'llm.abort') aborted.add(effect.callId);
+    if (effect.type !== 'client.send' || effect.message.type !== 'assistant.chunk') continue;
+    const delivery = after.domain.deliveries[effect.message.deliveryId];
+    if (delivery && aborted.has(delivery.callId)) return ['I3 chunk forwarded after generation abort'];
+  }
+  return [];
+};
+
 export const invariantRegistry: Invariant[] = [
   sequence,
   idempotency,
   retiredAttempt,
   captures,
-  retiredReplyTerminal,
+  retiredReplyResult,
   replyCaptures,
+  noPostAbortChunks,
 ];
 
 const itemAuthority: Invariant = (before, event, after) => {

@@ -1,0 +1,283 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "reducerVersion": "5",
+    "configVersion": "0.3.4",
+    "fixtureVersion": "1"
+  },
+  "sessionId": "s",
+  "events": [
+    {
+      "at": 0,
+      "event": {
+        "eventId": "initial-commit",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "initial",
+          "text": "Consider cloud sync.",
+          "modality": "text"
+        }
+      }
+    },
+    {
+      "at": 900,
+      "event": {
+        "eventId": "start",
+        "sessionId": "s",
+        "type": "reply.chunk",
+        "payload": {
+          "requestId": "s.3.1",
+          "callId": "s.3.2",
+          "text": "First sentence. "
+        }
+      }
+    },
+    {
+      "at": 1000,
+      "event": {
+        "eventId": "interrupt",
+        "sessionId": "s",
+        "type": "input.committed",
+        "payload": {
+          "clientMsgId": "m5",
+          "text": "Actually no cloud. Notes must stay on the phone.",
+          "modality": "text",
+          "renderedUpTo": 6
+        }
+      }
+    },
+    {
+      "at": 1100,
+      "event": {
+        "eventId": "late-chunk",
+        "sessionId": "s",
+        "type": "reply.chunk",
+        "payload": {
+          "requestId": "s.3.1",
+          "callId": "s.3.2",
+          "text": "Late sentence. "
+        }
+      }
+    },
+    {
+      "at": 1200,
+      "event": {
+        "eventId": "late-done",
+        "sessionId": "s",
+        "type": "reply.done",
+        "payload": {
+          "requestId": "s.3.1",
+          "callId": "s.3.2"
+        }
+      }
+    },
+    {
+      "at": 1300,
+      "event": {
+        "eventId": "late-failed",
+        "sessionId": "s",
+        "type": "reply.failed",
+        "payload": {
+          "requestId": "s.3.1",
+          "callId": "s.3.2",
+          "reason": "late failure"
+        }
+      }
+    }
+  ],
+  "fakes": [
+    {
+      "role": "interpreter",
+      "offset": 10,
+      "type": "interpretation.ready",
+      "output": {
+        "inputKinds": [
+          {
+            "inputId": "s.1.1",
+            "kind": "statement"
+          }
+        ],
+        "ops": [],
+        "replacementGroups": [],
+        "researchRequests": [],
+        "deprioritizedTopics": [],
+        "voiceConfirmValues": []
+      }
+    }
+  ],
+  "endAt": 1300,
+  "expected": {
+    "decisions": [
+      {
+        "seq": 1,
+        "kind": "kernel",
+        "reason": "input:committed"
+      },
+      {
+        "seq": 2,
+        "kind": "kernel",
+        "reason": "interpreter:ready"
+      },
+      {
+        "seq": 3,
+        "kind": "kernel",
+        "reason": "reply:started"
+      },
+      {
+        "seq": 4,
+        "kind": "kernel",
+        "reason": "reply:buffered"
+      },
+      {
+        "seq": 5,
+        "kind": "kernel",
+        "reason": "input:committed"
+      },
+      {
+        "seq": 6,
+        "kind": "kernel",
+        "reason": "late:retired_reply"
+      },
+      {
+        "seq": 7,
+        "kind": "kernel",
+        "reason": "late:retired_reply"
+      },
+      {
+        "seq": 8,
+        "kind": "kernel",
+        "reason": "late:retired_reply"
+      }
+    ],
+    "effects": [
+      {
+        "type": "timer.set",
+        "timerId": "s.1.2",
+        "purpose": "replyDebounce",
+        "dueAt": 800
+      },
+      {
+        "type": "llm.call",
+        "role": "interpreter",
+        "requestId": "s.1.3",
+        "callId": "s.1.4",
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      {
+        "type": "llm.call",
+        "role": "responder",
+        "requestId": "s.3.1",
+        "callId": "s.3.2",
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "assistant.chunk",
+          "deliveryId": "s.3.3",
+          "chunkIdx": 0,
+          "text": "First sentence. "
+        }
+      },
+      {
+        "type": "llm.abort",
+        "callId": "s.3.2"
+      },
+      {
+        "type": "audio.stop",
+        "deliveryId": "s.3.3"
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "assistant.stopped",
+          "deliveryId": "s.3.3",
+          "reason": "interrupted"
+        }
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.5.2",
+        "purpose": "replyDebounce",
+        "dueAt": 1800
+      },
+      {
+        "type": "llm.call",
+        "role": "interpreter",
+        "requestId": "s.5.3",
+        "callId": "s.5.4",
+        "basisRev": 0,
+        "capturedInputs": []
+      }
+    ],
+    "final": {
+      "seq": 8,
+      "pendingTimers": [
+        {
+          "timerId": "s.5.2",
+          "purpose": "replyDebounce",
+          "dueAt": 1800
+        }
+      ],
+      "inFlight": {
+        "requestId": "s.5.3",
+        "callId": "s.5.4",
+        "attempt": 1,
+        "inputIds": [
+          "s.5.1"
+        ],
+        "basisRev": 0,
+        "capturedInputs": []
+      },
+      "uninterpreted": [
+        {
+          "id": "s.5.1",
+          "text": "Actually no cloud. Notes must stay on the phone.",
+          "status": "inflight"
+        }
+      ],
+      "reservations": [],
+      "replyPending": true,
+      "reply": {
+        "requestId": "s.3.1",
+        "callId": "s.3.2",
+        "attempt": 1,
+        "inputIds": [
+          "s.1.1"
+        ],
+        "basisRev": 0,
+        "capturedInputs": [],
+        "deliveryId": "s.3.3",
+        "overridesSnapshotInputIds": [],
+        "buffer": "",
+        "status": "aborted"
+      },
+      "deliveries": {
+        "s.3.3": {
+          "id": "s.3.3",
+          "callId": "s.3.2",
+          "basisRev": 0,
+          "state": "interrupted",
+          "chunks": [
+            {
+              "text": "First ",
+              "state": "rendered",
+              "claimIds": [],
+              "sentenceFinished": false
+            }
+          ],
+          "deliveredChars": 6,
+          "sentChars": 16,
+          "finalAcknowledged": false,
+          "aborted": true,
+          "claimsDelivered": [],
+          "interruptedPrefix": "First"
+        }
+      },
+      "replyStartWaiting": false
+    }
+  }
+}

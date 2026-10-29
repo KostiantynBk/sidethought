@@ -1,8 +1,8 @@
 {
   "meta": {
     "schemaVersion": 1,
-    "reducerVersion": "4",
-    "configVersion": "0.3.3",
+    "reducerVersion": "5",
+    "configVersion": "0.3.4",
     "fixtureVersion": "2"
   },
   "sessionId": "s",

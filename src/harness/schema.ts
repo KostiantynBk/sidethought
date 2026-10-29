@@ -109,8 +109,8 @@ const finalSchema = z.strictObject({
 export const fixtureSchema = z.strictObject({
   meta: z.strictObject({
     schemaVersion: z.literal(1),
-    reducerVersion: z.literal('4'),
-    configVersion: z.literal('0.3.3'),
+    reducerVersion: z.literal('5'),
+    configVersion: z.literal('0.3.4'),
     fixtureVersion: z.string().min(1),
   }),
   sessionId: z.string().min(1),
@@ -121,6 +121,7 @@ export const fixtureSchema = z.strictObject({
       items: z.record(z.string(), ItemSchema).optional(),
       projectRev: z.number().int().nonnegative().optional(),
       replyPending: z.boolean().optional(),
+      composerActive: z.boolean().optional(),
       reply: ReplyGenerationSchema.nullable().optional(),
       deliveries: z.record(z.string(), DeliverySchema).optional(),
       replyStartWaiting: z.boolean().optional(),

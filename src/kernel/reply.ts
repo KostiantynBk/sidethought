@@ -2,6 +2,7 @@ import type { Config } from '../config/index.js';
 import type { KernelEvent, ReplyGeneration } from '../contract/index.js';
 import type { Context } from './index.js';
 import { bufferReplyDelta, finishReplyBuffer } from './reply-buffer.js';
+import { releaseReplySentences } from './reply-output.js';
 
 function uninterpretedIds(context: Context): string[] {
   return context.domain.inputs.filter(input =>
@@ -50,6 +51,9 @@ function startReply(context: Context): void {
     state: 'delivering',
     chunks: [],
     deliveredChars: 0,
+    sentChars: 0,
+    finalAcknowledged: false,
+    aborted: false,
     claimsDelivered: [],
   };
   context.effects.push({
@@ -63,7 +67,8 @@ function startReply(context: Context): void {
 }
 
 // §8.1: interpretation completion can release the wait, but never bypass the debounce.
-export function resumeReplyWait(context: Context): void {
+export function resumeReplyWait(context: Context): string | undefined {
+  if (context.domain.composerActive && context.domain.replyPending) return 'reply:composer_active';
   if (!context.domain.replyStartWaiting) return;
   if (!context.domain.replyPending) {
     clearReplyWait(context);
@@ -81,6 +86,7 @@ export function replyTimer(
 ): string {
   if (!context.domain.replyPending) return 'reply:not_pending';
   if (context.domain.reply?.status === 'streaming') return 'reply:already_started';
+  if (context.domain.composerActive) return 'reply:composer_active';
   // Hold integration hook (§5.6): its caller must disable the cap until interpretation finishes.
   if (!uninterpretedIds(context).length || (purpose === 'interpreterSoftWait' && allowSoftWaitCap)) {
     startReply(context);
@@ -104,16 +110,19 @@ export function replyTimer(
 
 type ReplyEvent = Extract<KernelEvent, { type: 'reply.chunk' | 'reply.done' | 'reply.failed' }>;
 
-export function replyEvent(context: Context, event: ReplyEvent): string {
+export function replyEvent(context: Context, event: ReplyEvent, config: Config): string {
   const reply = context.domain.reply;
   if (!reply || reply.status !== 'streaming' || reply.callId !== event.payload.callId
     || reply.requestId !== event.payload.requestId) return 'late:retired_reply';
   const delivery = context.domain.deliveries[reply.deliveryId]!;
   if (event.type === 'reply.chunk') {
     bufferReplyDelta(reply, delivery, event.payload.text);
-    return 'reply:buffered';
+    return releaseReplySentences(context, reply, delivery, config) ? 'reply:buffered' : 'reply:output_blocked';
   }
   finishReplyBuffer(reply, delivery, event.type === 'reply.failed');
+  if (event.type === 'reply.done' && !releaseReplySentences(context, reply, delivery, config)) {
+    return 'reply:output_blocked';
+  }
   reply.status = event.type === 'reply.done' ? 'done' : 'failed';
   // §5.3: only this reservation's owning generation can release it.
   context.domain.replyPending = false;

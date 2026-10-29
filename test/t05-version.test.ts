@@ -5,7 +5,7 @@ import { REDUCER_VERSION, ReducerVersionMismatchError, SessionRunner } from '../
 import { MemoryStore, type Snapshot } from '../src/store/index.js';
 
 it('refuses a previous-version snapshot with array-shaped items', () => {
-  expect(REDUCER_VERSION).toBe('4');
+  expect(REDUCER_VERSION).toBe('5');
   const store = new MemoryStore();
   const state = initialState('s', loadConfig());
   const oldState = {

@@ -21,17 +21,21 @@ export function bufferReplyDelta(reply: ReplyGeneration, delivery: Delivery, del
     consumed = end;
   }
   reply.buffer = reply.buffer.slice(consumed);
-  // A1 deliberately does not send: A2 must apply output checks before pending → sent.
+  // The caller applies §11.3 output checks before pending → sent.
 }
 
 export function finishReplyBuffer(reply: ReplyGeneration, delivery: Delivery, failed: boolean): void {
   if (failed) {
     for (const chunk of delivery.chunks) {
-      if (chunk.state === 'pending') chunk.state = 'discarded';
+      if (chunk.state !== 'pending') continue;
+      chunk.state = 'discarded';
+      chunk.text = '';
+      chunk.claimIds = [];
+      chunk.sentenceFinished = false;
     }
     if (reply.buffer) {
       delivery.chunks.push({
-        text: reply.buffer,
+        text: '',
         state: 'discarded',
         claimIds: [],
         sentenceFinished: false,

@@ -1,9 +1,9 @@
 {
   "meta": {
     "schemaVersion": 1,
-    "reducerVersion": "4",
-    "configVersion": "0.3.3",
-    "fixtureVersion": "1"
+    "reducerVersion": "5",
+    "configVersion": "0.3.4",
+    "fixtureVersion": "2"
   },
   "sessionId": "s",
   "events": [
@@ -214,6 +214,15 @@
         "callId": "s.7.2",
         "basisRev": 0,
         "capturedInputs": []
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "assistant.chunk",
+          "deliveryId": "s.7.3",
+          "chunkIdx": 0,
+          "text": "Current sentence. "
+        }
       }
     ],
     "final": {
@@ -246,7 +255,10 @@
           "state": "delivering",
           "chunks": [],
           "deliveredChars": 0,
-          "claimsDelivered": []
+          "claimsDelivered": [],
+          "sentChars": 0,
+          "finalAcknowledged": false,
+          "aborted": false
         },
         "s.7.3": {
           "id": "s.7.3",
@@ -256,13 +268,16 @@
           "chunks": [
             {
               "text": "Current sentence. ",
-              "state": "pending",
+              "state": "sent",
               "claimIds": [],
               "sentenceFinished": true
             }
           ],
           "deliveredChars": 0,
-          "claimsDelivered": []
+          "claimsDelivered": [],
+          "sentChars": 18,
+          "finalAcknowledged": false,
+          "aborted": false
         }
       },
       "replyStartWaiting": false

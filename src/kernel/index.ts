@@ -4,6 +4,8 @@ import { connectClient, recoverDomain } from './recovery.js';
 import { itemAction } from './items/index.js';
 import { interpret, startWaiting } from './interpretation-lifecycle.js';
 import { clearReplyWait, replyEvent, replyTimer } from './reply.js';
+import { interruptReply } from './reply-abort.js';
+import { clearComposer } from './composer.js';
 
 export { initialState } from './state.js';
 export type { Call, Context, Decision, State, Timer } from './state.js';
@@ -40,7 +42,10 @@ function retryInputs(context: Context, inputIds: string[]): void {
 
 function commitInput(context: Context, event: Extract<KernelEvent, { type: 'input.committed' }>, state: State): void {
   const { domain, effects } = context;
+  // AD-7: abort and stop effects must precede even the next Interpreter dispatch.
+  interruptReply(context, event.payload.renderedUpTo);
   clearWait(context);
+  domain.composerActive = false;
   clearReplyWait(context);
   domain.floorEpoch += 1;
   domain.inputs.push({
@@ -99,11 +104,19 @@ function applyEvent(context: Context, state: State, event: KernelEvent): string 
       return connectClient(context, state, event.acceptedAt!, event.payload.modality);
     case 'client.disconnected':
       context.domain.clientConnected = false;
+      clearComposer(context, event.acceptedAt!, state.config);
       return 'client:disconnected';
     case 'input.retry':
       retryInputs(context, event.payload.inputIds);
       return 'input:retry';
     case 'input.activity':
+      if (event.payload.channel === 'composer') {
+        if (!event.payload.active) {
+          clearComposer(context, event.acceptedAt!, state.config);
+          return 'input:activity';
+        }
+        context.domain.composerActive = true;
+      }
       if (!event.payload.active) return 'noop:unhandled';
       clearWait(context);
       context.domain.floorEpoch += 1;
@@ -117,7 +130,7 @@ function applyEvent(context: Context, state: State, event: KernelEvent): string 
     case 'reply.chunk':
     case 'reply.done':
     case 'reply.failed':
-      return replyEvent(context, event);
+      return replyEvent(context, event, state.config);
     case 'item.action': {
       const result = itemAction(context.domain, event.payload);
       context.domain.items = result.state.items;

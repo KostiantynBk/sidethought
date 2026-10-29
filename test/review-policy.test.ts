@@ -176,9 +176,18 @@ describe('prototype policy bounds', () => {
   });
 });
 
+const credential = '(?:credentials?|passwords?|passphrases?|(?:api[ _-]?)?keys?|(?:access|auth|api)[ _-]?tokens?)';
+const expectedCredentialPatterns = [
+  '\\b(?:send|share|give|paste|enter|provide|upload|reveal|tell|type|supply|submit|forward|show)'
+    + '\\b[^.!?\\n]{0,160}\\b' + credential + '\\b',
+  '\\b' + credential + '\\b[^.!?\\n]{0,80}\\b(?:please|required|needed|here)\\b',
+  '\\b(?:what(?:\'s| is)|need|require)\\b[^.!?\\n]{0,80}\\b' + credential + '\\b',
+];
+
 it('matches the literal policy inventory and default values', () => {
   expect(loadConfig()).toEqual({
-    configVersion: '0.3.3',
+    configVersion: '0.3.4',
+    credentialRequestPatterns: expectedCredentialPatterns,
     hedgeLexicon: ['might', 'maybe', 'perhaps', 'thinking about', 'I was thinking', 'not sure', 'possibly'],
     negationLexicon: ['not', 'no', 'never', "don't", "doesn't", "isn't", "won't", "can't"],
     replyDebounceMs: 800,

@@ -3,7 +3,7 @@ import { eventSchemaWithEvidenceLimits, TELEMETRY_EVENT_TYPES, type Effect } fro
 import { initialState, reduce, type Decision, type State } from '../kernel/index.js';
 import { DuplicateEventError, type JournalEvent, type SessionStore, type Snapshot } from '../store/index.js';
 
-export const REDUCER_VERSION = '4';
+export const REDUCER_VERSION = '5';
 
 export class ReducerVersionMismatchError extends Error {
   constructor(readonly found: string) {
@@ -20,7 +20,6 @@ export type RunnerResult = {
 export class SessionRunner {
   private state: State;
   private pending: JournalEvent[] = [];
-  private pendingEffects: Effect[] = [];
   private committed?: Snapshot;
   private readonly parser;
 
@@ -77,9 +76,9 @@ export class SessionRunner {
 
   private apply(event: JournalEvent): RunnerResult {
     const result = reduce(this.state, event);
-    if ((TELEMETRY_EVENT_TYPES as readonly string[]).includes(event.type)) {
+    // §6.3 / T07 decision 9: external effects require a durable snapshot, even on a delta/activity event.
+    if ((TELEMETRY_EVENT_TYPES as readonly string[]).includes(event.type) && result.effects.length === 0) {
       this.pending.push(event);
-      this.pendingEffects.push(...result.effects);
       this.state = result.state;
       return {
         ...result,
@@ -97,9 +96,8 @@ export class SessionRunner {
       if (error instanceof DuplicateEventError && error.eventId === event.eventId) return this.duplicate();
       throw error;
     }
-    const effects = [...this.pendingEffects, ...result.effects];
+    const effects = result.effects;
     this.pending = [];
-    this.pendingEffects = [];
     this.state = result.state;
     this.committed = snapshot;
     if (effects.length) this.sink(effects);
@@ -113,7 +111,6 @@ export class SessionRunner {
     this.state = snapshot.state;
     this.committed = structuredClone(snapshot);
     this.pending = [];
-    this.pendingEffects = [];
     return this.accept({
       eventId,
       sessionId: this.sessionId,

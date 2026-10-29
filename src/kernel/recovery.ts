@@ -22,6 +22,7 @@ export function recoverDomain(context: Context): string {
     if (input.status !== 'interpreted') input.status = 'needs_retry';
   }
   domain.replyPending = false;
+  domain.composerActive = false;
   domain.replyStartWaiting = false;
   // New A1 state must not leave a live owner after the existing AD-9 recovery path.
   if (domain.reply?.status === 'streaming') {

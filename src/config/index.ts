@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CredentialRequestPatternsSchema } from './output-policy.js';
 import { MAX_DELIBERATOR_NOMINATIONS, MAX_RESEARCH_REQUESTS_PER_INPUT } from '../contract/roles.js';
 
 // Each numeric call lists its explicit maximum as the second argument.
@@ -8,7 +9,8 @@ const number = (defaultValue: number, maximum: number) => z.number().positive().
 const textLexicon = () => z.string().min(1);
 
 export const ConfigSchema = z.strictObject({
-  configVersion: z.string().min(1).default('0.3.3'),
+  configVersion: z.string().min(1).default('0.3.4'),
+  credentialRequestPatterns: CredentialRequestPatternsSchema,
   hedgeLexicon: z.array(textLexicon()).default([
     'might', 'maybe', 'perhaps', 'thinking about', 'I was thinking', 'not sure', 'possibly',
   ]),

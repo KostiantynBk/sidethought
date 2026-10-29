@@ -17,11 +17,14 @@ it('creates a valid empty delivery owned by the generation and bound to its basi
     state: 'delivering',
     chunks: [],
     deliveredChars: 0,
+    sentChars: 0,
+    finalAcknowledged: false,
+    aborted: false,
     claimsDelivered: [],
   });
 });
 
-it('buffers split deltas into pending sentences without claiming delivery or sending unchecked text', () => {
+it('sends checked complete sentences while retaining the unfinished tail and zero delivered accounting', () => {
   const state = streaming();
   const before = structuredClone(state);
   const partial = replyResult(state, 'reply.chunk', 'Local storage is').state;
@@ -32,13 +35,21 @@ it('buffers split deltas into pending sentences without claiming delivery or sen
   expect(reply.buffer).toBe('Next sentence');
   expect(delivery.chunks).toEqual([{
     text: 'Local storage is fine. ',
-    state: 'pending',
+    state: 'sent',
     claimIds: [],
     sentenceFinished: true,
   }]);
   expect(delivery.deliveredChars).toBe(0);
   expect(delivery.claimsDelivered).toEqual([]);
-  expect(result.effects).toEqual([]);
+  expect(result.effects).toContainEqual({
+    type: 'client.send',
+    message: {
+      type: 'assistant.chunk',
+      deliveryId: delivery.id,
+      chunkIdx: 0,
+      text: 'Local storage is fine. ',
+    },
+  });
   expect(state).toEqual(before);
 });
 
@@ -68,15 +79,23 @@ it('flushes the final buffered sentence on owner done and clears only generation
   expect(result.state.domain.replyPending).toBe(false);
   expect(delivery.chunks[0]).toMatchObject({
     text: 'Finished.',
-    state: 'pending',
+    state: 'sent',
     sentenceFinished: true,
   });
   expect(delivery.deliveredChars).toBe(0);
   expect(delivery.claimsDelivered).toEqual([]);
-  expect(result.effects).toEqual([]);
+  expect(result.effects).toContainEqual({
+    type: 'client.send',
+    message: {
+      type: 'assistant.chunk',
+      deliveryId: delivery.id,
+      chunkIdx: 0,
+      text: 'Finished.',
+    },
+  });
 });
 
-it('discards pending sentences and the incomplete tail on owner failure', () => {
+it('preserves sent sentences and discards and the incomplete tail on owner failure', () => {
   const partial = replyResult(streaming(), 'reply.chunk', 'First. An unfinished').state;
   const result = replyResult(partial, 'reply.failed');
   const reply = result.state.domain.reply!;
@@ -84,7 +103,7 @@ it('discards pending sentences and the incomplete tail on owner failure', () => 
   expect(result.state.domain.replyPending).toBe(false);
   expect(reply.status).toBe('failed');
   expect(reply.buffer).toBe('');
-  expect(delivery.chunks.map(chunk => chunk.state)).toEqual(['discarded', 'discarded']);
+  expect(delivery.chunks.map(chunk => chunk.state)).toEqual(['sent', 'discarded']);
   expect(delivery.chunks[1]?.sentenceFinished).toBe(false);
   expect(delivery.deliveredChars).toBe(0);
   expect(delivery.claimsDelivered).toEqual([]);

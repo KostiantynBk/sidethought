@@ -210,6 +210,10 @@ export const DeliverySchema = z.strictObject({
   state: DeliveryStateSchema,
   chunks: z.array(ChunkSchema),
   deliveredChars: count,
+  sentChars: count,
+  finalAcknowledged: z.boolean(),
+  aborted: z.boolean(),
+  interruptedPrefix: z.string().optional(),
   claimsDelivered: z.array(id),
 });
 export const ReplyGenerationSchema = z.strictObject({
@@ -222,7 +226,7 @@ export const ReplyGenerationSchema = z.strictObject({
   deliveryId: id,
   overridesSnapshotInputIds: z.array(id),
   buffer: z.string(),
-  status: z.enum(['streaming', 'done', 'failed', 'interrupted']),
+  status: z.enum(['streaming', 'done', 'failed', 'interrupted', 'aborted']),
 });
 export type ReplyGeneration = z.infer<typeof ReplyGenerationSchema>;
 export const KernelIdSchema = z.string().regex(/^[^.]+\.\d+\.\d+$/);

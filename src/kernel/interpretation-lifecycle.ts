@@ -85,8 +85,8 @@ function finish(
   if (applied) applyWait(context, call, event.acceptedAt!, config);
   context.domain.call = null;
   startWaiting(context);
-  resumeReplyWait(context);
-  return applied ? 'interpreter:ready' : 'interpreter:needs_retry';
+  const replyDecision = resumeReplyWait(context);
+  return replyDecision ?? (applied ? 'interpreter:ready' : 'interpreter:needs_retry');
 }
 
 export function interpret(

@@ -57,7 +57,7 @@ describe('fixture validation and timer ordering', () => {
       expect(result.projection?.decisions.map(decision => decision.reason)).toEqual([
         'input:committed',
         'input:activity',
-        'reply:waiting_interpreter',
+        'reply:composer_active',
       ]);
     });
   });
