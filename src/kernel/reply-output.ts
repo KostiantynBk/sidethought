@@ -3,14 +3,16 @@ import type { Delivery, ReplyGeneration } from '../contract/index.js';
 import type { Context } from './state.js';
 import { normalizeOutput, removeAbbreviationDots } from './output-normalization.js';
 import { containsCredentialRequest } from './output-credentials.js';
-import { containsUrl } from './output-url.js';
+import { containsUnapprovedUrl } from './output-url.js';
+import { verifiedFindingUrls } from './research/findings.js';
 
 export const OUTPUT_CHECK_NOTICE = 'I stopped this reply because it failed an output safety check.';
 
-export function outputFailure(text: string, config: Config): 'credential' | 'url' | undefined {
+export function outputFailure(text: string, config: Config, allowedUrls: readonly string[] = []):
+  'credential' | 'url' | undefined {
   const normalized = removeAbbreviationDots(normalizeOutput(text));
   if (containsCredentialRequest(normalized, config)) return 'credential';
-  if (containsUrl(text)) return 'url';
+  if (containsUnapprovedUrl(text, allowedUrls)) return 'url';
   return undefined;
 }
 
@@ -54,8 +56,9 @@ export function releaseReplySentences(
     if (chunk.state !== 'pending') continue;
     const previous = delivery.chunks.slice(0, chunkIdx)
       .findLast(item => ['sent', 'rendered', 'played'].includes(item.state));
-    const reason = outputFailure(chunk.text, config)
-      ?? (previous ? outputFailure(`${previous.text} ${chunk.text}`, config) : undefined);
+    const urls = verifiedFindingUrls(context.domain);
+    const reason = outputFailure(chunk.text, config, urls)
+      ?? (previous ? outputFailure(`${previous.text} ${chunk.text}`, config, urls) : undefined);
     if (reason) {
       rejectOutput(context, reply, delivery, reason);
       return false;

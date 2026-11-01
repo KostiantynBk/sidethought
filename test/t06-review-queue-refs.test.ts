@@ -62,11 +62,11 @@ it('binds an accepted new:1 create to its actual ID at version 1', () => {
   });
   const created = Object.values(result.state.domain.items).find(item => item.text === 'Use local storage')!;
   expect(created.contentVersion).toBe(1);
-  expect(result.state.domain.pendingRequests[0]?.deps).toEqual([{
+  expect(Object.values(result.state.domain.jobs)[0]?.deps).toEqual([{
     itemId: created.id,
     contentVersion: 1,
   }]);
-  expect(result.state.domain.pendingRequests[0]?.depItemIds).toEqual([created.id]);
+  expect(Object.values(result.state.domain.jobs)[0]?.depItemIds).toEqual([created.id]);
 });
 
 it('binds an accepted inline replacement new:1 to its actual ID at version 1', () => {
@@ -86,11 +86,11 @@ it('binds an accepted inline replacement new:1 to its actual ID at version 1', (
   const created = Object.values(result.state.domain.items).find(item => item.text === 'Use local storage')!;
   expect(result.state.domain.items.r1?.status).toBe('superseded');
   expect(created.contentVersion).toBe(1);
-  expect(result.state.domain.pendingRequests[0]?.deps).toEqual([{
+  expect(Object.values(result.state.domain.jobs)[0]?.deps).toEqual([{
     itemId: created.id,
     contentVersion: 1,
   }]);
-  expect(result.state.domain.pendingRequests[0]?.depItemIds).toEqual([created.id]);
+  expect(Object.values(result.state.domain.jobs)[0]?.depItemIds).toEqual([created.id]);
 });
 
 it('rejects __proto__ as an invalid localRef and retries without publishing a create or request', () => {

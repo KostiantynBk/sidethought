@@ -2,6 +2,8 @@ import type { Delivery, Effect, Item, Dep, InterpreterOutput, ReplyGeneration } 
 import type { Config } from '../config/index.js';
 import type { RecentTurn } from '../context/recent.js';
 import type { QuoteInput } from './items/index.js';
+import type { Finding } from '../contract/index.js';
+import { emptyResearchBudget, type ResearchBudget, type ResearchJob } from './research/types.js';
 
 export type Decision = {
   seq: number;
@@ -63,6 +65,10 @@ export type State = {
     floorEpoch: number;
     interruptedCalls: (Call & { status: 'interrupted' })[];
     reservations: string[];
+    jobs: Record<string, ResearchJob>;
+    findings: Record<string, Finding>;
+    researchBudget: ResearchBudget;
+    researchAdmitted: number;
     pendingRequests: Array<{
       inputId: string;
       question: string;
@@ -120,6 +126,10 @@ export function initialState(sessionId: string, config: Config): State {
       floorEpoch: 0,
       interruptedCalls: [],
       reservations: [],
+      jobs: {},
+      findings: {},
+      researchBudget: emptyResearchBudget(),
+      researchAdmitted: 0,
       pendingRequests: [],
       deprioritizedTopics: [],
       clarifications: [],

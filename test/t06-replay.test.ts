@@ -71,13 +71,15 @@ it('replays 1g with two persisted promised requests and bound dependency version
   const result = replay('v1g-two-requests');
   const domain = result.snapshot!.state.domain;
   const created = Object.values(domain.items).find(item => item.text === 'Use local storage')!;
-  expect(domain.pendingRequests).toHaveLength(2);
-  expect(domain.pendingRequests.every(request => request.promised)).toBe(true);
-  expect(domain.pendingRequests[0]?.deps).toEqual([{
+  const jobs = Object.values(domain.jobs);
+  expect(domain.pendingRequests).toEqual([]);
+  expect(jobs).toHaveLength(2);
+  expect(jobs.every(job => job.promised)).toBe(true);
+  expect(jobs[0]?.deps).toEqual([{
     itemId: created.id,
     contentVersion: 1,
   }]);
-  expect(domain.pendingRequests[1]?.deps).toEqual([
+  expect(jobs[1]?.deps).toEqual([
     {
       itemId: 'r1',
       contentVersion: 1,

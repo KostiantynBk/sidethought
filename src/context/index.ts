@@ -4,6 +4,7 @@ import { recentTurns } from './recent.js';
 import { OUTPUT_RULES } from './prompts/common.js';
 import { INTERPRETER_PROMPT } from './prompts/interpreter.js';
 import { RESPONDER_PROMPT } from './prompts/responder.js';
+import { researchContext } from './research.js';
 
 export type RolePrompt = {
   instructions: string;
@@ -74,10 +75,7 @@ export function assembleContext(state: State, effect: CallEffect): RolePrompt {
         openQuestions: items.filter(item => item.kind === 'open_question').map(item => item.id),
         deprioritizedTopics: state.domain.deprioritizedTopics,
       },
-      researchState: {
-        jobs: [],
-        findings: [],
-      },
+      researchState: researchContext(state),
       recentWindow: effect.role === 'interpreter'
         ? state.domain.call!.quoteWitness.recent
         : recentTurns(state.domain, state.config.recentWindowTurns),

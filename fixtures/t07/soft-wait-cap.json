@@ -1,9 +1,9 @@
 {
   "meta": {
     "schemaVersion": 1,
-    "reducerVersion": "9",
-    "configVersion": "0.3.6",
-    "fixtureVersion": "2"
+    "reducerVersion": "10",
+    "configVersion": "0.3.7",
+    "fixtureVersion": "3"
   },
   "sessionId": "s",
   "events": [
@@ -88,7 +88,7 @@
       {
         "seq": 5,
         "kind": "kernel",
-        "reason": "noop:unhandled"
+        "reason": "research:global_budget"
       }
     ],
     "effects": [
@@ -149,6 +149,14 @@
           "deliveryId": "s.3.3",
           "chunkIdx": 0,
           "text": "A complete sentence. "
+        }
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "budget.updated",
+          "spentUsd": 0,
+          "reservedUsd": 0
         }
       }
     ],
