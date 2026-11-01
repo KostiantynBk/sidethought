@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { InterpreterOutputSchema } from '../../contract/roles.js';
+import { InterpreterOutputSchema, InvestigatorOutputSchema } from '../../contract/roles.js';
 import { object } from './stream.js';
 
 type Schema = Record<string, unknown>;
@@ -31,6 +31,11 @@ function strictSchema(value: unknown): unknown {
 }
 
 export const interpreterJsonSchema = strictSchema(original) as Schema;
+const investigatorOriginal = z.toJSONSchema(InvestigatorOutputSchema, {
+  reused: 'inline',
+  cycles: 'throw',
+}) as Schema;
+export const investigatorJsonSchema = strictSchema(investigatorOriginal) as Schema;
 
 function unionBranch(schema: Schema, value: unknown): Schema | undefined {
   const branches = (schema.oneOf ?? schema.anyOf) as Schema[] | undefined;
@@ -68,4 +73,8 @@ function normalize(value: unknown, candidate: Schema): unknown {
 // originally optional positions; required nulls and unknown properties still fail the original zod contract.
 export function normalizeInterpreterWire(value: unknown): unknown {
   return normalize(value, original);
+}
+
+export function normalizeInvestigatorWire(value: unknown): unknown {
+  return normalize(value, investigatorOriginal);
 }

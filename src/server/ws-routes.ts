@@ -8,7 +8,9 @@ import type { RawEvent } from '../runtime/model-port.js';
 import type { ServerConfig } from './config.js';
 import { projectState } from './projection.js';
 
-const allowed = new Set(['input.committed', 'input.activity', 'control.set', 'item.action', 'delivery.progress']);
+const allowed = new Set([
+  'input.committed', 'input.activity', 'control.set', 'item.action', 'delivery.progress', 'job.cancelRequested',
+]);
 const clientEvent = z.strictObject({
   type: z.string(),
   payload: z.unknown(),

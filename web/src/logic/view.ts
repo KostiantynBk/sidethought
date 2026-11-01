@@ -1,3 +1,5 @@
+import type { Finding } from '../../../src/contract/models.js';
+import type { ResearchJob } from '../ResearchPanel.js';
 import { mergeChunk, type TranscriptDelivery } from './transcript.js';
 
 export type Item = {
@@ -36,6 +38,8 @@ export type View = {
   notices: string[];
   decisions: string[];
   timeline: TimelineEntry[];
+  jobs: ResearchJob[];
+  findings: Finding[];
 };
 
 export const emptyView = (): View => ({
@@ -47,6 +51,8 @@ export const emptyView = (): View => ({
   notices: [],
   decisions: [],
   timeline: [],
+  jobs: [],
+  findings: [],
 });
 
 function newDelivery(id: string): TranscriptDelivery {
@@ -110,6 +116,14 @@ export function nextView(view: View, message: Message): View {
   }
   if (message.type === 'assistant.stopped') {
     return updateDelivery(view, message.deliveryId as string, { stopped: true });
+  }
+  if (message.type === 'job.updated') {
+    const job = { jobId: message.jobId as string, publicQuery: message.publicQuery as string, state: message.state as string };
+    return { ...view, jobs: [...view.jobs.filter(previous => previous.jobId !== job.jobId), job] };
+  }
+  if (message.type === 'finding.upserted') {
+    const finding = message.finding as Finding;
+    return { ...view, findings: [...view.findings.filter(previous => previous.id !== finding.id), finding] };
   }
   if (message.type === 'project.changed') return { ...view, items: message.items as Item[] };
   if (message.type === 'transcript.appended') return { ...view, notices: [...view.notices, message.text as string] };
