@@ -8,15 +8,25 @@ import type { RawEvent } from '../runtime/model-port.js';
 import type { ServerConfig } from './config.js';
 import { projectState } from './projection.js';
 
-const allowed = new Set(['input.committed', 'input.activity', 'control.set', 'item.action', 'delivery.progress']);
+const allowed = new Set([
+  'input.committed',
+  'input.retry',
+  'input.activity',
+  'control.set',
+  'item.action',
+  'delivery.progress',
+]);
 const clientEvent = z.strictObject({
   type: z.string(),
   payload: z.unknown(),
 });
 
-type SocketPorts = {
+export type SocketSession = {
   state: () => State;
   accept: (event: RawEvent) => void;
+};
+
+type SocketPorts = SocketSession & {
   sockets: Set<WebSocket>;
   recentMessages: number[];
 };
@@ -72,13 +82,19 @@ export function registerSockets(
   config: ServerConfig,
   state: () => State,
   accept: (event: RawEvent) => void,
-): (message: ClientMessage) => void {
-  const ports: SocketPorts = {
-    state,
-    accept,
-    sockets: new Set(),
-    recentMessages: [],
-  };
+  resolveSession?: (projectId: string) => SocketSession,
+): (message: ClientMessage, projectId?: string) => void {
+  const groups = new Map<string, SocketPorts>();
+  const projectQuery = z.strictObject({ project: z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/).optional() });
+  function portsFor(projectId: string): SocketPorts {
+    const existing = groups.get(projectId);
+    if (existing) return existing;
+    if (!resolveSession && projectId !== 'local') throw new Error('unknown project');
+    const session = resolveSession ? resolveSession(projectId) : { state, accept };
+    const ports: SocketPorts = { ...session, sockets: new Set(), recentMessages: [] };
+    groups.set(projectId, ports);
+    return ports;
+  }
   app.get('/ws', {
     websocket: true,
     preValidation: async (request, reply) => {
@@ -86,9 +102,21 @@ export function registerSockets(
       if (!origin || !config.allowedOrigins.includes(origin)) return reply.code(403).send();
       const rawCookie = request.cookies.sidethought;
       if (!rawCookie || request.unsignCookie(rawCookie).value !== 'authenticated') return reply.code(401).send();
+      const query = projectQuery.safeParse(request.query);
+      if (!query.success) return reply.code(400).send();
+      try {
+        portsFor(query.data.project ?? 'local');
+      } catch {
+        return reply.code(404).send();
+      }
     },
-  }, socket => connect(socket, ports));
-  return message => {
+  }, (socket, request) => {
+    const query = projectQuery.parse(request.query);
+    connect(socket, portsFor(query.project ?? 'local'));
+  });
+  return (message, projectId = 'local') => {
+    const ports = groups.get(projectId);
+    if (!ports) return;
     const json = JSON.stringify(message);
     for (const socket of ports.sockets) {
       if (socket.readyState === socket.OPEN) socket.send(json);

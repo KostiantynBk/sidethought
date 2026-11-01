@@ -22,6 +22,8 @@ export class SessionRunner {
   private pending: JournalEvent[] = [];
   private committed?: Snapshot;
   private readonly parser;
+  private suspended = false;
+  private recovering = false;
 
   constructor(
     private readonly sessionId: string,
@@ -57,7 +59,22 @@ export class SessionRunner {
     };
   }
 
+  isSuspended(): boolean {
+    return this.suspended;
+  }
+
+  suspendForMemoryChange(): void {
+    // Fence persistence before any abort/recovery can fail. Never expose the old RAM snapshot again.
+    this.suspended = true;
+    this.pending = [];
+    this.state = initialState(this.sessionId, this.config);
+    const snapshot = this.store.loadSnapshot(this.sessionId);
+    if (snapshot) this.state = structuredClone(snapshot.state);
+    this.committed = snapshot;
+  }
+
   accept(raw: unknown): RunnerResult {
+    if (this.suspended && !this.recovering) throw new Error('session paused after memory change');
     const parsed = this.parser.parse({
       ...(raw as object),
       acceptedAt: this.clock(),
@@ -111,11 +128,18 @@ export class SessionRunner {
     this.state = snapshot.state;
     this.committed = structuredClone(snapshot);
     this.pending = [];
-    return this.accept({
-      eventId,
-      sessionId: this.sessionId,
-      type: 'session.recovered',
-      payload: {},
-    });
+    this.recovering = true;
+    try {
+      const result = this.accept({
+        eventId,
+        sessionId: this.sessionId,
+        type: 'session.recovered',
+        payload: {},
+      });
+      this.suspended = false;
+      return result;
+    } finally {
+      this.recovering = false;
+    }
   }
 }

@@ -7,7 +7,11 @@ async function main(): Promise<void> {
   await runtime.app.listen({ host: '127.0.0.1', port: config.port });
   console.log(config.model === 'dev' ? 'dev model: no real AI' : 'meta model: Spark');
   const stop = () => {
-    void runtime.close();
+    void runtime.close().catch(() => {
+      // Cleanup errors can contain provider/content details; do not dump them on shutdown.
+      console.error('server shutdown failed');
+      process.exitCode = 1;
+    });
   };
   process.once('SIGINT', stop);
   process.once('SIGTERM', stop);

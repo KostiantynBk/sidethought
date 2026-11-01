@@ -1,6 +1,7 @@
 # Meta Spark executor — T09 policy inventory
 
-This is a text-only Interpreter/Responder adapter. No live account behavior has been verified.
+This is a text-only Interpreter/Responder adapter. Strict-schema live smoke passed Oct 31; bounded guidance
+and reviewed cross-project lesson recall were checked Nov 1. This is not general live coverage of every error path.
 The server uses the exact-pinned `openai` 7.45.1 SDK (Apache-2.0). Its automatic retries and logging are disabled.
 The SDK builds/sends the request; a small local SSE decoder preserves error envelopes and their usage, which
 its high-level stream iterator otherwise turns into exceptions.
@@ -16,8 +17,12 @@ Values come from `State.config` (`src/config/index.ts`), not duplicate executor 
 | Effective default Interpreter retry cap | 1800 | Only a fresh kernel-issued call can use this cap |
 | `responderMaxOutputTokens` | 800 | Responder cap, including reasoning and visible text |
 
-These are the existing, unmeasured starting budgets, not 1200/800 tokens of visible output plus reasoning.
-Reasoning can consume most of the cap; the smoke run must measure it. No adapter repair call or retry exists.
+These include reasoning, not 1200/800 visible tokens plus reasoning. In the Nov 1 guidance run, low effort
+used 673/800 output tokens for reasoning and truncated a simple explanation. Responder now uses minimal
+(reasoning 173/330 and 57/251 in two complete examples). The real UI then exposed Interpreter failures at
+both 1200/1800 caps with low effort. Interpreter also now uses minimal: three actual-prompt/kernel samples
+completed at 536, 1072 and 899 total output tokens with quote-backed item application. No cap was raised.
+No adapter repair call or retry exists.
 The existing config bounds remain unchanged: Interpreter normal cap <= 4800, Responder <= 3200, multiplier <= 4.
 
 ## Server-only configuration
@@ -38,7 +43,8 @@ The existing config bounds remain unchanged: Interpreter normal cap <= 4800, Res
 
 ## Request and outcome behavior
 
-All calls use `stream: true`, `store: false`, `reasoning.effort: low`, explicit instructions/input and an output cap.
+All calls use `stream: true`, `store: false`, explicit instructions/input and an output cap.
+Interpreter and Responder reasoning effort are `minimal` after the Nov 1 measured real-prompt fixes.
 No history ID, tools, encrypted reasoning replay, `response_format`, provider fallback or extra repair request.
 Only the Interpreter uses `text.format` with `type: json_schema` and `strict: true`.
 
@@ -85,7 +91,7 @@ It exits with a clear configuration message if the key is missing. It prints no 
 token counts (including cached/reasoning), cost, terminal/outcome and Interpreter schema-pass status.
 It is statically typechecked but never imported by the test suite.
 
-## Unverified until the live smoke run
+## Original T09 verification checklist (partially verified Oct 31 / Nov 1)
 
 Documentation read: https://dev.meta.ai/docs/protocols/responses and https://dev.meta.ai/docs/structured-output.
 
@@ -98,5 +104,6 @@ Documentation read: https://dev.meta.ai/docs/protocols/responses and https://dev
 
 The real root is exercised with fake fetch, authenticated in-memory websocket injection, in-memory SQLite and
 manual time. It verifies context assembly, quote-backed state changes, checked sentence release and completion.
-The existing browser header still says dev unconditionally; `/health` and server startup reporting are correct.
-Updating that UI label is outside T09's assigned UI scope.
+T13 wired the browser header to authenticated model metadata. `/health` and server startup reporting also
+identify the model. Reusable lesson context is selected only for opted-in Responder calls; it is never a tool
+request or web query. Other projects' raw histories and Interpreter quote witnesses remain isolated.
