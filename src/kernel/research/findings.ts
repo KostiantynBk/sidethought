@@ -1,6 +1,7 @@
 import type { Finding, KernelEvent } from '../../contract/index.js';
 import type { Context, State } from '../state.js';
 import { dependencyState } from './policy.js';
+import { hasCurrentDependencies } from './purge-orphans.js';
 import { verifiedSupport } from './support.js';
 import type { ResearchJob } from './types.js';
 
@@ -80,7 +81,7 @@ export function refreshFindings(context: Context): void {
 }
 
 export function verifiedFindingUrls(domain: State['domain']): string[] {
-  return Object.values(domain.findings).filter(finding => finding.validity.state === 'current')
+  return Object.values(domain.findings).filter(finding => hasCurrentDependencies({ domain }, finding))
     .flatMap(finding => finding.claims.flatMap(claim => claim.support
       .filter(support => support.quoteVerified).map(support => support.url)));
 }

@@ -5,6 +5,7 @@ import { completeFinding } from './findings.js';
 import { cancelJob, clearJobDeadline, dispatchJob, finishJob } from './lifecycle.js';
 import { dependencyState, queryPrivacyFailure, researchControlBlock } from './policy.js';
 import { isOpenJob, type ResearchJob } from './types.js';
+import { purgeOrphanResearch } from './purge-orphans.js';
 
 type JobEvent = Extract<KernelEvent, { type: `job.${string}` }>;
 
@@ -75,6 +76,7 @@ export function researchDeadline(context: Context, timerId: string, at: number):
 }
 
 export function recoverResearch(context: Context, at: number): void {
+  purgeOrphanResearch(context);
   for (const job of Object.values(context.domain.jobs)) {
     if (isOpenJob(job)) finishJob(context, job, 'interrupted', at, 'the session restarted');
   }

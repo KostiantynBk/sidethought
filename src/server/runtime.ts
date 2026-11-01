@@ -95,6 +95,17 @@ export async function createRuntime(
         failed = true;
       }
     }
+    for (const job of Object.values(state.domain.jobs)) {
+      if (job.state !== 'running' || !job.callId || job.deps.length === 0) continue;
+      try {
+        runtime.investigator.handle({ type: 'job.abort', callId: job.callId }, {
+          state,
+          emit: runtime.queue.emit,
+        });
+      } catch {
+        failed = true;
+      }
+    }
     runtime.timers.shutdown();
     return failed;
   }

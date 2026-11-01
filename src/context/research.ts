@@ -1,4 +1,5 @@
 import type { State } from '../kernel/state.js';
+import { hasCurrentDependencies } from '../kernel/research/purge-orphans.js';
 
 // §9.2: JSON's researchState field is a data delimiter, never an instruction channel.
 export function researchContext(state: State) {
@@ -8,7 +9,7 @@ export function researchContext(state: State) {
         title: job.question,
         state: job.state,
       })),
-    findings: Object.values(state.domain.findings).filter(finding => finding.validity.state === 'current')
+    findings: Object.values(state.domain.findings).filter(finding => hasCurrentDependencies(state, finding))
       .map(finding => ({
         question: state.domain.jobs[finding.jobId]?.question ?? '',
         verdict: finding.verdict,

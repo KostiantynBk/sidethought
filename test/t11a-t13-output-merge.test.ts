@@ -4,6 +4,13 @@ import { outputFailure } from '../src/kernel/reply-output.js';
 
 const url = 'https://provider.example/docs/offline';
 
+it('allows an exact verified URL with balanced path parentheses and surrounding punctuation', () => {
+  const allowed = 'https://en.wikipedia.org/wiki/C_(programming_language)';
+  expect(outputFailure(`See ${allowed} for details.`, loadConfig(), [allowed])).toBeUndefined();
+  expect(outputFailure(`See (${allowed}).`, loadConfig(), [allowed])).toBeUndefined();
+  expect(outputFailure(`See ${allowed}/attacker`, loadConfig(), [allowed])).toBe('url');
+});
+
 it('preserves the T13 prose and dataframe exceptions with a verified URL', () => {
   const text = `Check your data: run df.info() and see ${url} for details.`;
   expect(outputFailure(text, loadConfig(), [url])).toBeUndefined();

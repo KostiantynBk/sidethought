@@ -4,6 +4,7 @@ import { loadConfig } from '../src/config/index.js';
 import { initialState } from '../src/kernel/index.js';
 import { modelConfiguration } from '../src/model/meta/config.js';
 import { MetaInvestigator } from '../src/model/meta/investigator.js';
+import { extractEvidence } from '../src/model/meta/investigator-evidence.js';
 import type { RawEvent } from '../src/runtime/model-port.js';
 import { sentinel, sse } from './t09-helpers.js';
 
@@ -35,6 +36,61 @@ async function waitForEvent(events: RawEvent[], type: string): Promise<void> {
 }
 
 describe('Investigator fix coverage', () => {
+  it('uses separate search and structure caps, minimal reasoning, and retrieves included results', async () => {
+    const bodies: Array<Record<string, unknown>> = [];
+    let retrievedUrl = '';
+    const fetch = vi.fn<typeof globalThis.fetch>(async (url, init) => {
+      if (init?.method === 'GET') {
+        retrievedUrl = String(url);
+        return json({ id: 'response-1', status: 'completed', output: [] });
+      }
+      bodies.push(JSON.parse(String(init?.body)));
+      return bodies.length === 1
+        ? json({ id: 'response-1', status: 'queued' })
+        : completedStream();
+    });
+    const test = setup(fetch);
+    test.context.state.config.investigatorSearchMaxOutputTokens = 2345;
+    test.context.state.config.investigatorStructureMaxOutputTokens = 1234;
+    test.model.handle(test.effect, test.context);
+    await waitForEvent(test.emitted, 'job.completed');
+    expect(bodies[0]!.max_output_tokens).toBe(2345);
+    expect(bodies[1]!.max_output_tokens).toBe(1234);
+    expect(bodies[1]!.reasoning).toEqual({ effort: 'minimal' });
+    expect(new URL(retrievedUrl).searchParams.getAll('include[]')).toContain('web_search_call.results');
+    await test.model.shutdown();
+  });
+
+  it('counts one singular query when the queries array is empty', () => {
+    const result = extractEvidence({
+      output: [{
+        type: 'web_search_call',
+        status: 'completed',
+        action: { queries: [], query: 'one public query' },
+      }],
+    }, {
+      maxEvidenceResults: 20,
+      maxSnippetChars: 2000,
+    });
+    expect(result.queryCount).toBe(1);
+    expect(result.evidence.issuedQueries).toEqual(['one public query']);
+  });
+
+  it('counts three when neither query field is usable', () => {
+    const result = extractEvidence({
+      output: [{
+        type: 'web_search_call',
+        status: 'completed',
+        action: { queries: [] },
+      }],
+    }, {
+      maxEvidenceResults: 20,
+      maxSnippetChars: 2000,
+    });
+    expect(result.queryCount).toBe(3);
+    expect(result.evidence.issuedQueries).toEqual([]);
+  });
+
   it('sends neither the actual private question nor project item in any request body', async () => {
     const bodies: string[] = [];
     const fetch = vi.fn<typeof globalThis.fetch>(async (_url, init) => {

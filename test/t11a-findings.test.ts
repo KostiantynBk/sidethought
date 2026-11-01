@@ -1,8 +1,35 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { researchContext } from '../src/context/research.js';
 import { purgeResearchDerivedFrom } from '../src/kernel/research/index.js';
 import { consistentClaim } from '../src/kernel/research/support.js';
+import { REDUCER_VERSION } from '../src/runtime/session-runner.js';
 import { readyOutput } from './t03-helpers.js';
 import { ResearchHarness, claims, evidence, item, url } from './t11a-helpers.js';
+
+function assertCitationOnly(h: ResearchHarness, claim: string, quote: string): void {
+  h.request();
+  h.complete(undefined, {
+    verdict: 'mixed',
+    claims: [{
+      text: claim,
+      support: [{
+        url,
+        quote,
+        sourceKind: 'official',
+      }],
+    }],
+    caveats: [],
+  }, {
+    completedSearchCalls: 1,
+    issuedQueries: ['public query'],
+    results: [{
+      url,
+      snippet: quote,
+    }],
+  });
+  expect(Object.values(h.state.domain.findings)[0]!.claims[0]!.support[0]!.quoteVerified).toBe(false);
+  expect(researchContext(h.state).findings[0]!.claims).toEqual([]);
+}
 
 function supersede(h: ResearchHarness) {
   h.send('input.committed', {
@@ -71,9 +98,27 @@ describe.each(['memory', 'sqlite'] as const)('T11a findings (%s)', store => {
     };
     h.complete(undefined, output, {
       ...evidence,
-      results: [{ url, snippet: 'Provider A costs $15 monthly' }],
+      results: [{
+        url,
+        snippet: 'Provider A costs $15 monthly',
+      }],
     });
     expect(Object.values(h.state.domain.findings)[0]?.claims[0]?.support[0]?.quoteVerified).toBe(false);
+  });
+
+  it('keeps a leading-decimal mismatch citation-only in stored context', () => {
+    h = new ResearchHarness(store);
+    assertCitationOnly(h, 'Provider A allows .5 GB', 'Provider A allows 5 GB');
+  });
+
+  it('keeps a C++ versus C# mismatch citation-only in stored context', () => {
+    h = new ResearchHarness(store);
+    assertCitationOnly(h, 'Provider A supports C++', 'Provider A supports C#');
+  });
+
+  it('keeps paid versus free plans citation-only in stored context', () => {
+    h = new ResearchHarness(store);
+    assertCitationOnly(h, 'Provider A works for paid plans', 'Provider A works for free plans');
   });
 
   it('requires the quote to appear under its own cited URL', () => {
@@ -81,7 +126,10 @@ describe.each(['memory', 'sqlite'] as const)('T11a findings (%s)', store => {
     h.request();
     h.complete(undefined, claims, {
       ...evidence,
-      results: [{ ...evidence.results[0]!, url: 'https://different.example/docs' }],
+      results: [{
+        ...evidence.results[0]!,
+        url: 'https://different.example/docs',
+      }],
     });
     expect(Object.values(h.state.domain.findings)[0]?.claims[0]?.support[0]?.quoteVerified).toBe(false);
   });
@@ -200,6 +248,25 @@ describe.each(['memory', 'sqlite'] as const)('T11a findings (%s)', store => {
     expect(h.state.domain.researchEpoch).toBe(before.researchEpoch);
     expect(h.state.domain.pendingRequests).toEqual([]);
     expect(Object.values(h.state.domain.findings)[0]?.claims[0]?.text).toBe(instruction);
+  });
+
+  it('purges previously orphaned research on recovery while preserving unknown billing', () => {
+    h = new ResearchHarness(store);
+    h.request();
+    h.complete();
+    const state = h.state;
+    const job = Object.values(state.domain.jobs)[0]!;
+    const reservation = state.domain.researchBudget.calls[job.callId!]!.reservedUsd;
+    state.domain.items = {};
+    h.store.commit('s', [], {
+      seq: state.meta.seq,
+      reducerVersion: REDUCER_VERSION,
+      state,
+    });
+    h.runner.recover('orphan-recovery');
+    expect(h.state.domain.jobs).toEqual({});
+    expect(h.state.domain.findings).toEqual({});
+    expect(h.state.domain.researchBudget.calls[job.callId!]!.reservedUsd).toBe(reservation);
   });
 
   it('provides an unwired pure purge hook without marking deleted evidence stale', () => {
