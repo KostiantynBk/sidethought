@@ -2,7 +2,7 @@ import type { ResponseCreateParamsStreaming } from 'openai/resources/responses/r
 import type { CallEffect, RolePrompt } from '../../context/index.js';
 import type { State } from '../../kernel/index.js';
 
-import { interpreterJsonSchema } from './schema.js';
+import { checkerJsonSchema, deliberatorJsonSchema, interpreterJsonSchema } from './schema.js';
 
 export function requestBody(state: State, effect: CallEffect, prompt: RolePrompt): ResponseCreateParamsStreaming {
   let cap = state.config.responderMaxOutputTokens;
@@ -15,23 +15,31 @@ export function requestBody(state: State, effect: CallEffect, prompt: RolePrompt
     const multiplier = call.attempt >= 2 ? state.config.structuredRetryTokenMultiplier : 1;
     cap = Math.ceil(state.config.interpreterMaxOutputTokens * multiplier);
   }
+  if (effect.role === 'deliberator') cap = state.config.deliberatorMaxOutputTokens;
+  if (effect.role === 'checker') cap = state.config.checkerMaxOutputTokens;
+  const formats = {
+    interpreter: interpreterJsonSchema,
+    deliberator: deliberatorJsonSchema,
+    checker: checkerJsonSchema,
+  };
+  const schema = effect.role in formats ? formats[effect.role as keyof typeof formats] : undefined;
   return {
     model: 'muse-spark-1.3',
     stream: true,
     store: false,
     // T13 live checks: low exhausted 673/800 Responder tokens and both 1200/1800 Interpreter caps.
     // Use minimal for these two foreground roles; do not raise caps or weaken schema/quote checks.
-    reasoning: { effort: 'minimal' },
+    reasoning: { effort: effect.role === 'deliberator' ? 'low' : 'minimal' },
     max_output_tokens: cap,
     instructions: prompt.instructions,
     input: prompt.input,
-    ...(effect.role === 'interpreter' ? {
+    ...(schema ? {
       text: {
         format: {
           type: 'json_schema',
-          name: 'interpreter_output',
+          name: `${effect.role}_output`,
           strict: true,
-          schema: interpreterJsonSchema,
+          schema,
         },
       },
     } : {}),

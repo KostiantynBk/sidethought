@@ -29,6 +29,20 @@ export type Snapshot = {
   replyStatus: string;
 };
 
+// Local T12 seam; replace with the shared contract type when T12a is merged.
+export type ContributionView = {
+  type: 'contribution.upserted';
+  candidateId: string;
+  class: 'speak' | 'card';
+  payload: 'evidence' | 'inference' | 'clarification' | 'closure';
+  state: 'candidate' | 'dropped' | 'card_only' | 'checking' | 'delivering' | 'delivered' | 'interrupted' | 'superseded';
+  topic: string;
+  text: string;
+  findingId?: string;
+  jobId?: string;
+  deliveryId?: string;
+};
+
 export type Message = Record<string, unknown> & { type: string };
 export type TimelineEntry = { kind: 'input' | 'delivery'; id: string };
 export type View = {
@@ -42,6 +56,7 @@ export type View = {
   timeline: TimelineEntry[];
   jobs: ResearchJob[];
   findings: Finding[];
+  contributions: ContributionView[];
 };
 
 export const emptyView = (): View => ({
@@ -55,6 +70,7 @@ export const emptyView = (): View => ({
   timeline: [],
   jobs: [],
   findings: [],
+  contributions: [],
 });
 
 function newDelivery(id: string): TranscriptDelivery {
@@ -120,6 +136,13 @@ export function nextView(view: View, message: Message): View {
   }
   if (message.type === 'assistant.stopped') {
     return updateDelivery(view, message.deliveryId as string, { stopped: true });
+  }
+  if (message.type === 'contribution.upserted') {
+    const contribution = message as ContributionView;
+    return {
+      ...view,
+      contributions: [...view.contributions.filter(item => item.candidateId !== contribution.candidateId), contribution],
+    };
   }
   if (message.type === 'job.updated') {
     const job = { jobId: message.jobId as string, publicQuery: message.publicQuery as string, state: message.state as string };

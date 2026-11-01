@@ -19,6 +19,36 @@ function devResearchRequests(state: State, inputIds: string[]) {
   });
 }
 
+function devNominations(state: State, effect: Extract<ModelEffect, { type: 'llm.call' }>) {
+  const items = effect.capturedInputs.flatMap(dep => {
+    const item = state.domain.items[dep.itemId];
+    return item && item.contentVersion === dep.contentVersion && item.status === 'stated' ? [item] : [];
+  });
+  for (let left = 0; left < items.length; left++) {
+    for (let right = left + 1; right < items.length; right++) {
+      const first = items[left]!;
+      const second = items[right]!;
+      const words = new Set(first.text.toLowerCase().match(/[a-z]{5,}/g) ?? []);
+      const topic = (second.text.toLowerCase().match(/[a-z]{5,}/g) ?? []).find(word => words.has(word));
+      if (!topic) continue;
+      return [{
+        kind: 'insight',
+        topic,
+        depItemIds: [first.id, second.id],
+        insight: `Consider these together: ${first.text} ${second.text}`,
+        scores: {
+          consequence: 1,
+          uncertainty: 0,
+          answerable: false,
+          urgency: 0,
+          needsPrivateDetail: false,
+        },
+      }];
+    }
+  }
+  return [];
+}
+
 export class DevModel implements ModelExecutor {
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
 
@@ -47,7 +77,14 @@ export class DevModel implements ModelExecutor {
       this.emit(ctx, 'deliberation.ready', {
         requestId: effect.requestId,
         callId: effect.callId,
-        output: { nominations: [] },
+        output: { nominations: devNominations(ctx.state, effect) },
+      });
+    } else if (effect.role === 'checker') {
+      // T12a owns the candidate context shape. Fail closed until the seam is integrated.
+      this.emit(ctx, 'check.failed', {
+        requestId: effect.requestId,
+        callId: effect.callId,
+        reason: 'candidate_context_unavailable',
       });
     }
   }

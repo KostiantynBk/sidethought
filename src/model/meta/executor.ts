@@ -1,5 +1,5 @@
 import type OpenAI from 'openai';
-import { InterpreterOutputSchema } from '../../contract/roles.js';
+import { CheckerOutputSchema, DeliberatorOutputSchema, InterpreterOutputSchema } from '../../contract/roles.js';
 import { assembleContext, type CallEffect, type RolePrompt } from '../../context/index.js';
 import type { State } from '../../kernel/index.js';
 import type { ModelEffect, ModelExecutor, RawEvent } from '../../runtime/model-port.js';
@@ -113,7 +113,7 @@ export class MetaModel implements ModelExecutor {
 
   private async run(attempt: Attempt): Promise<void> {
     try {
-      if (!['interpreter', 'responder'].includes(attempt.effect.role)) {
+      if (!['interpreter', 'responder', 'deliberator', 'checker'].includes(attempt.effect.role)) {
         this.fail(attempt, 'unsupported_role');
         return;
       }
@@ -163,7 +163,7 @@ export class MetaModel implements ModelExecutor {
     if (typeof value !== 'string') throw new Error('invalid_delta');
     attempt.metric.firstDeltaMs ??= this.now() - attempt.metric.startedAt;
     attempt.metric.outputChars += value.length;
-    if (attempt.effect.role === 'interpreter') {
+    if (attempt.effect.role !== 'responder') {
       attempt.text += value;
     } else {
       this.emit(attempt, `chunk:${attempt.chunk++}`, 'reply.chunk', {
@@ -189,7 +189,7 @@ export class MetaModel implements ModelExecutor {
     if (attempt.controller.signal.aborted) return;
     const capped = type === 'response.incomplete'
       && object(response?.incomplete_details)?.reason === 'max_output_tokens';
-    if (capped && attempt.effect.role === 'interpreter') {
+    if (capped && attempt.effect.role !== 'responder') {
       this.fail(attempt, 'output_cap');
     } else if (type === 'response.completed' || (capped && attempt.effect.role === 'responder')) {
       attempt.metric.outcome = capped ? 'cap_reached' : 'completed';
@@ -212,13 +212,18 @@ export class MetaModel implements ModelExecutor {
       this.fail(attempt, 'invalid_json');
       return;
     }
-    const result = InterpreterOutputSchema.safeParse(normalizeInterpreterWire(output));
+    const role = attempt.effect.role;
+    const result = role === 'interpreter' ? InterpreterOutputSchema.safeParse(normalizeInterpreterWire(output))
+      : role === 'deliberator' ? DeliberatorOutputSchema.safeParse(output)
+        : CheckerOutputSchema.safeParse(output);
     attempt.metric.schemaValid = result.success;
     if (!result.success) {
       this.fail(attempt, 'invalid_schema');
       return;
     }
-    this.emit(attempt, 'ready', 'interpretation.ready', {
+    const type = role === 'interpreter' ? 'interpretation.ready'
+      : role === 'deliberator' ? 'deliberation.ready' : 'check.ready';
+    this.emit(attempt, 'ready', type, {
       ...this.identity(attempt),
       output: result.data,
     });

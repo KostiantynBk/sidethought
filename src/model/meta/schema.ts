@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { InterpreterOutputSchema, InvestigatorOutputSchema } from '../../contract/roles.js';
+import { InterpreterOutputSchema, InvestigatorOutputSchema, DeliberatorOutputSchema, CheckerOutputSchema } from '../../contract/roles.js';
 import { object } from './stream.js';
 
 type Schema = Record<string, unknown>;
@@ -36,6 +36,11 @@ const investigatorOriginal = z.toJSONSchema(InvestigatorOutputSchema, {
   cycles: 'throw',
 }) as Schema;
 export const investigatorJsonSchema = strictSchema(investigatorOriginal) as Schema;
+
+const deliberatorOriginal = z.toJSONSchema(DeliberatorOutputSchema, { reused: 'inline', cycles: 'throw' }) as Schema;
+const checkerOriginal = z.toJSONSchema(CheckerOutputSchema, { reused: 'inline', cycles: 'throw' }) as Schema;
+export const deliberatorJsonSchema = strictSchema(deliberatorOriginal) as Schema;
+export const checkerJsonSchema = strictSchema(checkerOriginal) as Schema;
 
 function unionBranch(schema: Schema, value: unknown): Schema | undefined {
   const branches = (schema.oneOf ?? schema.anyOf) as Schema[] | undefined;

@@ -16,6 +16,9 @@ const allowed = new Set([
   'item.action',
   'delivery.progress',
   'job.cancelRequested',
+  'job.approve',
+  'job.decline',
+  'finding.dismissed',
 ]);
 const clientEvent = z.strictObject({
   type: z.string(),

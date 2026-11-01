@@ -3,6 +3,7 @@ import type { ProjectSpace } from '../../src/memory/types.js';
 import { Composer, Conversation, Inspector, Project } from './components.js';
 import { MemoryPanel } from './MemoryPanel.js';
 import { ResearchPanel } from './ResearchPanel.js';
+import { ContributionPanel } from './ContributionPanel.js';
 import { InputStatus } from './InputStatus.js';
 import { projectApi } from './project-api.js';
 import { useComposer } from './useComposer.js';
@@ -18,6 +19,12 @@ function ProjectChat({ project }: { project: ProjectSpace }) {
     <Composer draft={composer.draft} onTyping={composer.onTyping}
       onBlur={composer.endActivity} onCommit={composer.commit} />
     <InputStatus projectId={project.id} retry={inputId => connection.send('input.retry', { inputIds: [inputId] })} />
+    <ContributionPanel
+      contributions={connection.view.contributions}
+      jobs={connection.view.jobs}
+      onApprove={jobId => { connection.send('job.approve', { jobId }); }}
+      onDecline={jobId => { connection.send('job.decline', { jobId }); }}
+    />
     <ResearchPanel
       jobs={connection.view.jobs}
       findings={connection.view.findings}

@@ -10,5 +10,5 @@
     "types": ["node"],
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "test/**/*.tsx", "web/src/**/*.ts", "web/src/**/*.tsx", "web/vite.config.ts", "scripts/spark-smoke.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "test/**/*.tsx", "web/src/**/*.ts", "web/src/**/*.tsx", "web/vite.config.ts", "scripts/spark-smoke.ts", "scripts/contribution-smoke.ts"]
 }

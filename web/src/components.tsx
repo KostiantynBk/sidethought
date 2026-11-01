@@ -39,9 +39,13 @@ function TranscriptEntry({ view, kind, id }: { view: View; kind: 'input' | 'deli
   }
   const delivery = view.deliveries[id];
   const prefix = view.prefixes[id];
+  const contribution = view.contributions.find(item => item.deliveryId === id);
   const text = delivery ? contiguousText(delivery.chunks).slice(0, delivery.visibleLimit) : prefix?.text ?? '';
   return <p>
-    <strong>Assistant:</strong> <span id={`delivery-${id}`}>{text}</span>
+    <strong>{contribution ? 'Sidethought — unprompted:' : 'Assistant:'}</strong>{' '}
+    {contribution && <><span>{contribution.payload === 'evidence' ? 'evidence (from sources)' : 'reasoning'}</span>{' '}
+      <a href={`#contribution-${contribution.candidateId}`}>View card</a>{' '}</>}
+    <span id={`delivery-${id}`}>{text}</span>
     {(delivery?.stopped || prefix?.interrupted) && <em> interrupted</em>}
   </p>;
 }
