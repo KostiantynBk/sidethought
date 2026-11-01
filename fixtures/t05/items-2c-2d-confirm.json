@@ -110,9 +110,19 @@
         "reason": "item:verbal_confirm_pending"
       },
       {
+        "seq": 3,
+        "kind": "item",
+        "reason": "contribution:deliberator:debounced"
+      },
+      {
         "seq": 4,
         "kind": "kernel",
         "reason": "action:confirm"
+      },
+      {
+        "seq": 4,
+        "kind": "item",
+        "reason": "contribution:deliberator:debounced"
       }
     ],
     "effects": [
@@ -134,6 +144,36 @@
             "contentVersion": 1
           }
         ]
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.3.1",
+        "purpose": "deliberationDebounce",
+        "dueAt": 2002
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "inspector.decision",
+          "reason": "contribution:deliberator:debounced"
+        }
+      },
+      {
+        "type": "timer.clear",
+        "timerId": "s.3.1"
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.4.1",
+        "purpose": "deliberationDebounce",
+        "dueAt": 2003
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "inspector.decision",
+          "reason": "contribution:deliberator:debounced"
+        }
       }
     ],
     "final": {
@@ -143,6 +183,11 @@
           "timerId": "s.2.2",
           "purpose": "replyDebounce",
           "dueAt": 801
+        },
+        {
+          "timerId": "s.4.1",
+          "purpose": "deliberationDebounce",
+          "dueAt": 2003
         }
       ],
       "inFlight": null,

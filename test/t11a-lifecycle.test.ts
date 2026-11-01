@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { jobForDispatch } from '../src/kernel/research/index.js';
 import { ResearchHarness } from './t11a-helpers.js';
+import { deliverPromises } from './t12a-closure-helpers.js';
 
 describe.each(['memory', 'sqlite'] as const)('T11a lifecycle (%s)', store => {
   let h: ResearchHarness;
@@ -32,11 +33,8 @@ describe.each(['memory', 'sqlite'] as const)('T11a lifecycle (%s)', store => {
     expect(finding.claims.map(claim => claim.support[0]?.quoteVerified)).toEqual([true, true, false]);
     expect(finding.retrievedAt).toBe(h.at);
     expect(finding.claims[0]?.support[0]?.published).toBe('2026-10-01');
-    expect(h.state.domain.jobs[job.id]?.closureCount).toBe(1);
-    expect(h.notices()).toEqual([
-      'Checking: Does Provider A work offline?',
-      'Finished checking: Does Provider A work offline? — see the card',
-    ]);
+    deliverPromises(h, [job.id]);
+    expect(h.notices()).toEqual(['Checking: Does Provider A work offline?']);
     const late = h.complete();
     expect(late.decisions[0]?.reason).toBe('late:retired_job');
     expect(late.effects).toEqual([]);
@@ -48,8 +46,7 @@ describe.each(['memory', 'sqlite'] as const)('T11a lifecycle (%s)', store => {
     const jobs = Object.values(h.state.domain.jobs);
     expect(jobs.map(job => job.state)).toEqual(['running', 'running', 'queued']);
     for (const job of jobs) h.complete(job.id);
-    expect(Object.values(h.state.domain.jobs).map(job => job.closureCount)).toEqual([1, 1, 1]);
-    expect(h.notices().filter(text => text.startsWith('Finished checking:'))).toHaveLength(3);
+    deliverPromises(h, jobs.map(job => job.id));
   });
 
   it('times out with an abort and retains unknown-cost reservation', () => {
@@ -67,7 +64,7 @@ describe.each(['memory', 'sqlite'] as const)('T11a lifecycle (%s)', store => {
     });
     expect(h.state.domain.jobs[job.id]?.state).toBe('timed_out');
     expect(h.state.domain.researchBudget.reservedUsd).toBe(0.1);
-    expect(h.notices().at(-1)).toContain('exceeded its time limit');
+    deliverPromises(h, [job.id]);
   });
 
   it('retries one transient failure with a fresh call and rejects retired results', () => {
@@ -108,7 +105,7 @@ describe.each(['memory', 'sqlite'] as const)('T11a lifecycle (%s)', store => {
     }
     expect(Object.values(h.state.domain.jobs)[0]?.state).toBe('failed');
     expect(h.effects.filter(effect => effect.type === 'job.dispatch')).toHaveLength(2);
-    expect(h.notices().filter(text => text.startsWith("Couldn't check"))).toHaveLength(1);
+    deliverPromises(h, [Object.values(h.state.domain.jobs)[0]!.id]);
   });
 
   it('does not retry a permanent failure', () => {
@@ -167,6 +164,7 @@ describe.each(['memory', 'sqlite'] as const)('T11a lifecycle (%s)', store => {
     });
     expect(h.state.domain.researchBudget.reservedUsd).toBe(0);
     expect(h.state.domain.researchBudget.spentUsd).toBe(0.04);
+    deliverPromises(h, [job.id]);
     expect(h.state.domain.jobs[job.id]).toMatchObject({
       state: 'timed_out',
       closureCount: 1,
@@ -186,7 +184,7 @@ describe.each(['memory', 'sqlite'] as const)('T11a lifecycle (%s)', store => {
     expect(result.state.domain.researchBudget.reservedUsd).toBe(0.2);
     const again = h.send('session.recovered', {});
     expect(again.effects).toEqual([]);
-    expect(h.notices().filter(text => text.startsWith("Couldn't check"))).toHaveLength(3);
+    deliverPromises(h, Object.values(h.state.domain.jobs).map(job => job.id));
   });
 
   it('cancels a queued promise without dispatching it', () => {
@@ -196,7 +194,7 @@ describe.each(['memory', 'sqlite'] as const)('T11a lifecycle (%s)', store => {
     const result = h.send('job.cancelRequested', { jobId: job.id });
     expect(result.state.domain.jobs[job.id]?.state).toBe('cancelled');
     expect(result.effects.some(effect => effect.type === 'job.abort')).toBe(false);
-    expect(result.state.domain.jobs[job.id]?.closureCount).toBe(1);
+    deliverPromises(h, [job.id]);
   });
 
   it('cancels a running job when its dependency is rejected through the UI', () => {

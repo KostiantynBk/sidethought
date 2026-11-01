@@ -8,11 +8,17 @@ import { interruptReply } from './reply-abort.js';
 import { clearComposer } from './composer.js';
 import { replyDeadline } from './reply-failure.js';
 import { deliveryProgress } from './delivery-progress.js';
+import { ensureClosures } from './contributions/candidates.js';
 import {
   advanceResearch, researchEvent, researchDeadline, recoverResearch, recordUsage, publishBudget,
 } from './research/index.js';
 
+import {
+  beforeContributionEvent, contributionEvent, contributionTimer, advanceContributions, recoverContributions,
+} from './contributions/index.js';
+
 export { initialState } from './state.js';
+export { projectContributions } from './contributions/index.js';
 export type { Call, Context, Decision, State, Timer } from './state.js';
 
 export function hasUninterpretedInput(state: State): boolean {
@@ -94,6 +100,9 @@ function fireTimer(
   if (timer.purpose !== event.payload.purpose) return 'stale:timer';
   if (timer.purpose === 'userWait' && !context.domain.userWait) return 'stale:timer';
   if (timer.purpose === 'answerWait' && !context.domain.awaitingUserAnswer) return 'stale:timer';
+  const contribution = contributionTimer(context, timer, event.acceptedAt!);
+  if (contribution) return contribution;
+  if (timer.purpose === 'answerWait') context.domain.awaitingUserAnswer = false;
   if (timer.purpose === 'jobDeadline') return researchDeadline(context, timer.timerId, event.acceptedAt!);
   if (timer.purpose === 'userWait') context.domain.userWait = false;
   if (timer.purpose === 'replyDebounce' || timer.purpose === 'interpreterSoftWait') {
@@ -107,6 +116,9 @@ function fireTimer(
 }
 
 function applyEvent(context: Context, state: State, event: KernelEvent): string {
+  beforeContributionEvent(context, event);
+  const contribution = contributionEvent(context, event);
+  if (contribution) return contribution;
   switch (event.type) {
     case 'job.started':
     case 'job.completed':
@@ -125,7 +137,9 @@ function applyEvent(context: Context, state: State, event: KernelEvent): string 
       publishBudget(context);
       return 'research:global_budget';
     case 'session.recovered':
+      recoverContributions(context);
       recoverResearch(context, event.acceptedAt!);
+      ensureClosures(context, event.acceptedAt!);
       return recoverDomain(context);
     case 'client.connected':
       return connectClient(context, state, event.acceptedAt!, event.payload.modality);
@@ -195,6 +209,7 @@ function applyAcceptedEvent(
       jobs: structuredClone(state.domain.jobs),
       findings: structuredClone(state.domain.findings),
       researchBudget: structuredClone(state.domain.researchBudget),
+      initiative: structuredClone(state.domain.initiative),
     },
     effects,
     itemDecisions,
@@ -202,10 +217,12 @@ function applyAcceptedEvent(
   };
   const reason = applyEvent(context, state, event);
   const expiredTimer = reason === 'stale:timer' && context.domain.timers.length !== state.domain.timers.length;
-  const inert = ['late:retired_attempt', 'late:retired_reply', 'late:retired_job', 'stale:timer', 'noop:unhandled'];
+  const inert = ['late:retired_attempt', 'late:retired_reply', 'late:retired_job', 'stale:timer', 'noop:unhandled',
+    'late:retired_deliberation', 'late:retired_check'];
   if (expiredTimer || !inert.includes(reason)) {
     if (!inert.includes(reason) && event.type !== 'session.recovered') {
       advanceResearch(context, event.acceptedAt!);
+      advanceContributions(context, state, event);
     }
     next.domain = context.domain;
   }

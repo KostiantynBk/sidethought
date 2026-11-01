@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { questionKey } from '../src/kernel/research/policy.js';
+import { deliverPromises } from './t12a-closure-helpers.js';
 import { ResearchHarness, item } from './t11a-helpers.js';
 
 describe.each(['memory', 'sqlite'] as const)('T11a admission (%s)', store => {
@@ -69,7 +70,7 @@ describe.each(['memory', 'sqlite'] as const)('T11a admission (%s)', store => {
     h.request();
     expect(Object.values(h.state.domain.jobs)).toHaveLength(1);
     expect(Object.values(h.state.domain.jobs)[0]?.inputIds).toHaveLength(3);
-    expect(h.notices().filter(text => text.startsWith('Finished checking:'))).toHaveLength(1);
+    deliverPromises(h, [Object.values(h.state.domain.jobs)[0]!.id]);
   });
 
   it('does not reuse an answer outside the recent-success window', () => {

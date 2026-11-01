@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { replayFixture } from '../src/harness/index.js';
 const path = process.argv[2];
 if (!path) throw new Error('usage: npm run fixture:accept -- <file>');
-const result = replayFixture(path);
+const result = replayFixture(path, { store: 'memory' });
 const blocked = result.failures.some(failure =>
   failure.class === 'harness' || failure.class === 'fixture_schema' || failure.class === 'invariant',
 );

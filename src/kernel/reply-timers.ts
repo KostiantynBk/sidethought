@@ -5,13 +5,14 @@ export const REPLY_DEADLINES = ['firstTokenTimeout', 'streamStall', 'callDeadlin
 export type ReplyDeadline = typeof REPLY_DEADLINES[number];
 
 export function clearReplyTimers(context: Context, purposes: readonly string[] = REPLY_DEADLINES): void {
-  for (const timer of context.domain.timers.filter(item => purposes.includes(item.purpose))) {
+  for (const timer of context.domain.timers.filter(item => purposes.includes(item.purpose) && !item.ownerCallId)) {
     context.effects.push({
       type: 'timer.clear',
       timerId: timer.timerId,
     });
   }
-  context.domain.timers = context.domain.timers.filter(item => !purposes.includes(item.purpose));
+  context.domain.timers = context.domain.timers.filter(item =>
+    !purposes.includes(item.purpose) || !!item.ownerCallId);
 }
 
 function arm(context: Context, purpose: ReplyDeadline, dueAt: number): void {

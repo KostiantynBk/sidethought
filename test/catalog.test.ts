@@ -203,6 +203,14 @@ const clients: Record<string, object> = {
     state: 'queued',
   },
   'finding.upserted': { finding },
+  'contribution.upserted': {
+    candidateId: 'candidate',
+    class: 'card',
+    payload: 'inference',
+    state: 'card_only',
+    topic: 'topic',
+    text: 'insight',
+  },
   'budget.updated': {
     spentUsd: 0,
     reservedUsd: 0,

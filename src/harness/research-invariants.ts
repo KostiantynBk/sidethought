@@ -42,14 +42,33 @@ export const promised_closed_once: Invariant = (before, _event, after, effects) 
   let added = 0;
   for (const job of Object.values(after.domain.jobs)) {
     const terminal = !isOpenJob(job) && job.state !== 'proposed' && job.state !== 'awaiting_user';
-    const expected = job.promised && terminal ? 1 : 0;
-    if (job.closureCount !== expected) failures.push(`promised_closed_once: ${job.id}`);
+    const pending = Object.values(after.domain.initiative.candidates).some(candidate => candidate.jobId === job.id
+      && ['candidate', 'checking', 'delivering', 'interrupted'].includes(candidate.state));
+    const expected = job.promised && terminal;
+    if (job.closureCount > 1 || job.closureCount < 0 || (!expected && job.closureCount !== 0)
+      || (expected && job.closureCount !== 1 && !pending)) failures.push(`promised_closed_once: ${job.id}`);
     added += job.closureCount - (before.domain.jobs[job.id]?.closureCount ?? 0);
   }
   const closures = effects.filter(effect => effect.type === 'client.send'
     && effect.message.type === 'transcript.appended'
     && /^(?:Finished checking:|Couldn't check |Can't check that now:)/u.test(effect.message.text));
-  if (closures.length !== added) failures.push('promised_closed_once: closure effect count differs');
+  const acknowledged = effects.filter(effect => effect.type === 'client.send'
+    && effect.message.type === 'contribution.upserted' && effect.message.state === 'delivered'
+    && (() => {
+      const candidate = after.domain.initiative.candidates[effect.message.candidateId];
+      return candidate?.jobId && after.domain.jobs[candidate.jobId]?.promised
+        && (before.domain.jobs[candidate.jobId]?.closureCount ?? 0) === 0;
+    })());
+  const startedClosures = effects.filter(effect => {
+    if (effect.type !== 'client.send' || effect.message.type !== 'assistant.chunk') return false;
+    const delivery = after.domain.deliveries[effect.message.deliveryId];
+    const candidate = delivery?.candidateId ? after.domain.initiative.candidates[delivery.candidateId] : undefined;
+    return candidate?.payload === 'closure' && candidate.jobId
+      && (before.domain.jobs[candidate.jobId]?.closureCount ?? 0) === 0;
+  });
+  if (closures.length + acknowledged.length + startedClosures.length !== added) {
+    failures.push('promised_closed_once: closure effect count differs');
+  }
   return failures;
 };
 

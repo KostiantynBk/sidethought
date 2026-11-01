@@ -13,7 +13,15 @@ it('replays S1 through the next model-context checkpoint identically in memory a
   expect(memory.unflushedTelemetry).toEqual([]);
   expect(sqlite.unflushedTelemetry).toEqual([]);
   const domain = memory.snapshot!.state.domain;
-  expect(Object.values(domain.jobs)[0]?.closureCount).toBe(1);
+  // T12: the verified finding becomes a promised evidence contribution; its closure counts only once
+  // delivery starts, and this fixture has no connected client, so it is still waiting at the floor gate.
+  expect(Object.values(domain.jobs)[0]?.closureCount).toBe(0);
+  const pending = Object.values(domain.initiative.candidates);
+  expect(pending).toHaveLength(1);
+  expect(pending[0]?.payload).toBe('evidence');
+  expect(pending[0]?.class).toBe('speak');
+  expect(pending[0]?.promised).toBe(true);
+  expect(pending[0]?.state).toBe('candidate');
   expect(Object.values(domain.findings)[0]?.claims.map(claim => claim.support[0]?.quoteVerified))
     .toEqual([true, true, false]);
   const fixture = JSON.parse(readFileSync(path, 'utf8'));

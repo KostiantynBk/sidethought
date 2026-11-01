@@ -9,7 +9,7 @@ const number = (defaultValue: number, maximum: number) => z.number().positive().
 const textLexicon = () => z.string().min(1);
 
 export const ConfigSchema = z.strictObject({
-  configVersion: z.string().min(1).default('0.3.7'),
+  configVersion: z.string().min(1).default('0.3.8'),
   credentialRequestPatterns: CredentialRequestPatternsSchema,
   hedgeLexicon: z.array(textLexicon()).default([
     'might', 'maybe', 'perhaps', 'thinking about', 'I was thinking', 'not sure', 'possibly',
@@ -82,6 +82,7 @@ export const ConfigSchema = z.strictObject({
   searchUsdPerThousandQueries: number(2.5, 100), // Reject implausible unit prices.
   assumedQueriesPerToolCall: int(3, 20), // Bound conservative accounting.
   transcriptionUsdPerHour: number(0.18, 10), // Reject implausible unit prices.
+  deliberatorEstimateUsd: number(0.05, 3), // Conservative unmeasured bounded reasoning reservation.
   deliberationDebounceMs: int(2000, 5000), // Avoid delayed background decisions.
   maxDeliberatorRunsPerInput: int(3, 10), // Bound repeated reasoning.
   maxDeliberatorRunsPerMinute: int(4, 20), // Bound rate and cost.

@@ -126,6 +126,11 @@
         "seq": 3,
         "kind": "item",
         "reason": "research:dispatched"
+      },
+      {
+        "seq": 3,
+        "kind": "item",
+        "reason": "contribution:deliberator:debounced"
       }
     ],
     "effects": [
@@ -285,6 +290,19 @@
         "timerId": "s.3.7",
         "purpose": "jobDeadline",
         "dueAt": 90002
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.3.8",
+        "purpose": "deliberationDebounce",
+        "dueAt": 2002
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "inspector.decision",
+          "reason": "contribution:deliberator:debounced"
+        }
       }
     ],
     "final": {
@@ -304,6 +322,11 @@
           "timerId": "s.3.7",
           "purpose": "jobDeadline",
           "dueAt": 90002
+        },
+        {
+          "timerId": "s.3.8",
+          "purpose": "deliberationDebounce",
+          "dueAt": 2002
         }
       ],
       "inFlight": null,

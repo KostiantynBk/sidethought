@@ -2,6 +2,7 @@ import type { Delivery, Effect, Item, Dep, InterpreterOutput, ReplyGeneration } 
 import type { Config } from '../config/index.js';
 import type { RecentTurn } from '../context/recent.js';
 import type { QuoteInput } from './items/index.js';
+import { emptyInitiative, type Initiative } from './contributions/types.js';
 import type { Finding } from '../contract/index.js';
 import { emptyResearchBudget, type ResearchBudget, type ResearchJob } from './research/types.js';
 
@@ -36,6 +37,7 @@ export type Timer = {
   timerId: string;
   purpose: Extract<Effect, { type: 'timer.set' }>['purpose'];
   dueAt: number;
+  ownerCallId?: string;
 };
 export type State = {
   sessionId: string;
@@ -69,6 +71,7 @@ export type State = {
     findings: Record<string, Finding>;
     researchBudget: ResearchBudget;
     researchAdmitted: number;
+    initiative: Initiative;
     pendingRequests: Array<{
       inputId: string;
       question: string;
@@ -130,6 +133,7 @@ export function initialState(sessionId: string, config: Config): State {
       findings: {},
       researchBudget: emptyResearchBudget(),
       researchAdmitted: 0,
+      initiative: emptyInitiative(),
       pendingRequests: [],
       deprioritizedTopics: [],
       clarifications: [],

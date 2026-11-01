@@ -153,6 +153,11 @@
         "reason": "item:edited"
       },
       {
+        "seq": 3,
+        "kind": "item",
+        "reason": "contribution:deliberator:debounced"
+      },
+      {
         "seq": 4,
         "kind": "kernel",
         "reason": "patch:conflict_reinterpret"
@@ -166,6 +171,11 @@
         "seq": 5,
         "kind": "item",
         "reason": "item:superseded"
+      },
+      {
+        "seq": 5,
+        "kind": "item",
+        "reason": "contribution:deliberator:debounced"
       }
     ],
     "effects": [
@@ -189,6 +199,19 @@
         ]
       },
       {
+        "type": "timer.set",
+        "timerId": "s.3.1",
+        "purpose": "deliberationDebounce",
+        "dueAt": 2002
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "inspector.decision",
+          "reason": "contribution:deliberator:debounced"
+        }
+      },
+      {
         "type": "llm.call",
         "role": "interpreter",
         "requestId": "s.4.1",
@@ -200,6 +223,23 @@
             "contentVersion": 2
           }
         ]
+      },
+      {
+        "type": "timer.clear",
+        "timerId": "s.3.1"
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.5.2",
+        "purpose": "deliberationDebounce",
+        "dueAt": 2004
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "inspector.decision",
+          "reason": "contribution:deliberator:debounced"
+        }
       }
     ],
     "final": {
@@ -209,6 +249,11 @@
           "timerId": "s.2.2",
           "purpose": "replyDebounce",
           "dueAt": 801
+        },
+        {
+          "timerId": "s.5.2",
+          "purpose": "deliberationDebounce",
+          "dueAt": 2004
         }
       ],
       "inFlight": null,

@@ -189,9 +189,29 @@
         "reason": "research:finding"
       },
       {
+        "seq": 4,
+        "kind": "item",
+        "reason": "contribution:deliberator:debounced"
+      },
+      {
+        "seq": 4,
+        "kind": "item",
+        "reason": "contribution:added candidate=s.4.3"
+      },
+      {
+        "seq": 4,
+        "kind": "item",
+        "reason": "contribution:floor:disconnected candidate=s.4.3"
+      },
+      {
         "seq": 5,
         "kind": "kernel",
         "reason": "input:committed"
+      },
+      {
+        "seq": 5,
+        "kind": "item",
+        "reason": "contribution:floor:disconnected candidate=s.4.3"
       }
     ],
     "effects": [
@@ -381,16 +401,56 @@
       {
         "type": "client.send",
         "message": {
-          "type": "transcript.appended",
-          "text": "Finished checking: Does Provider A work offline? — see the card"
+          "type": "budget.updated",
+          "spentUsd": 0,
+          "reservedUsd": 0.1
+        }
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.4.2",
+        "purpose": "deliberationDebounce",
+        "dueAt": 2003
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "inspector.decision",
+          "reason": "contribution:deliberator:debounced"
         }
       },
       {
         "type": "client.send",
         "message": {
-          "type": "budget.updated",
-          "spentUsd": 0,
-          "reservedUsd": 0.1
+          "type": "contribution.upserted",
+          "candidateId": "s.4.3",
+          "class": "speak",
+          "payload": "evidence",
+          "state": "candidate",
+          "topic": "Does Provider A work offline?",
+          "text": "",
+          "findingId": "s.4.1",
+          "jobId": "s.3.1"
+        }
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "inspector.decision",
+          "reason": "contribution:added candidate=s.4.3"
+        }
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.4.4",
+        "purpose": "candidateExpiry",
+        "dueAt": 300003
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "inspector.decision",
+          "reason": "contribution:floor:disconnected candidate=s.4.3"
         }
       },
       {
@@ -415,11 +475,28 @@
             "contentVersion": 1
           }
         ]
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "inspector.decision",
+          "reason": "contribution:floor:disconnected candidate=s.4.3"
+        }
       }
     ],
     "final": {
       "seq": 5,
       "pendingTimers": [
+        {
+          "timerId": "s.4.2",
+          "purpose": "deliberationDebounce",
+          "dueAt": 2003
+        },
+        {
+          "timerId": "s.4.4",
+          "purpose": "candidateExpiry",
+          "dueAt": 300003
+        },
         {
           "timerId": "s.5.2",
           "purpose": "replyDebounce",

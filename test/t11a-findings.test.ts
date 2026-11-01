@@ -3,6 +3,7 @@ import { purgeResearchDerivedFrom } from '../src/kernel/research/index.js';
 import { consistentClaim } from '../src/kernel/research/support.js';
 import { readyOutput } from './t03-helpers.js';
 import { ResearchHarness, claims, evidence, item, url } from './t11a-helpers.js';
+import { deliverPromises } from './t12a-closure-helpers.js';
 
 function supersede(h: ResearchHarness) {
   h.send('input.committed', {
@@ -52,7 +53,7 @@ describe.each(['memory', 'sqlite'] as const)('T11a findings (%s)', store => {
     const finding = Object.values(h.state.domain.findings)[0]!;
     expect(finding.verdict).toBe('not_researched');
     expect(finding.claims.flatMap(claim => claim.support).every(support => !support.quoteVerified)).toBe(true);
-    expect(h.state.domain.jobs[finding.jobId]?.closureCount).toBe(1);
+    deliverPromises(h, [finding.jobId]);
   });
 
   it('makes a mismatched claim number citation-only even with an exact snippet quote', () => {
@@ -102,7 +103,7 @@ describe.each(['memory', 'sqlite'] as const)('T11a findings (%s)', store => {
     });
     h.complete();
     expect(h.state.domain.findings).toEqual({});
-    expect(h.notices().filter(text => text.startsWith("Couldn't check"))).toHaveLength(1);
+    deliverPromises(h, [job.id]);
   });
 
   it('marks a completed finding stale and re-upserts after superseding its dependency', () => {
