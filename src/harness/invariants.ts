@@ -4,6 +4,7 @@ import { hasUninterpretedInput, type State, type Decision } from '../kernel/inde
 import { validateSpans, type QuoteInput } from '../kernel/items/index.js';
 import { deliveredContextInvariant } from './context-invariant.js';
 import { deliveredQuoteInputs } from '../context/quote-sources.js';
+import { I11, promised_closed_once, researchEvidence, retiredResearch } from './research-invariants.js';
 
 type Invariant = (
   before: State,
@@ -130,6 +131,10 @@ export const invariantRegistry: Invariant[] = [
   replyCaptures,
   noPostAbortChunks,
   deliveredContextInvariant,
+  I11,
+  promised_closed_once,
+  researchEvidence,
+  retiredResearch,
 ];
 
 const itemAuthority: Invariant = (before, event, after) => {

@@ -9,7 +9,8 @@ describe('T06 input behavior fixtures', () => {
     const result = ready(state, fixture('v1g-two-requests', state.domain.inputs[0]!.id));
     const created = Object.values(result.state.domain.items).find(value => value.text === 'Use local storage');
     expect(created).toBeDefined();
-    const requests = result.state.domain.pendingRequests;
+    const requests = Object.values(result.state.domain.jobs);
+    expect(result.state.domain.pendingRequests).toEqual([]);
     expect(requests).toHaveLength(2);
     expect(requests.every(request => request.promised)).toBe(true);
     expect(requests[0]?.deps).toEqual([{
@@ -34,9 +35,11 @@ describe('T06 input behavior fixtures', () => {
     const state = start();
     const result = ready(state, fixture('rejected-create-dependency', state.domain.inputs[0]!.id));
     expect(result.state.domain.items).toEqual(state.domain.items);
-    expect(result.state.domain.pendingRequests).toHaveLength(1);
-    expect(result.state.domain.pendingRequests[0]?.promised).toBe(true);
-    expect(result.state.domain.pendingRequests[0]?.deps).toEqual([]);
+    const jobs = Object.values(result.state.domain.jobs);
+    expect(result.state.domain.pendingRequests).toEqual([]);
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0]?.promised).toBe(true);
+    expect(jobs[0]?.deps).toEqual([]);
     expect(reasons(result)).toContain('research:dep_dropped');
   });
 

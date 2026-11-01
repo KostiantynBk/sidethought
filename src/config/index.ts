@@ -9,7 +9,7 @@ const number = (defaultValue: number, maximum: number) => z.number().positive().
 const textLexicon = () => z.string().min(1);
 
 export const ConfigSchema = z.strictObject({
-  configVersion: z.string().min(1).default('0.3.6'),
+  configVersion: z.string().min(1).default('0.3.7'),
   credentialRequestPatterns: CredentialRequestPatternsSchema,
   hedgeLexicon: z.array(textLexicon()).default([
     'might', 'maybe', 'perhaps', 'thinking about', 'I was thinking', 'not sure', 'possibly',
@@ -50,7 +50,9 @@ export const ConfigSchema = z.strictObject({
   jobsMaxQueued: int(4, 16), // A small queue limits backlog.
   jobsMaxPerSession: int(15, 50), // Bound session research volume.
   jobDeadlineMs: int(90000, 300000), // Five minutes bounds unattended research.
-  jobMaxRetries: int(1, 3), // Limit repeated network work.
+  jobMaxRetries: z.number().int().min(0).max(1).default(1), // §4.5: at most one retry.
+  jobDedupeWindowMs: int(300000, 3600000), // Recent successful evidence, bounded to one hour.
+  jobEstimateUsd: number(0.10, 3), // Conservative unmeasured per-attempt reservation (§8.4).
   maxToolCallsPerSearch: int(3, 6), // Tool calls are distinct from actual queries.
   maxEvidenceResults: int(20, 100), // Bound journal growth.
   maxSnippetChars: int(2000, 10000), // Bound each retained snippet.

@@ -1,9 +1,9 @@
 {
   "meta": {
     "schemaVersion": 1,
-    "reducerVersion": "9",
-    "configVersion": "0.3.6",
-    "fixtureVersion": "1"
+    "reducerVersion": "10",
+    "configVersion": "0.3.7",
+    "fixtureVersion": "2"
   },
   "sessionId": "s",
   "events": [
@@ -106,6 +106,26 @@
         "seq": 3,
         "kind": "item",
         "reason": "span:valid"
+      },
+      {
+        "seq": 3,
+        "kind": "item",
+        "reason": "research:admitted"
+      },
+      {
+        "seq": 3,
+        "kind": "item",
+        "reason": "research:dispatched"
+      },
+      {
+        "seq": 3,
+        "kind": "item",
+        "reason": "research:admitted"
+      },
+      {
+        "seq": 3,
+        "kind": "item",
+        "reason": "research:dispatched"
       }
     ],
     "effects": [
@@ -127,6 +147,144 @@
             "contentVersion": 1
           }
         ]
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "job.updated",
+          "jobId": "s.3.2",
+          "publicQuery": "local storage feasibility",
+          "state": "proposed"
+        }
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "job.updated",
+          "jobId": "s.3.2",
+          "publicQuery": "local storage feasibility",
+          "state": "queued"
+        }
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "budget.updated",
+          "spentUsd": 0,
+          "reservedUsd": 0.1
+        }
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "job.updated",
+          "jobId": "s.3.2",
+          "publicQuery": "local storage feasibility",
+          "state": "running"
+        }
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "budget.updated",
+          "spentUsd": 0,
+          "reservedUsd": 0.1
+        }
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "transcript.appended",
+          "text": "Checking: Can local storage work?"
+        }
+      },
+      {
+        "type": "job.dispatch",
+        "jobId": "s.3.2",
+        "callId": "s.3.3",
+        "capturedInputs": [
+          {
+            "itemId": "s.3.1",
+            "contentVersion": 1
+          }
+        ]
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.3.4",
+        "purpose": "jobDeadline",
+        "dueAt": 90002
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "job.updated",
+          "jobId": "s.3.5",
+          "publicQuery": "cloud storage risks",
+          "state": "proposed"
+        }
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "job.updated",
+          "jobId": "s.3.5",
+          "publicQuery": "cloud storage risks",
+          "state": "queued"
+        }
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "budget.updated",
+          "spentUsd": 0,
+          "reservedUsd": 0.2
+        }
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "job.updated",
+          "jobId": "s.3.5",
+          "publicQuery": "cloud storage risks",
+          "state": "running"
+        }
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "budget.updated",
+          "spentUsd": 0,
+          "reservedUsd": 0.2
+        }
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "transcript.appended",
+          "text": "Checking: What are cloud risks?"
+        }
+      },
+      {
+        "type": "job.dispatch",
+        "jobId": "s.3.5",
+        "callId": "s.3.6",
+        "capturedInputs": [
+          {
+            "itemId": "r1",
+            "contentVersion": 1
+          },
+          {
+            "itemId": "s.3.1",
+            "contentVersion": 1
+          }
+        ]
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.3.7",
+        "purpose": "jobDeadline",
+        "dueAt": 90002
       }
     ],
     "final": {
@@ -136,6 +294,16 @@
           "timerId": "s.2.2",
           "purpose": "replyDebounce",
           "dueAt": 801
+        },
+        {
+          "timerId": "s.3.4",
+          "purpose": "jobDeadline",
+          "dueAt": 90002
+        },
+        {
+          "timerId": "s.3.7",
+          "purpose": "jobDeadline",
+          "dueAt": 90002
         }
       ],
       "inFlight": null,

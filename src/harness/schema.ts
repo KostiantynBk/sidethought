@@ -109,8 +109,8 @@ const finalSchema = z.strictObject({
 export const fixtureSchema = z.strictObject({
   meta: z.strictObject({
     schemaVersion: z.literal(1),
-    reducerVersion: z.literal('9'),
-    configVersion: z.literal('0.3.6'),
+    reducerVersion: z.literal('10'),
+    configVersion: z.literal('0.3.7'),
     fixtureVersion: z.string().min(1),
   }),
   sessionId: z.string().min(1),

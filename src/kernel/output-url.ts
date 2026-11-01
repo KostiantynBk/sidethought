@@ -1,4 +1,4 @@
-// §11.3: until findings supply provenance, recognized URL forms are not released.
+// §11.3: only exact verified-current finding URLs may pass the existing broad URL detector.
 const webTlds = new Set([
   'com', 'org', 'net', 'edu', 'gov', 'io', 'ai', 'dev', 'app', 'co', 'me', 'info', 'xyz',
   'uk', 'de', 'es', 'fr', 'eu', 'us',
@@ -8,6 +8,16 @@ const fileExtensions = new Set([
   'yml', 'yaml', 'toml', 'txt', 'css', 'scss', 'html', 'sql', 'csv', 'env', 'lock', 'png', 'jpg',
   'svg', 'ipynb',
 ]);
+
+export function containsUnapprovedUrl(text: string, allowed: readonly string[]): boolean {
+  const allowlist = new Set(allowed);
+  const remaining = text.replace(/\bhttps?:\/\/[^\s<>"`]+/gu, token => {
+    const url = token.replace(/[.,!;:)\]}]+$/gu, '');
+    // Match the complete URL token, never an allow-listed prefix of an attacker's URL.
+    return allowlist.has(url) ? ' ' : token;
+  });
+  return containsUrl(remaining);
+}
 
 // A bare prose label such as "Check your data:" is not a data URI. Recognize compact
 // and empty headers by their comma; block MIME/parameter prefixes before the comma so

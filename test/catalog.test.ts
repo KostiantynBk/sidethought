@@ -274,8 +274,16 @@ describe('complete wire catalog', () => {
   });
 });
 describe('every numeric config bound', () => {
+  it('permits disabling research retries but caps them at one', () => {
+    expect(loadConfig({ jobMaxRetries: 0 }).jobMaxRetries).toBe(0);
+    expect(loadConfig({ jobMaxRetries: 1 }).jobMaxRetries).toBe(1);
+    expect(() => loadConfig({ jobMaxRetries: -1 })).toThrow();
+    expect(() => loadConfig({ jobMaxRetries: 2 })).toThrow();
+    expect(() => loadConfig({ jobMaxRetries: 0.5 })).toThrow();
+  });
+
   const defaults = loadConfig();
-  const numeric = Object.entries(defaults).filter(([, v]) => typeof v === 'number');
+  const numeric = Object.entries(defaults).filter(([key, v]) => typeof v === 'number' && key !== 'jobMaxRetries');
   it.each(numeric)('%s rejects zero, negative and above its maximum', (key) => {
     const field = ConfigSchema.shape[key as keyof typeof ConfigSchema.shape];
     const inner = field._def.innerType as { maxValue?: number };

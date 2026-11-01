@@ -58,9 +58,10 @@ it('S1 t=1.1 binds a promised request to an option created in the same output', 
   expect(option?.status).toBe('considering');
   expect(option?.contentVersion).toBe(1);
   expect(result.state.domain.projectRev).toBe(1);
-  expect(result.state.domain.pendingRequests).toHaveLength(1);
-  expect(result.state.domain.pendingRequests[0]).toMatchObject({
-    inputId: state.domain.inputs[0]!.id,
+  expect(result.state.domain.pendingRequests).toEqual([]);
+  expect(Object.values(result.state.domain.jobs)).toHaveLength(1);
+  expect(Object.values(result.state.domain.jobs)[0]).toMatchObject({
+    inputIds: [state.domain.inputs[0]!.id],
     question: "Does Provider A's client work without a network connection?",
     publicQuery: 'Provider A client offline support',
     promised: true,
@@ -91,8 +92,9 @@ it('keeps only the configured number of research requests per input', () => {
     ...output,
     researchRequests: [first, request],
   });
-  expect(result.state.domain.pendingRequests).toHaveLength(1);
-  expect(result.state.domain.pendingRequests[0]?.question)
+  expect(result.state.domain.pendingRequests).toEqual([]);
+  expect(Object.values(result.state.domain.jobs)).toHaveLength(1);
+  expect(Object.values(result.state.domain.jobs)[0]?.question)
     .toBe("Does Provider A's client work without a network connection?");
   expect(result.decisions.map(decision => decision.reason)).toContain('research:over_limit');
   expect(result.state.domain.inputs[0]?.status).toBe('interpreted');

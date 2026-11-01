@@ -8,6 +8,9 @@ import { interruptReply } from './reply-abort.js';
 import { clearComposer } from './composer.js';
 import { replyDeadline } from './reply-failure.js';
 import { deliveryProgress } from './delivery-progress.js';
+import {
+  advanceResearch, researchEvent, researchDeadline, recoverResearch, recordUsage, publishBudget,
+} from './research/index.js';
 
 export { initialState } from './state.js';
 export type { Call, Context, Decision, State, Timer } from './state.js';
@@ -91,6 +94,7 @@ function fireTimer(
   if (timer.purpose !== event.payload.purpose) return 'stale:timer';
   if (timer.purpose === 'userWait' && !context.domain.userWait) return 'stale:timer';
   if (timer.purpose === 'answerWait' && !context.domain.awaitingUserAnswer) return 'stale:timer';
+  if (timer.purpose === 'jobDeadline') return researchDeadline(context, timer.timerId, event.acceptedAt!);
   if (timer.purpose === 'userWait') context.domain.userWait = false;
   if (timer.purpose === 'replyDebounce' || timer.purpose === 'interpreterSoftWait') {
     return replyTimer(context, timer.purpose, event.acceptedAt!, state.config);
@@ -104,7 +108,24 @@ function fireTimer(
 
 function applyEvent(context: Context, state: State, event: KernelEvent): string {
   switch (event.type) {
+    case 'job.started':
+    case 'job.completed':
+    case 'job.failed':
+    case 'job.timedOut':
+    case 'job.cancelled':
+    case 'job.cancelRequested':
+      return researchEvent(context, event);
+    case 'llm.usage':
+      return recordUsage(context, event);
+    case 'budget.global':
+      context.domain.researchBudget.global = {
+        ...event.payload,
+        sessionSpentAtUpdate: context.domain.researchBudget.spentUsd,
+      };
+      publishBudget(context);
+      return 'research:global_budget';
     case 'session.recovered':
+      recoverResearch(context, event.acceptedAt!);
       return recoverDomain(context);
     case 'client.connected':
       return connectClient(context, state, event.acceptedAt!, event.payload.modality);
@@ -171,6 +192,9 @@ function applyAcceptedEvent(
       clarifications: [...state.domain.clarifications],
       reply: state.domain.reply ? structuredClone(state.domain.reply) : null,
       deliveries: structuredClone(state.domain.deliveries),
+      jobs: structuredClone(state.domain.jobs),
+      findings: structuredClone(state.domain.findings),
+      researchBudget: structuredClone(state.domain.researchBudget),
     },
     effects,
     itemDecisions,
@@ -178,8 +202,11 @@ function applyAcceptedEvent(
   };
   const reason = applyEvent(context, state, event);
   const expiredTimer = reason === 'stale:timer' && context.domain.timers.length !== state.domain.timers.length;
-  const inert = ['late:retired_attempt', 'late:retired_reply', 'stale:timer', 'noop:unhandled'];
+  const inert = ['late:retired_attempt', 'late:retired_reply', 'late:retired_job', 'stale:timer', 'noop:unhandled'];
   if (expiredTimer || !inert.includes(reason)) {
+    if (!inert.includes(reason) && event.type !== 'session.recovered') {
+      advanceResearch(context, event.acceptedAt!);
+    }
     next.domain = context.domain;
   }
   return reason;
