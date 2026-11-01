@@ -4,6 +4,7 @@ import { recentTurns } from './recent.js';
 import { OUTPUT_RULES } from './prompts/common.js';
 import { INTERPRETER_PROMPT } from './prompts/interpreter.js';
 import { RESPONDER_PROMPT } from './prompts/responder.js';
+import { contributionContext } from './contributions.js';
 import { researchContext } from './research.js';
 
 export type RolePrompt = {
@@ -57,6 +58,9 @@ function task(state: State, effect: CallEffect) {
 
 // §9.2 / A2: consume the dispatch capture, never substitute current items or raw state.
 export function assembleContext(state: State, effect: CallEffect): RolePrompt {
+  if (effect.role === 'deliberator' || effect.role === 'checker') {
+    return contributionContext(state, effect, capturedItems(state, effect));
+  }
   if (effect.role !== 'interpreter' && effect.role !== 'responder') throw new Error('context:unsupported_role');
   const items = capturedItems(state, effect).map(item => ({
     id: item.id,

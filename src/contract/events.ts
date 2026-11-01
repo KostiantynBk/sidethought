@@ -6,6 +6,7 @@ import {
   DepSchema,
   EnvelopeFields,
   FindingSchema,
+  DeliveryStateSchema,
   ItemSchema,
   RetrievalEvidenceSchema,
   retrievalEvidenceSchemaWithLimits,
@@ -289,6 +290,18 @@ export const ClientMessageSchema = z.discriminatedUnion('type', [
   obj({
     type: z.literal('finding.upserted'),
     finding: FindingSchema,
+  }),
+  obj({
+    type: z.literal('contribution.upserted'),
+    candidateId: id,
+    class: z.enum(['speak', 'card']),
+    payload: z.enum(['evidence', 'inference', 'clarification', 'closure']),
+    state: DeliveryStateSchema,
+    topic: text,
+    text: z.string(),
+    findingId: id.optional(),
+    jobId: id.optional(),
+    deliveryId: id.optional(),
   }),
   obj({
     type: z.literal('budget.updated'),

@@ -6,6 +6,8 @@ import { deliveredContextInvariant } from './context-invariant.js';
 import { deliveredQuoteInputs } from '../context/quote-sources.js';
 import { I11, promised_closed_once, researchEvidence, retiredResearch } from './research-invariants.js';
 
+import { I1, I2, I4, I12, I14, I17 } from './contribution-invariants.js';
+
 type Invariant = (
   before: State,
   event: KernelEvent,
@@ -123,6 +125,12 @@ const noPostAbortChunks: Invariant = (before, _event, after, effects) => {
 };
 
 export const invariantRegistry: Invariant[] = [
+  I1,
+  I2,
+  I4,
+  I12,
+  I14,
+  I17,
   sequence,
   idempotency,
   retiredAttempt,

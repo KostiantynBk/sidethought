@@ -6,6 +6,9 @@ export type ResearchJob = Job & {
   closureCount: number;
   completedAt?: number;
   deadlineTimerId?: string;
+  topic?: string;
+  consequence?: number;
+  followupScheduled?: boolean;
 };
 
 export type ResearchBudget = {

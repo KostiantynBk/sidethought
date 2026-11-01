@@ -55,12 +55,7 @@ export function finishJob(
   job.state = state;
   job.completedAt = at;
   publishJob(context, job);
-  if (job.promised && job.closureCount === 0) {
-    job.closureCount = 1;
-    notice(context, state === 'succeeded'
-      ? `Finished checking: ${title(job)} — see the card`
-      : `Couldn't check ${title(job)}: ${reason}`);
-  }
+  // T12: closure is owned by the contribution ledger, not by job completion.
   publishBudget(context);
 }
 

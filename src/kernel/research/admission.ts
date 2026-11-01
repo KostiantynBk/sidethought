@@ -6,7 +6,7 @@ import { isOpenJob, type ResearchJob } from './types.js';
 
 type Request = State['domain']['pendingRequests'][number];
 
-function refusal(context: Context, query: string): string | undefined {
+export function refusal(context: Context, query: string): string | undefined {
   const privacy = queryPrivacyFailure(context, query);
   if (privacy) return privacy;
   const control = researchControlBlock(context.domain);
@@ -18,7 +18,7 @@ function refusal(context: Context, query: string): string | undefined {
   return undefined;
 }
 
-const refusalText: Record<string, string> = {
+export const refusalText: Record<string, string> = {
   private_term: 'the public query contains private terms',
   query_length: 'the public query is empty or too long',
   session_cap: 'the session research limit has been reached',
