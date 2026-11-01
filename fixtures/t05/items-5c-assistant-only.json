@@ -175,6 +175,11 @@
         "seq": 8,
         "kind": "item",
         "reason": "status:forced_considering:assistant_only"
+      },
+      {
+        "seq": 8,
+        "kind": "item",
+        "reason": "contribution:deliberator:debounced"
       }
     ],
     "effects": [
@@ -260,6 +265,19 @@
         "callId": "s.7.4",
         "basisRev": 0,
         "capturedInputs": []
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.8.2",
+        "purpose": "deliberationDebounce",
+        "dueAt": 3001
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "inspector.decision",
+          "reason": "contribution:deliberator:debounced"
+        }
       }
     ],
     "final": {
@@ -269,6 +287,11 @@
           "timerId": "s.7.2",
           "purpose": "replyDebounce",
           "dueAt": 1800
+        },
+        {
+          "timerId": "s.8.2",
+          "purpose": "deliberationDebounce",
+          "dueAt": 3001
         }
       ],
       "inFlight": null,

@@ -105,6 +105,11 @@
         "seq": 3,
         "kind": "item",
         "reason": "status:forced_considering:hedge"
+      },
+      {
+        "seq": 3,
+        "kind": "item",
+        "reason": "contribution:deliberator:debounced"
       }
     ],
     "effects": [
@@ -121,6 +126,19 @@
         "callId": "s.2.4",
         "basisRev": 0,
         "capturedInputs": []
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.3.2",
+        "purpose": "deliberationDebounce",
+        "dueAt": 2002
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "inspector.decision",
+          "reason": "contribution:deliberator:debounced"
+        }
       }
     ],
     "final": {
@@ -130,6 +148,11 @@
           "timerId": "s.2.2",
           "purpose": "replyDebounce",
           "dueAt": 801
+        },
+        {
+          "timerId": "s.3.2",
+          "purpose": "deliberationDebounce",
+          "dueAt": 2002
         }
       ],
       "inFlight": null,

@@ -30,6 +30,10 @@ export function sendNext(context: Context, candidate: Contribution): void {
   const chunk = delivery.chunks[index]!;
   chunk.state = 'sent';
   delivery.sentChars += chunk.text.length;
+  if (candidate.payload === 'closure' && candidate.jobId) {
+    const job = context.domain.jobs[candidate.jobId];
+    if (job?.promised && job.closureCount === 0) job.closureCount = 1;
+  }
   context.effects.push({
     type: 'client.send',
     message: {
@@ -126,7 +130,11 @@ export function stopContribution(
       reason,
     },
   });
-  transition(context, candidate, 'interrupted', `deliver:${reason}`);
+  if (candidate.payload === 'closure') {
+    transition(context, candidate, 'card_only', `deliver:${reason}`);
+  } else {
+    transition(context, candidate, 'interrupted', `deliver:${reason}`);
+  }
 }
 
 export function interruptContributions(context: Context, reason: string, renderedUpTo?: number): void {

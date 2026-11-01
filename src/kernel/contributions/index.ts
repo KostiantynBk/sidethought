@@ -5,10 +5,16 @@ import { addFindings, ensureClosures } from './candidates.js';
 import { interruptionOutcome } from './cuts.js';
 import { arbitrate } from './arbiter.js';
 import { checkDeadline, checkEvent } from './checking.js';
-import { clearTimer, decide, topicKey, transition } from './common.js';
+import { clearTimer, contributionView, decide, topicKey, transition } from './common.js';
 import { contributionProgress, currentCheck, interruptContributions, stopContribution } from './delivery.js';
 import { approval } from './nominations.js';
 import { deliberationDeadline, finishDeliberation, scheduleDeliberation, startDeliberation } from './scheduling.js';
+
+export function projectContributions(state: State) {
+  return Object.values(state.domain.initiative.candidates)
+    .filter(candidate => candidate.state !== 'dropped')
+    .map(contributionView);
+}
 
 export function contributionEvent(context: Context, event: KernelEvent): string | undefined {
   if (event.type === 'deliberation.ready' || event.type === 'deliberation.failed') return finishDeliberation(context, event);
@@ -119,6 +125,7 @@ export function recoverContributions(context: Context): void {
   for (const candidate of Object.values(initiative.candidates)) {
     delete candidate.check;
     if (candidate.state === 'delivering') stopContribution(context, candidate, 'recovered');
+    if (candidate.payload === 'closure' && candidate.state === 'candidate') continue;
     if (['candidate', 'checking', 'interrupted'].includes(candidate.state)) {
       transition(context, candidate, 'card_only', 'recovered');
     }

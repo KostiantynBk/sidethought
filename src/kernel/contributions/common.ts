@@ -7,7 +7,7 @@ export function topicKey(topic: string): string {
 }
 
 export function decide(context: Context, code: string, candidate?: Contribution): void {
-  const reason = `contribution:${code}${candidate ? `:${candidate.id}` : ''}`;
+  const reason = `contribution:${code}${candidate ? ` candidate=${candidate.id}` : ''}`;
   context.itemDecisions.push(reason);
   context.effects.push({
     type: 'client.send',
@@ -18,20 +18,26 @@ export function decide(context: Context, code: string, candidate?: Contribution)
   });
 }
 
+export function contributionView(candidate: Contribution) {
+  return {
+    candidateId: candidate.id,
+    class: candidate.class,
+    payload: candidate.payload,
+    state: candidate.state,
+    topic: candidate.topic,
+    text: candidate.text,
+    ...(candidate.source.findingId ? { findingId: candidate.source.findingId } : {}),
+    ...(candidate.jobId ? { jobId: candidate.jobId } : {}),
+    ...(candidate.deliveryId ? { deliveryId: candidate.deliveryId } : {}),
+  };
+}
+
 export function publish(context: Context, candidate: Contribution): void {
   context.effects.push({
     type: 'client.send',
     message: {
       type: 'contribution.upserted',
-      candidateId: candidate.id,
-      class: candidate.class,
-      payload: candidate.payload,
-      state: candidate.state,
-      topic: candidate.topic,
-      text: candidate.text,
-      ...(candidate.source.findingId ? { findingId: candidate.source.findingId } : {}),
-      ...(candidate.jobId ? { jobId: candidate.jobId } : {}),
-      ...(candidate.deliveryId ? { deliveryId: candidate.deliveryId } : {}),
+      ...contributionView(candidate),
     },
   });
 }

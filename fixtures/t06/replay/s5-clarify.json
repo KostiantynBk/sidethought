@@ -180,6 +180,11 @@
         "seq": 8,
         "kind": "item",
         "reason": "span:valid"
+      },
+      {
+        "seq": 8,
+        "kind": "item",
+        "reason": "contribution:deliberator:debounced"
       }
     ],
     "effects": [
@@ -287,6 +292,19 @@
         "timerId": "s.8.7",
         "purpose": "callDeadline",
         "dueAt": 28900
+      },
+      {
+        "type": "timer.set",
+        "timerId": "s.8.8",
+        "purpose": "deliberationDebounce",
+        "dueAt": 10900
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "inspector.decision",
+          "reason": "contribution:deliberator:debounced"
+        }
       }
     ],
     "final": {
@@ -301,6 +319,11 @@
           "timerId": "s.8.7",
           "purpose": "callDeadline",
           "dueAt": 28900
+        },
+        {
+          "timerId": "s.8.8",
+          "purpose": "deliberationDebounce",
+          "dueAt": 10900
         }
       ],
       "inFlight": null,

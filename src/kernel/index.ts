@@ -8,6 +8,7 @@ import { interruptReply } from './reply-abort.js';
 import { clearComposer } from './composer.js';
 import { replyDeadline } from './reply-failure.js';
 import { deliveryProgress } from './delivery-progress.js';
+import { ensureClosures } from './contributions/candidates.js';
 import {
   advanceResearch, researchEvent, researchDeadline, recoverResearch, recordUsage, publishBudget,
 } from './research/index.js';
@@ -17,6 +18,7 @@ import {
 } from './contributions/index.js';
 
 export { initialState } from './state.js';
+export { projectContributions } from './contributions/index.js';
 export type { Call, Context, Decision, State, Timer } from './state.js';
 
 export function hasUninterpretedInput(state: State): boolean {
@@ -137,6 +139,7 @@ function applyEvent(context: Context, state: State, event: KernelEvent): string 
     case 'session.recovered':
       recoverContributions(context);
       recoverResearch(context, event.acceptedAt!);
+      ensureClosures(context, event.acceptedAt!);
       return recoverDomain(context);
     case 'client.connected':
       return connectClient(context, state, event.acceptedAt!, event.payload.modality);

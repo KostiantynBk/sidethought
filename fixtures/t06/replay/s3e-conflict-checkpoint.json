@@ -109,6 +109,11 @@
         "reason": "item:edited"
       },
       {
+        "seq": 3,
+        "kind": "item",
+        "reason": "contribution:deliberator:debounced"
+      },
+      {
         "seq": 4,
         "kind": "kernel",
         "reason": "patch:conflict_reinterpret"
@@ -135,6 +140,19 @@
         ]
       },
       {
+        "type": "timer.set",
+        "timerId": "s.3.1",
+        "purpose": "deliberationDebounce",
+        "dueAt": 2002
+      },
+      {
+        "type": "client.send",
+        "message": {
+          "type": "inspector.decision",
+          "reason": "contribution:deliberator:debounced"
+        }
+      },
+      {
         "type": "llm.call",
         "role": "interpreter",
         "requestId": "s.4.1",
@@ -155,6 +173,11 @@
           "timerId": "s.2.2",
           "purpose": "replyDebounce",
           "dueAt": 801
+        },
+        {
+          "timerId": "s.3.1",
+          "purpose": "deliberationDebounce",
+          "dueAt": 2002
         }
       ],
       "inFlight": {

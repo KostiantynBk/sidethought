@@ -192,7 +192,7 @@ const expectedCredentialPatterns = [
 
 it('matches the literal policy inventory and default values', () => {
   expect(loadConfig()).toEqual({
-    configVersion: '0.3.7',
+    configVersion: '0.3.8',
     credentialRequestPatterns: expectedCredentialPatterns,
     hedgeLexicon: ['might', 'maybe', 'perhaps', 'thinking about', 'I was thinking', 'not sure', 'possibly'],
     negationLexicon: ['not', 'no', 'never', "don't", "doesn't", "isn't", "won't", "can't"],
@@ -252,6 +252,7 @@ it('matches the literal policy inventory and default values', () => {
     assumedQueriesPerToolCall: 3,
     transcriptionUsdPerHour: 0.18,
     deliberationDebounceMs: 2000,
+    deliberatorEstimateUsd: 0.05,
     maxDeliberatorRunsPerInput: 3,
     maxDeliberatorRunsPerMinute: 4,
     maxDeliberatorNominations: 3,

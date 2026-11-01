@@ -1,0 +1,7 @@
+{
+  "role": "checker",
+  "promptVersion": "checker-v1",
+  "payloadType": "evidence",
+  "claimText": "Provider A edits work offline after first sign-in",
+  "contractContains": "OWN verified quote"
+}

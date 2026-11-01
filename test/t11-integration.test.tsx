@@ -29,6 +29,7 @@ describe('integrated dev research', () => {
       SIDETHOUGHT_DB_PATH: ':memory:',
       SIDETHOUGHT_MODEL: 'dev',
     });
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     const runtime = await createRuntime(config);
     const sockets: WebSocket[] = [];
     const messages: Array<Record<string, unknown>> = [];
@@ -46,7 +47,6 @@ describe('integrated dev research', () => {
         onInit: client => client.on('message', data => messages.push(JSON.parse(data.toString()))),
       });
       sockets.push(socket);
-      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
       socket.send(JSON.stringify({
         type: 'input.committed',
         payload: {
@@ -60,7 +60,32 @@ describe('integrated dev research', () => {
       await vi.advanceTimersByTimeAsync(200);
       await flushSockets();
       expect(messages.some(message => String(message.text).startsWith('Checking:'))).toBe(true);
-      expect(messages.some(message => String(message.text).startsWith('Finished checking:'))).toBe(true);
+      const acknowledged = new Set<string>();
+      const chars = new Map<string, number>();
+      for (let step = 0; step < 70; step += 1) {
+        await vi.advanceTimersByTimeAsync(100);
+        await flushSockets();
+        for (const message of messages) {
+          if (message.type !== 'assistant.chunk') continue;
+          const key = `${message.deliveryId}:${message.chunkIdx}`;
+          if (acknowledged.has(key)) continue;
+          acknowledged.add(key);
+          const id = String(message.deliveryId);
+          const count = (chars.get(id) ?? 0) + String(message.text).length;
+          chars.set(id, count);
+          const done = messages.some(value => value.type === 'assistant.done' && value.deliveryId === id);
+          socket.send(JSON.stringify({
+            type: 'delivery.progress',
+            payload: { deliveryId: id, chunkIdx: message.chunkIdx, chars: count, final: done, reason: 'rendered' },
+          }));
+        }
+        await flushSockets();
+      }
+      const closure = messages.find(message => message.type === 'contribution.upserted'
+        && message.payload === 'closure' && message.state === 'delivered');
+      expect(closure).toBeDefined();
+      expect(messages.filter(message => message.type === 'assistant.chunk' && message.deliveryId === closure!.deliveryId))
+        .toHaveLength(1);
       const finding = Object.values(runtime.runner.current().domain.findings)[0]!;
       expect(finding.verdict).toBe('not_researched');
       expect(renderToStaticMarkup(<FindingCard finding={finding} />)).toContain('No completed web search');
