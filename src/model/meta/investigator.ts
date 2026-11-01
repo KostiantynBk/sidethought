@@ -184,7 +184,8 @@ export class MetaInvestigator implements InvestigatorExecutor {
       reasoning: { effort: 'medium' },
       instructions: INVESTIGATOR_SEARCH_V1,
       input: job.publicQuery,
-      max_output_tokens: attempt.context.state.config.interpreterMaxOutputTokens,
+      // §8.4: the search step has its own cap; live runs used about 1,600 output tokens (Nov 1).
+      max_output_tokens: attempt.context.state.config.investigatorSearchMaxOutputTokens,
     }, { signal: attempt.startController.signal });
   }
 
@@ -215,9 +216,12 @@ export class MetaInvestigator implements InvestigatorExecutor {
         }, delay);
         signal.addEventListener('abort', abort, { once: true });
       });
-      response = await this.client.responses.retrieve(attempt.providerId!, {
-        signal: attempt.controller.signal,
-      }) as unknown as Record<string, unknown>;
+      // The search results must be requested on retrieval too, not only at creation.
+      response = await this.client.responses.retrieve(
+        attempt.providerId!,
+        { include: ['web_search_call.results'] },
+        { signal: attempt.controller.signal },
+      ) as unknown as Record<string, unknown>;
       delay = Math.min(delay * 2, 2000);
     }
     if (response.status !== 'completed') throw new Error('provider_failed');
@@ -229,8 +233,8 @@ export class MetaInvestigator implements InvestigatorExecutor {
       model: 'muse-spark-1.3',
       stream: true,
       store: false,
-      reasoning: { effort: 'low' },
-      max_output_tokens: attempt.context.state.config.interpreterMaxOutputTokens,
+      reasoning: { effort: 'minimal' },
+      max_output_tokens: attempt.context.state.config.investigatorStructureMaxOutputTokens,
       instructions: INVESTIGATOR_STRUCTURE_V1,
       input: `UNTRUSTED_SOURCE_DATA_JSON_BEGIN\n${JSON.stringify({ answer, results })}\nUNTRUSTED_SOURCE_DATA_JSON_END`,
       text: {

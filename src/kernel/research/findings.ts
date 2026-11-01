@@ -20,12 +20,16 @@ export function findingValidity(deps: Finding['deps'], domain: State['domain']):
   return { state: 'current' };
 }
 
+export function projectFinding(finding: Finding): Finding {
+  return structuredClone(finding);
+}
+
 export function publishFinding(context: Context, finding: Finding): void {
   context.effects.push({
     type: 'client.send',
     message: {
       type: 'finding.upserted',
-      finding: structuredClone(finding),
+      finding: projectFinding(finding),
     },
   });
 }

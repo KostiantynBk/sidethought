@@ -24,6 +24,8 @@ export type Snapshot = {
   streamingChunks: Array<{ deliveryId: string; chunkIdx: number; text: string }>;
   possiblyDelivered: Delivery[];
   items: Item[];
+  jobs?: ResearchJob[];
+  findings?: Finding[];
   replyStatus: string;
 };
 
@@ -82,6 +84,8 @@ function snapshotView(snapshot: Snapshot): View {
   view.inputs = snapshot.inputs;
   view.cards = snapshot.possiblyDelivered;
   view.items = snapshot.items;
+  view.jobs = snapshot.jobs ?? [];
+  view.findings = snapshot.findings ?? [];
   view.prefixes = Object.fromEntries(snapshot.deliveries.map(delivery => [delivery.deliveryId, delivery]));
   view.timeline = [
     ...snapshot.inputs.map(input => ({ kind: 'input' as const, id: input.id })),

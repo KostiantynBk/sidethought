@@ -12,14 +12,20 @@ export function notice(context: Context, text: string): void {
   });
 }
 
+export function projectJob(job: ResearchJob) {
+  return {
+    jobId: job.id,
+    publicQuery: job.publicQuery,
+    state: job.state,
+  };
+}
+
 export function publishJob(context: Context, job: ResearchJob): void {
   context.effects.push({
     type: 'client.send',
     message: {
       type: 'job.updated',
-      jobId: job.id,
-      publicQuery: job.publicQuery,
-      state: job.state,
+      ...projectJob(job),
     },
   });
 }

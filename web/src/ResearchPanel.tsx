@@ -14,6 +14,7 @@ function safeLink(url: string): string | undefined {
 export function FindingCard({ finding }: { finding: Finding }) {
   return <article>
     <h3>Verdict: {finding.verdict}</h3>
+    {finding.verdict === 'not_researched' && <p>No completed web search; this is not researched evidence.</p>}
     {finding.validity.state === 'stale' && <p>Applies to earlier version r{finding.validity.atRev}</p>}
     {finding.validity.state === 'needs_recheck' && <p>Needs recheck</p>}
     <p>Retrieved: {new Date(finding.retrievedAt).toISOString()}</p>

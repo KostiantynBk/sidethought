@@ -1,5 +1,7 @@
 import type { Delivery } from '../contract/index.js';
 import type { State } from '../kernel/index.js';
+import { projectFinding } from '../kernel/research/findings.js';
+import { projectJob } from '../kernel/research/lifecycle.js';
 
 export type ProjectedDelivery = {
   deliveryId: string;
@@ -61,6 +63,8 @@ export function projectState(state: State) {
     streamingChunks,
     possiblyDelivered,
     items: Object.values(state.domain.items).map(item => structuredClone(item)),
+    jobs: Object.values(state.domain.jobs).map(projectJob),
+    findings: Object.values(state.domain.findings).map(projectFinding),
     replyStatus: state.domain.reply?.status ?? 'idle',
   };
 }

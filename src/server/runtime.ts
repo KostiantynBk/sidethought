@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { loadConfig } from '../config/index.js';
 import type { ClientMessage } from '../contract/index.js';
+import { jobForDispatch } from '../kernel/research/index.js';
 import { assembleWithLessons } from '../memory/context.js';
 import type { ProjectMemoryStore } from '../memory/store.js';
 import { MemoryError } from '../memory/types.js';
@@ -45,7 +46,7 @@ export async function createRuntime(
   const store = new SqliteStore(config.dbPath);
   const memory = store.projectMemory();
   const model = injectedModel ?? configuredModel(config, memory, options.fetch);
-  const lookup: JobLookup = options.jobLookup ?? (() => undefined);
+  const lookup: JobLookup = options.jobLookup ?? jobForDispatch;
   const sessions = new Map<string, ProjectRuntime>();
   let closing = false;
   let closePromise: Promise<void> | undefined;

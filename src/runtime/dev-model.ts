@@ -4,6 +4,21 @@ import type { State } from '../kernel/index.js';
 
 type Context = { state: State; emit: (event: RawEvent) => void };
 
+function devResearchRequests(state: State, inputIds: string[]) {
+  return state.domain.inputs.flatMap(input => {
+    if (!inputIds.includes(input.id) || input.origin === 'assistant') return [];
+    const match = /^\s*check whether\s+(.+?)\s+works offline[?.!]?\s*$/iu.exec(input.text);
+    if (!match) return [];
+    const question = input.text.trim();
+    return [{
+      inputId: input.id,
+      question,
+      publicQuery: question,
+      depItemIds: [],
+    }];
+  });
+}
+
 export class DevModel implements ModelExecutor {
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
 
@@ -21,7 +36,7 @@ export class DevModel implements ModelExecutor {
           inputKinds: inputIds.map(inputId => ({ inputId, kind: 'statement' })),
           ops: [],
           replacementGroups: [],
-          researchRequests: [],
+          researchRequests: devResearchRequests(ctx.state, inputIds),
           deprioritizedTopics: [],
           voiceConfirmValues: [],
         },

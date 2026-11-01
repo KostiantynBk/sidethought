@@ -23,11 +23,18 @@ export function extractEvidence(response: Record<string, unknown>, limits: Limit
     }
     if (item.type !== 'web_search_call') continue;
     if (item.status === 'completed') evidence.completedSearchCalls++;
-    const queries = object(item.action)?.queries;
-    if (Array.isArray(queries) && queries.every(query => typeof query === 'string' && query.length > 0)) {
+    const action = object(item.action);
+    const queries = action?.queries;
+    const single = action?.query;
+    if (Array.isArray(queries) && queries.length > 0 && queries.every(query => typeof query === 'string' && query)) {
       evidence.issuedQueries.push(...queries);
       queryCount += queries.length;
+    } else if (typeof single === 'string' && single.length > 0) {
+      // Live Meta responses (Nov 1) carry an empty `queries` list plus one `query` string.
+      evidence.issuedQueries.push(single);
+      queryCount += 1;
     } else {
+      // §4.5: unreadable queries are counted conservatively as three per tool call.
       queryCount += 3;
     }
     if (!Array.isArray(item.results)) continue;
