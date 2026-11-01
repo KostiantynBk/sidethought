@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { loadConfig } from '../src/config/index.js';
 import type { Delivery } from '../src/contract/index.js';
+import { researchContext } from '../src/context/research.js';
+import { verifiedFindingUrls } from '../src/kernel/research/findings.js';
+import { outputFailure } from '../src/kernel/reply-output.js';
 import { assembleWithLessons } from '../src/memory/context.js';
-import { REDUCER_VERSION } from '../src/runtime/session-runner.js';
+import { REDUCER_VERSION, SessionRunner } from '../src/runtime/session-runner.js';
+import { ResearchHarness, claims, evidence, url } from './t11a-helpers.js';
 import { memorySetup, modelState } from './t13-memory-helpers.js';
 
 function delivered(id: string, callId: string, text: string): Delivery {
@@ -76,6 +81,92 @@ describe('shared lesson removal and correction', () => {
     expect(memory.retrieve(target.id, 'forecasting')).toEqual([]);
     expect(memory.inputs(target.id)[0]!.text).toContain('forecasting');
     expect(memory.inputs('local')[0]!.text).toContain('amber-canary');
+  });
+
+  it.each(['edit', 'forget'] as const)(
+    'purges item-derived research on lesson %s and keeps unknown billing through recovery', action => {
+    const { store, memory, target, lesson } = usedLesson();
+    const harness = new ResearchHarness('memory');
+    try {
+      harness.request();
+      harness.complete();
+      const source = harness.state;
+      const snapshot = store.loadSnapshot(target.id)!;
+      // The helper's synthetic in-flight reply has no matching delivery; use a settled runtime snapshot.
+      snapshot.state.domain.reply = null;
+      snapshot.state.domain.call = null;
+      snapshot.state.domain.items = source.domain.items;
+      snapshot.state.domain.jobs = source.domain.jobs;
+      snapshot.state.domain.findings = source.domain.findings;
+      snapshot.state.domain.researchBudget = source.domain.researchBudget;
+      const job = Object.values(source.domain.jobs)[0]!;
+      const callId = job.callId!;
+      const reservation = source.domain.researchBudget.calls[callId]!.reservedUsd;
+      expect(reservation).toBeGreaterThan(0);
+      store.commit(target.id, [{
+        sessionId: target.id,
+        seq: 9,
+        eventId: 'research-completion',
+        type: 'job.completed',
+        acceptedAt: 9,
+        payload: {
+          jobId: job.id,
+          callId,
+          investigatorOutput: claims,
+          retrievalEvidence: evidence,
+        },
+      }], snapshot);
+      const orphan = structuredClone(snapshot.state);
+      orphan.domain.items = {};
+      expect(researchContext(orphan).findings).toEqual([]);
+      expect(verifiedFindingUrls(orphan.domain)).toEqual([]);
+      expect(verifiedFindingUrls(snapshot.state.domain)).toContain(url);
+      if (action === 'edit') {
+        memory.changeLesson(lesson.id, {
+          text: 'Corrected short pilot lesson.',
+          terms: ['forecasting'],
+          expectedVersion: 1,
+          acknowledgeRedaction: true,
+        });
+      } else {
+        memory.removeLesson(lesson.id, 1);
+      }
+      const redacted = store.loadSnapshot(target.id)!.state;
+      expect(redacted.domain.items).toEqual({});
+      expect(redacted.domain.jobs).toEqual({});
+      expect(redacted.domain.findings).toEqual({});
+      expect(redacted.domain.researchBudget.calls[callId]!.reservedUsd).toBe(reservation);
+      expect(JSON.stringify(store.readJournal(target.id))).not.toContain(url);
+      const runner = new SessionRunner(target.id, loadConfig(), store, () => 20, () => {});
+      runner.recover('after-lesson-edit');
+      runner.accept({
+        eventId: 'reconnect',
+        sessionId: target.id,
+        type: 'client.connected',
+        payload: { modality: 'text' },
+      });
+      expect(researchContext(runner.current()).findings).toEqual([]);
+      expect(outputFailure(`See ${url}`, loadConfig(), verifiedFindingUrls(runner.current().domain))).toBe('url');
+      expect(runner.current().domain.researchBudget.calls[callId]!.reservedUsd).toBe(reservation);
+      runner.accept({
+        eventId: 'late-usage',
+        sessionId: target.id,
+        type: 'llm.usage',
+        payload: {
+          callId,
+          inputTokens: 1,
+          outputTokens: 2,
+          queries: 1,
+          audioSeconds: 0,
+          costUsd: 0.003,
+        },
+      });
+      expect(runner.current().domain.researchBudget.calls[callId]!.reservedUsd).toBe(0);
+      expect(runner.current().domain.researchBudget.spentUsd).toBe(0.003);
+    } finally {
+      harness.store.close();
+      store.close();
+    }
   });
 
   it('redacts the old version before allowing the corrected lesson into later calls', () => {

@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3';
 import type { State } from '../kernel/index.js';
+import { purgeOrphanResearch } from '../kernel/research/purge-orphans.js';
 import type { LessonUse } from './types.js';
 
 const marker = '[Reply removed after a shared lesson changed.]';
@@ -9,10 +10,11 @@ function sequence(id: string): number {
   return match ? Number(match[1]) : 0;
 }
 
-function redactState(state: State, since: number): void {
+function redactState(state: State, since: number): string[] {
   // T13: later replies may have indirectly reused the lesson through recent conversation.
   // Preserve user messages, but conservatively clear extracted state and downstream replies.
   state.domain.items = {};
+  const removedJobs = purgeOrphanResearch(state);
   state.domain.projectRev += 1;
   state.domain.pendingRequests = [];
   state.domain.clarifications = [];
@@ -32,6 +34,21 @@ function redactState(state: State, since: number): void {
     delivery.settled = true;
     delivery.doneSent = true;
     delivery.finalAcknowledged = true;
+  }
+  return removedJobs;
+}
+
+function redactResearchJournal(db: Database.Database, sessionId: string, removedJobs: string[]): void {
+  const removed = new Set(removedJobs);
+  const rows = db.prepare("SELECT seq, payload FROM journal WHERE sessionId = ? AND type = 'job.completed'")
+    .all(sessionId) as Array<{ seq: number; payload: string }>;
+  const update = db.prepare('UPDATE journal SET payload = ? WHERE sessionId = ? AND seq = ?');
+  for (const row of rows) {
+    const payload = JSON.parse(row.payload);
+    if (!removed.has(payload.jobId)) continue;
+    payload.investigatorOutput = { verdict: 'inconclusive', claims: [], caveats: [] };
+    payload.retrievalEvidence = { completedSearchCalls: 0, issuedQueries: [], results: [] };
+    update.run(JSON.stringify(payload), sessionId, row.seq);
   }
 }
 
@@ -66,7 +83,8 @@ export function redactLessonUses(db: Database.Database, uses: LessonUse[]): stri
       .get(sessionId) as { stateJson: string } | undefined;
     if (snapshot) {
       const state = JSON.parse(snapshot.stateJson) as State;
-      redactState(state, since);
+      const removedJobs = redactState(state, since);
+      redactResearchJournal(db, sessionId, removedJobs);
       db.prepare('UPDATE snapshots SET stateJson = ? WHERE sessionId = ?').run(JSON.stringify(state), sessionId);
     }
     redactJournal(db, sessionId, since);

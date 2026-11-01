@@ -12,7 +12,14 @@ const fileExtensions = new Set([
 export function containsUnapprovedUrl(text: string, allowed: readonly string[]): boolean {
   const allowlist = new Set(allowed);
   const remaining = text.replace(/\bhttps?:\/\/[^\s<>"`]+/gu, token => {
-    const url = token.replace(/[.,!;:)\]}]+$/gu, '');
+    if (allowlist.has(token)) return ' ';
+    let url = token.replace(/[.,!;:]+$/gu, '');
+    // Strip only unbalanced closing delimiters, preserving parentheses that belong to the URL.
+    for (const [open, close] of [['(', ')'], ['[', ']'], ['{', '}']] as const) {
+      while (url.endsWith(close) && url.split(close).length > url.split(open).length) {
+        url = url.slice(0, -1).replace(/[.,!;:]+$/gu, '');
+      }
+    }
     // Match the complete URL token, never an allow-listed prefix of an attacker's URL.
     return allowlist.has(url) ? ' ' : token;
   });

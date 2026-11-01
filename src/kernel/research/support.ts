@@ -34,14 +34,16 @@ export function normalizeEvidence(text: string): string {
 
 function numbers(text: string): string[] {
   const normalized = normalizeEvidence(text);
-  const numeric = normalized.match(/[-+]?[$€£]?\s*\d+(?:[.,]\d+)*(?:\s*%)?/gu) ?? [];
+  const numeric = normalized.match(/[-+]?[$€£]?\s*(?:\d+(?:[.,]\d+)*|[.,]\d+)(?:\s*%)?/gu) ?? [];
   return numeric.map(value => value.replace(/\s/gu, ''));
 }
 
 function quantities(text: string): string[] {
   // Keep the number WITH its adjacent unit: swapped units cannot pass as a bag of tokens.
   // Unknown adjacent words are treated as possible units, conservatively card-only on mismatch.
-  const tokens = normalizeEvidence(text).match(/[-+]?[$€£]?\d+(?:[.,]\d+)*(?:\s*%)?|[\p{L}]+/gu) ?? [];
+  const tokens = normalizeEvidence(text).match(
+    /[-+]?[$€£]?(?:\d+(?:[.,]\d+)*|[.,]\d+)(?:\s*%)?|[\p{L}]+/gu,
+  ) ?? [];
   return tokens.flatMap((token, index) => {
     if (!/\d/u.test(token) && !numberWords.has(token)) return [];
     const next = tokens[index + 1];
@@ -86,6 +88,11 @@ export function consistentClaim(claim: string, quote: string): boolean {
   if (numbers(claim).some(number => !quotedNumbers.has(number))) return false;
   if (quantities(claim).some(quantity => !quotedQuantities.has(quantity))) return false;
   if (names(claim).some(name => !containsPhrase(quote, name))) return false;
+  const languages = normalizeEvidence(claim).match(/\bc(?:\+\+|#)(?![\p{L}\p{N}+#])/gu) ?? [];
+  const quotedLanguages: string[] = normalizeEvidence(quote).match(/\bc(?:\+\+|#)(?![\p{L}\p{N}+#])/gu) ?? [];
+  if (languages.some(language => !quotedLanguages.includes(language))) return false;
+  const tiers = new Set(['free', 'paid']);
+  if (terms(claim).some(term => tiers.has(term) && !quoteTerms.has(term))) return false;
   const subject = lowercaseSubject(claim);
   if (subject && !containsPhrase(quote, subject)) return false;
   if (terms(claim).some(term => (negations.has(term) || units.has(term)) && !quoteTerms.has(term))) return false;
