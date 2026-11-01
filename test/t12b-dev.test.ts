@@ -19,7 +19,7 @@ it('nominates one deterministic insight from matching captured items', async () 
       voiceConfirmNeeded: false,
     };
   }
-  const model = new DevModel();
+  const model = new DevModel(() => ({ instructions: '', input: '{}' }));
   const events: RawEvent[] = [];
   const effect = {
     type: 'llm.call' as const,

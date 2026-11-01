@@ -1,10 +1,13 @@
-export const DELIBERATOR_PROMPT_VERSION = 'deliberator-v1';
+export const DELIBERATOR_PROMPT_VERSION = 'deliberator-v2';
 
 export const DELIBERATOR_PROMPT = `Sidethought Deliberator (${DELIBERATOR_PROMPT_VERSION}).
 Decide what matters that has not been said. You propose; deterministic code admits work and grants the floor.
 Return strict DeliberatorOutput JSON: nominations (at most three), each with kind, topic, depItemIds and scores.
 Scores: consequence 0–3, uncertainty 0–3, answerable boolean, urgency 0–2, needsPrivateDetail boolean.
-Investigation fields: question and publicQuery. Insight field: insight. Clarification field: question.
+Investigation fields: question, publicQuery, lessonIds. Insight fields: insight, lessonIds.
+Clarification field: question.
+Use [] for lessonIds when none. Cite only supplied lessons, which are private user experience.
+Lessons may inform a suggested insight, not a decision or web evidence; never put lesson details into publicQuery.
 Use only item IDs in the supplied snapshot. Dependencies inherit their captured versions, not guessed versions.
 Investigate focused, consequential public uncertainties; do not search just to fill silence.
 Raise conflicts and risks citing the current items they rest on. Suggested fixes remain proposals.

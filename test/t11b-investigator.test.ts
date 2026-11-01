@@ -50,6 +50,7 @@ describe('Investigator', () => {
       return json(evidence);
     });
     const test = setup(fetch);
+    test.ctx.state.domain.inputs.push({ id: 'private', text: 'private-lesson-amber-canary', status: 'interpreted' });
     test.model.handle(test.effect, test.ctx);
     await vi.waitFor(() => expect(test.emitted.some(event => event.type === 'job.completed')).toBe(true));
     const completed = test.emitted.find(event => event.type === 'job.completed')!;
@@ -63,6 +64,7 @@ describe('Investigator', () => {
     });
     expect(bodies[0]).toContain('public query');
     expect(bodies[0]).not.toContain('private question');
+    expect(bodies.join(' ')).not.toContain('private-lesson-amber-canary');
     expect(bodies[1]).toContain('UNTRUSTED_SOURCE_DATA_JSON_BEGIN');
     await test.model.shutdown();
   });

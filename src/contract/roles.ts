@@ -149,11 +149,13 @@ export const NominationSchema = z.discriminatedUnion('kind', [
     kind: z.literal('investigation'),
     question: text,
     publicQuery: text,
+    lessonIds: z.array(id).optional(),
     ...common,
   }),
   z.strictObject({
     kind: z.literal('insight'),
     insight: text,
+    lessonIds: z.array(id).optional(),
     ...common,
   }),
   z.strictObject({

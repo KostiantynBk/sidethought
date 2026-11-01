@@ -4,6 +4,7 @@ import {
   id,
   text,
   DepSchema,
+  SuppliedLessonSchema,
   EnvelopeFields,
   FindingSchema,
   DeliveryStateSchema,
@@ -167,6 +168,7 @@ export const EventSchema = z.discriminatedUnion('type', [
     'deliberation.ready',
     obj({
       ...call,
+      suppliedLessons: z.array(SuppliedLessonSchema).max(3).optional(),
       output: DeliberatorOutputSchema,
     }),
   ),
@@ -299,6 +301,7 @@ export const ClientMessageSchema = z.discriminatedUnion('type', [
     state: DeliveryStateSchema,
     topic: text,
     text: z.string(),
+    lessons: z.array(SuppliedLessonSchema).optional(),
     findingId: id.optional(),
     jobId: id.optional(),
     deliveryId: id.optional(),

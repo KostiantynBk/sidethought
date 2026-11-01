@@ -72,7 +72,7 @@ function checkerContext(state: State, effect: CallEffect, items: Item[]): RolePr
         contract: candidate.payload === 'evidence'
           ? 'Each claimsUsed ID needs its OWN verified quote and semantic support; preserve all qualifiers.'
           : candidate.payload === 'inference'
-            ? 'Reason only from cited current items; no evidence claims or added numbers/names.'
+            ? 'Reason only from cited current items and lessons; attribute lessons to the named project, not evidence.'
             : 'Ask the supplied clarification without factual additions; claimsUsed must be empty.',
       },
     }, null, 2),

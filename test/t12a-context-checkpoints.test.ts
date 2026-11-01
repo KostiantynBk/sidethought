@@ -33,6 +33,7 @@ it('checks the Checker context against its evidence fixture', () => {
   const result = assembleContext(h.state, { type: 'llm.call', role: 'checker', ...candidate.check! });
   const input = JSON.parse(result.input);
   expect(result.instructions).toContain(expected.promptVersion);
+  expect(result.instructions).toContain("Never mention internal item IDs; refer to the user's own words instead.");
   expect(input.task.role).toBe(expected.role);
   expect(input.task.contract).toContain(expected.contractContains);
   expect(input.candidate.type).toBe(expected.payloadType);

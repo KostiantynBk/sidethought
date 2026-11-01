@@ -89,10 +89,14 @@ export function finishDeliberation(context: Context, event: DeliberationEvent): 
   } else if (event.type === 'deliberation.ready') {
     const captured = new Set(call.capturedInputs.map(dep => dep.itemId));
     const nominations = event.payload.output.nominations;
-    if (nominations.some(nomination => nomination.depItemIds.some(id => !captured.has(id)))) {
+    const supplied = event.payload.suppliedLessons ?? [];
+    const lessonIds = new Set(supplied.map(lesson => lesson.lessonId));
+    const invalid = nominations.some(nomination => nomination.depItemIds.some(id => !captured.has(id))
+      || ('lessonIds' in nomination && nomination.lessonIds?.some(id => !lessonIds.has(id))));
+    if (invalid) {
       decide(context, 'deliberator:schema_failure');
     } else {
-      acceptNominations(context, nominations, call, event.acceptedAt!);
+      acceptNominations(context, nominations, call, event.acceptedAt!, supplied);
     }
   }
   // Results never cause new reasoning by themselves; only a recorded dirty trigger can do so.

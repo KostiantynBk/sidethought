@@ -27,6 +27,21 @@ it('sends the Deliberator schema and its own configured budget', async () => {
   await test.model.shutdown();
 });
 
+it('journals exactly the lessons included in the Deliberator request', async () => {
+  const lessons = [{ lessonId: 'l1', version: 2, sourceProjectName: 'Memory A', text: 'A 43 minute pilot.' }];
+  const input = JSON.stringify({ reusableLessons: lessons });
+  const test = setup('interpreter', [delta('{"nominations":[]}'), terminal()], {
+    assemble: () => ({ instructions: 'Synthetic', input, suppliedLessons: lessons }),
+  });
+  test.effect.role = 'deliberator';
+  test.model.handle(test.effect, test.ctx);
+  await finished(test.model);
+  const body = JSON.parse(String(test.requests[0]?.body));
+  expect(JSON.stringify(body)).toContain('43 minute pilot');
+  expect(test.emitted.at(-1)?.payload).toMatchObject({ suppliedLessons: lessons });
+  await test.model.shutdown();
+});
+
 it('sends the Checker schema and its own configured budget', async () => {
   const output = { applies: true, reason: 'current', utterance: 'Synthetic.', claimsUsed: [] };
   const test = setup('interpreter', [delta(JSON.stringify(output)), terminal()]);

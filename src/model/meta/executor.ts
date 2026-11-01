@@ -32,6 +32,7 @@ type Attempt = {
   metric: CallMetric;
   text: string;
   chunk: number;
+  suppliedLessons?: RolePrompt['suppliedLessons'];
 };
 export type MetaOptions = {
   assemble?: (state: State, effect: CallEffect) => RolePrompt;
@@ -119,6 +120,7 @@ export class MetaModel implements ModelExecutor {
       }
       const { state } = attempt.ctx;
       const prompt = this.assemble(state, attempt.effect);
+      attempt.suppliedLessons = prompt.suppliedLessons;
       const body = requestBody(state, attempt.effect, prompt);
       const response = await this.client.responses.create(body, {
         signal: attempt.controller.signal,
@@ -225,6 +227,8 @@ export class MetaModel implements ModelExecutor {
       : role === 'deliberator' ? 'deliberation.ready' : 'check.ready';
     this.emit(attempt, 'ready', type, {
       ...this.identity(attempt),
+      ...(role === 'deliberator' && attempt.suppliedLessons
+        ? { suppliedLessons: attempt.suppliedLessons } : {}),
       output: result.data,
     });
   }

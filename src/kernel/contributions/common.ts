@@ -26,6 +26,7 @@ export function contributionView(candidate: Contribution) {
     state: candidate.state,
     topic: candidate.topic,
     text: candidate.text,
+    ...(candidate.source.lessons?.length ? { lessons: candidate.source.lessons } : {}),
     ...(candidate.source.findingId ? { findingId: candidate.source.findingId } : {}),
     ...(candidate.jobId ? { jobId: candidate.jobId } : {}),
     ...(candidate.deliveryId ? { deliveryId: candidate.deliveryId } : {}),

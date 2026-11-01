@@ -31,7 +31,7 @@ function configuredModel(
   memory: ProjectMemoryStore,
   fetch?: typeof globalThis.fetch,
 ): ModelExecutor {
-  if (config.model === 'dev') return new DevModel();
+  if (config.model === 'dev') return new DevModel((state, effect) => assembleWithLessons(memory, state, effect));
   if (!config.meta) throw new Error('Meta model configuration is required');
   return new MetaModel(config.meta.createClient(fetch), config.meta.prices, {
     assemble: (state, effect) => assembleWithLessons(memory, state, effect),
@@ -87,7 +87,8 @@ export async function createRuntime(
 
   function stopCalls(runtime: ProjectRuntime, state: ReturnType<SessionRunner['current']>): boolean {
     let failed = false;
-    for (const call of [state.domain.call, state.domain.reply]) {
+    const checks = Object.values(state.domain.initiative.candidates).map(candidate => candidate.check);
+    for (const call of [state.domain.call, state.domain.reply, state.domain.initiative.deliberation, ...checks]) {
       if (!call) continue;
       try {
         model.handle({ type: 'llm.abort', callId: call.callId }, { state, emit: runtime.queue.emit });
@@ -96,7 +97,7 @@ export async function createRuntime(
       }
     }
     for (const job of Object.values(state.domain.jobs)) {
-      if (job.state !== 'running' || !job.callId || job.deps.length === 0) continue;
+      if (job.state !== 'running' || !job.callId) continue;
       try {
         runtime.investigator.handle({ type: 'job.abort', callId: job.callId }, {
           state,

@@ -3,6 +3,12 @@ import { z } from 'zod';
 const id = z.string().min(1);
 const count = z.number().int().nonnegative();
 const text = z.string().min(1);
+export const SuppliedLessonSchema = z.strictObject({
+  lessonId: id,
+  version: count,
+  sourceProjectName: text,
+  text,
+});
 export const DepSchema = z.strictObject({
   itemId: id,
   contentVersion: count,
@@ -142,6 +148,7 @@ export const CandidateSchema = z.strictObject({
     insightId: id.optional(),
     clarification: text.optional(),
     correctionOfDeliveryId: id.optional(),
+    lessons: z.array(SuppliedLessonSchema).optional(),
   }),
   ...dependencies,
   basisRev: count,

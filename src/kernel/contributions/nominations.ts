@@ -1,4 +1,4 @@
-import type { DeliberatorOutput, Dep, KernelEvent } from '../../contract/index.js';
+import type { Candidate, DeliberatorOutput, Dep, KernelEvent } from '../../contract/index.js';
 import type { Context } from '../state.js';
 import { refusal } from '../research/admission.js';
 import { publishJob } from '../research/lifecycle.js';
@@ -11,6 +11,15 @@ import type { RoleCall, Trigger } from './types.js';
 
 type Nomination = DeliberatorOutput['nominations'][number];
 type Investigation = Extract<Nomination, { kind: 'investigation' }>;
+type Lesson = NonNullable<Candidate['source']['lessons']>[number];
+
+function mentionsLesson(nomination: Investigation, lessons: Lesson[]): boolean {
+  if (nomination.lessonIds?.length) return true;
+  const query = new Set(`${nomination.question} ${nomination.publicQuery}`.toLowerCase()
+    .match(/[\p{L}\p{N}]{5,}/gu) ?? []);
+  return lessons.some(lesson => (lesson.text.toLowerCase().match(/[\p{L}\p{N}]{5,}/gu) ?? [])
+    .some(word => query.has(word)));
+}
 
 function queue(context: Context, job: ResearchJob, at: number): void {
   const blocked = refusal(context, job.publicQuery);
@@ -28,7 +37,14 @@ function queue(context: Context, job: ResearchJob, at: number): void {
   publishJob(context, job);
 }
 
-function investigate(context: Context, nomination: Investigation, call: RoleCall & Trigger, deps: Dep[], at: number) {
+function investigate(
+  context: Context,
+  nomination: Investigation,
+  call: RoleCall & Trigger,
+  deps: Dep[],
+  at: number,
+  lessons: Lesson[],
+) {
   if (!nomination.scores.answerable) {
     decide(context, 'investigation:not_answerable');
     return;
@@ -43,7 +59,7 @@ function investigate(context: Context, nomination: Investigation, call: RoleCall
   }
   const scores = nomination.scores;
   const ask = call.causalDepth >= 1 || scores.needsPrivateDetail || scores.consequence === 1
-    || !withinScope(context);
+    || !withinScope(context) || mentionsLesson(nomination, lessons);
   if (!ask && (scores.consequence < context.config.autoAdmitMinConsequenceScore
     || scores.uncertainty < context.config.autoAdmitMinUncertaintyScore)) {
     decide(context, 'investigation:low_value');
@@ -101,6 +117,7 @@ export function acceptNominations(
   nominations: Nomination[],
   call: RoleCall & Trigger,
   at: number,
+  supplied: Lesson[] = [],
 ): void {
   for (const nomination of nominations.slice(0, context.config.maxDeliberatorNominations)) {
     const key = topicKey(nomination.topic);
@@ -114,7 +131,7 @@ export function acceptNominations(
       continue;
     }
     if (nomination.kind === 'investigation') {
-      investigate(context, nomination, call, deps, at);
+      investigate(context, nomination, call, deps, at, supplied);
       continue;
     }
     if (nomination.kind === 'clarification' && context.domain.initiative.askedTopics.includes(key)) {
@@ -129,6 +146,9 @@ export function acceptNominations(
       deps,
       basisRev: call.basisRev,
       causalDepth: call.causalDepth,
+      ...(nomination.kind === 'insight' && nomination.lessonIds?.length ? {
+        source: { lessons: supplied.filter(lesson => nomination.lessonIds!.includes(lesson.lessonId)) },
+      } : {}),
     }, at);
   }
 }

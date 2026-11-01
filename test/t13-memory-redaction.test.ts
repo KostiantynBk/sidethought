@@ -76,7 +76,10 @@ describe('shared lesson removal and correction', () => {
     expect(text).toContain('Earlier unrelated answer.');
     expect(text).toContain('Reply removed after a shared lesson changed');
     expect(JSON.stringify(store.readJournal(target.id))).not.toContain('amber-canary');
-    expect(memory.recentUses(target.id)).toEqual([]);
+    expect(memory.recentUses(target.id)).toEqual([expect.objectContaining({
+      lessonId: lesson.id,
+      version: 1,
+    })]);
     expect(memory.lessons()).toEqual([]);
     expect(memory.retrieve(target.id, 'forecasting')).toEqual([]);
     expect(memory.inputs(target.id)[0]!.text).toContain('forecasting');

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { ModelEffect, ModelExecutor, RawEvent } from './model-port.js';
 import type { State } from '../kernel/index.js';
-import { assembleContext } from '../context/index.js';
+import { assembleContext, type CallEffect, type RolePrompt } from '../context/index.js';
 
 type Context = { state: State; emit: (event: RawEvent) => void };
 
@@ -72,6 +72,8 @@ function devNominations(state: State, effect: Extract<ModelEffect, { type: 'llm.
 export class DevModel implements ModelExecutor {
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
 
+  constructor(private readonly assemble: (state: State, effect: CallEffect) => RolePrompt = assembleContext) {}
+
   handle(effect: ModelEffect, ctx: Context): void {
     if (effect.type === 'llm.abort') {
       this.cancel(effect.callId);
@@ -94,26 +96,53 @@ export class DevModel implements ModelExecutor {
     } else if (effect.role === 'responder') {
       this.stream(effect, ctx);
     } else if (effect.role === 'deliberator') {
-      this.emit(ctx, 'deliberation.ready', {
-        requestId: effect.requestId,
-        callId: effect.callId,
-        output: { nominations: devNominations(ctx.state, effect) },
-      });
+      this.deliberate(effect, ctx);
     } else if (effect.role === 'checker') {
       this.check(effect, ctx);
     }
   }
 
+  private deliberate(effect: Extract<ModelEffect, { type: 'llm.call' }>, ctx: Context): void {
+    try {
+      const prompt = this.assemble(ctx.state, effect);
+      const lesson = prompt.suppliedLessons?.[0];
+      const items = effect.capturedInputs;
+      const nominations = lesson ? [{
+        kind: 'insight',
+        topic: 'Relevant past experience',
+        depItemIds: items.map(item => item.itemId),
+        lessonIds: [lesson.lessonId],
+        insight: lesson.text,
+        scores: { consequence: 2, uncertainty: 0, answerable: false, urgency: 0, needsPrivateDetail: false },
+      }] : devNominations(ctx.state, effect);
+      this.emit(ctx, 'deliberation.ready', {
+        requestId: effect.requestId,
+        callId: effect.callId,
+        ...(prompt.suppliedLessons ? { suppliedLessons: prompt.suppliedLessons } : {}),
+        output: { nominations },
+      });
+    } catch {
+      this.emit(ctx, 'deliberation.failed', {
+        requestId: effect.requestId,
+        callId: effect.callId,
+        reason: 'context_unavailable',
+      });
+    }
+  }
+
   private check(effect: Extract<ModelEffect, { type: 'llm.call' }>, ctx: Context): void {
     try {
-      const prompt = assembleContext(ctx.state, effect);
+      const prompt = this.assemble(ctx.state, effect);
       const candidate = JSON.parse(prompt.input).candidate as {
         type: string;
         text?: string;
         claims?: Array<{ id: string; text: string }>;
+        lessons?: Array<{ sourceProjectName: string; text: string }>;
       };
       const claim = candidate.type === 'evidence' ? candidate.claims?.[0] : undefined;
-      const utterance = claim?.text ?? (candidate.type === 'evidence' ? undefined : candidate.text);
+      const lesson = candidate.lessons?.[0];
+      const utterance = lesson ? `In ${lesson.sourceProjectName} you found: ${lesson.text}`
+        : claim?.text ?? (candidate.type === 'evidence' ? undefined : candidate.text);
       if (!utterance || !['evidence', 'inference', 'clarification'].includes(candidate.type)) {
         throw new Error('missing_payload');
       }

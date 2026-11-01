@@ -22,7 +22,9 @@ function strictSchema(value: unknown): unknown {
   if (properties) {
     const required = source.required as string[] | undefined;
     for (const key of Object.keys(properties)) {
-      if (!required?.includes(key)) properties[key] = { anyOf: [properties[key], { type: 'null' }] };
+      if (!required?.includes(key) && key !== 'lessonIds') {
+        properties[key] = { anyOf: [properties[key], { type: 'null' }] };
+      }
     }
     result.required = Object.keys(properties);
     result.additionalProperties = false;

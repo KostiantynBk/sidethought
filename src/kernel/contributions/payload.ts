@@ -21,6 +21,7 @@ export function candidatePayload(domain: State['domain'], candidate: Contributio
     } : {
       text: candidate.text,
       citedItems: items,
+      ...(candidate.source.lessons?.length ? { lessons: candidate.source.lessons } : {}),
     }),
   };
 }

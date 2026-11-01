@@ -46,6 +46,9 @@ function TranscriptEntry({ view, kind, id }: { view: View; kind: 'input' | 'deli
     {contribution && <><span>{contribution.payload === 'evidence' ? 'evidence (from sources)' : 'reasoning'}</span>{' '}
       <a href={`#contribution-${contribution.candidateId}`}>View card</a>{' '}</>}
     <span id={`delivery-${id}`}>{text}</span>
+    {contribution?.lessons?.map(lesson => <span key={lesson.lessonId}>
+      {' '}Experience — from your project {lesson.sourceProjectName}: {lesson.text}
+    </span>)}
     {(delivery?.stopped || prefix?.interrupted) && <em> interrupted</em>}
   </p>;
 }

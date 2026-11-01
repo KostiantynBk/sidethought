@@ -35,6 +35,21 @@ it('labels an unprompted inference as reasoning', () => {
   expect(renderToStaticMarkup(<Conversation view={view} />)).toContain('reasoning');
 });
 
+it('labels a cited lesson as experience from its named project', () => {
+  const html = renderToStaticMarkup(<ContributionPanel
+    contributions={[{
+      ...contribution,
+      payload: 'inference',
+      state: 'card_only',
+      lessons: [{ lessonId: 'l1', version: 1, sourceProjectName: 'Memory A', text: 'A 43 minute pilot.' }],
+    }]}
+    jobs={[]}
+    onApprove={() => undefined}
+    onDecline={() => undefined} />);
+  expect(html).toContain('Experience — from your project Memory A');
+  expect(html).toContain('A 43 minute pilot.');
+});
+
 it('escapes card text rather than rendering HTML', () => {
   const html = renderToStaticMarkup(<ContributionPanel
     contributions={[{ ...contribution, state: 'card_only' }]}

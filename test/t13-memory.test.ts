@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { assembleWithLessons } from '../src/memory/context.js';
 import { MemoryError } from '../src/memory/types.js';
+import { requestBody } from '../src/model/meta/request.js';
 import { memorySetup, modelState, saveState } from './t13-memory-helpers.js';
+import { ContributionHarness } from './t12a-helpers.js';
 
 describe('reviewed cross-project lesson boundaries', () => {
   it('preserves the existing default project and makes new projects retrieval-off by default', () => {
@@ -69,6 +71,45 @@ describe('reviewed cross-project lesson boundaries', () => {
     }]);
   });
 
+  it('supplies and audits relevant lessons for an opted-in Deliberator call', () => {
+    const { memory, target, lesson } = memorySetup();
+    memory.setEnabled(target.id, true);
+    const h = new ContributionHarness('memory', {}, []);
+    h.connect();
+    h.statement('Plan a forecasting experiment.');
+    h.timer('deliberationDebounce');
+    const state = structuredClone(h.state);
+    state.sessionId = target.id;
+    const call = state.domain.initiative.deliberation!;
+    const effect = { type: 'llm.call' as const, role: 'deliberator' as const, ...call };
+    const prompt = assembleWithLessons(memory, state, effect);
+    expect(prompt.suppliedLessons).toEqual([{
+      lessonId: lesson.id,
+      version: lesson.version,
+      sourceProjectName: lesson.sourceProjectName,
+      text: lesson.text,
+    }]);
+    expect(JSON.parse(prompt.input).reusableLessons).toEqual(prompt.suppliedLessons);
+    expect(memory.recentUses(target.id)[0]).toMatchObject({ callId: call.callId, lessonId: lesson.id });
+    h.store.close();
+  });
+
+  it('does not supply a relevant lesson to the Deliberator when recall is off', () => {
+    const { memory, target } = memorySetup();
+    const h = new ContributionHarness('memory', {}, []);
+    h.connect();
+    h.statement('Plan a forecasting experiment.');
+    h.timer('deliberationDebounce');
+    const state = structuredClone(h.state);
+    state.sessionId = target.id;
+    const call = state.domain.initiative.deliberation!;
+    const prompt = assembleWithLessons(memory, state, { type: 'llm.call', role: 'deliberator', ...call });
+    expect(prompt.suppliedLessons).toBeUndefined();
+    expect(JSON.parse(prompt.input)).not.toHaveProperty('reusableLessons');
+    expect(memory.recentUses(target.id)).toEqual([]);
+    h.store.close();
+  });
+
   it('never gives foreign memory to the Interpreter or its quote witness', () => {
     const { memory, target } = memorySetup();
     memory.setEnabled(target.id, true);
@@ -76,6 +117,7 @@ describe('reviewed cross-project lesson boundaries', () => {
     effect.role = 'interpreter';
     const prompt = assembleWithLessons(memory, state, effect);
     expect(prompt.input).not.toContain('amber-canary');
+    expect(JSON.stringify(requestBody(state, effect, prompt))).not.toContain('amber-canary');
     expect(JSON.parse(prompt.input)).not.toHaveProperty('reusableLessons');
     expect(state.domain.call!.quoteWitness.sources).toEqual([]);
     expect(memory.recentUses(target.id)).toEqual([]);

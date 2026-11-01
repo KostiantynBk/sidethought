@@ -57,14 +57,26 @@ export function outputFailure(context: Context, candidate: Contribution, output:
     }
   } else if (output.claimsUsed.length) return 'claims';
   const selected = claims.filter(claim => output.claimsUsed.includes(claim.id));
+  const lessons = candidate.source.lessons ?? [];
+  if (lessons.some(lesson => !text.toLowerCase().includes(lesson.sourceProjectName.toLowerCase()))) {
+    return 'lesson_attribution';
+  }
   // Only the claims actually approved by the Checker may authorize evidence words and URLs.
   const basis = candidate.payload === 'evidence' ? selected.map(claim => claim.text).join(' ')
-    : candidate.payload === 'inference' ? ('citedItems' in payload ? payload.citedItems : []).map(item => item.text).join(' ')
+    : candidate.payload === 'inference'
+      ? [
+        ...('citedItems' in payload ? payload.citedItems : []).map(item => item.text),
+        ...lessons.map(lesson => `${lesson.sourceProjectName} ${lesson.text}`),
+      ].join(' ')
       : candidate.text;
   const urls = selected.flatMap(claim => claim.support.map(support => support.url));
   if (containsUnapprovedUrl(text, urls)) return 'url';
   const withoutUrls = urls.reduce((value, url) => value.split(url).join(''), text);
-  if (!consistentClaim(withoutUrls, basis)) return 'payload_tokens';
+  const withoutAttribution = lessons.reduce((value, lesson) => {
+    const name = lesson.sourceProjectName.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+    return value.replace(new RegExp(`\\bIn\\s+${name}\\s+you\\s+found\\s*[:,]?\\s*`, 'giu'), '');
+  }, withoutUrls);
+  if (!consistentClaim(withoutAttribution, basis)) return 'payload_tokens';
   return undefined;
 }
 

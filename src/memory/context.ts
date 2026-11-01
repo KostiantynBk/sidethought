@@ -9,13 +9,32 @@ export function assembleWithLessons(
 ): RolePrompt {
   const prompt = assembleContext(state, effect);
   // Other projects' text must never enter the Interpreter's quote witness or authority path.
-  if (effect.role !== 'responder') return prompt;
+  if (effect.role !== 'responder' && effect.role !== 'deliberator') return prompt;
   const input = JSON.parse(prompt.input);
-  const query = input.task.inputs.map((entry: { text: string }) => entry.text).join('\n');
+  const query = effect.role === 'responder'
+    ? input.task.inputs.map((entry: { text: string }) => entry.text).join('\n')
+    : [
+      ...input.projectSnapshot.items.map((item: { text: string }) => item.text),
+      ...input.recentWindow.filter((turn: { role: string }) => turn.role === 'user')
+        .map((turn: { text: string }) => turn.text),
+    ].join('\n');
   const lessons = memory.retrieve(state.sessionId, query);
   if (!lessons.length) return prompt;
   // Persist IDs/versions before the external request, without another copy of lesson content.
   memory.recordUse(effect.callId, state.sessionId, lessons);
+  if (effect.role === 'deliberator') {
+    const suppliedLessons = lessons.map(lesson => ({
+      lessonId: lesson.id,
+      version: lesson.version,
+      sourceProjectName: lesson.sourceProjectName,
+      text: lesson.text,
+    }));
+    return {
+      ...prompt,
+      suppliedLessons,
+      input: JSON.stringify({ ...input, reusableLessons: suppliedLessons }, null, 2),
+    };
+  }
   return {
     ...prompt,
     input: JSON.stringify({

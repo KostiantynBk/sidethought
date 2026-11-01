@@ -30,7 +30,7 @@ const schema = `
   CREATE TABLE IF NOT EXISTS lesson_uses (
     callId TEXT NOT NULL,
     sessionId TEXT NOT NULL,
-    lessonId TEXT NOT NULL REFERENCES shared_lessons(id) ON DELETE CASCADE,
+    lessonId TEXT NOT NULL,
     version INTEGER NOT NULL,
     PRIMARY KEY(callId, lessonId)
   );
@@ -58,9 +58,27 @@ export class ProjectMemoryStore {
     this.db.pragma('secure_delete = ON');
     this.db.pragma('foreign_keys = ON');
     this.db.exec(schema);
+    this.preserveUseAudit();
     this.db.prepare('INSERT OR IGNORE INTO projects (id, name, rev) VALUES (?, ?, 0)')
       .run('local', 'Current project');
     this.db.prepare('INSERT OR IGNORE INTO project_memory_settings (projectId) VALUES (?)').run('local');
+  }
+
+  private preserveUseAudit(): void {
+    const foreignKeys = this.db.pragma('foreign_key_list(lesson_uses)') as unknown[];
+    if (!foreignKeys.length) return;
+    this.db.transaction(() => {
+      this.db.exec(`CREATE TABLE lesson_uses_preserved (
+        callId TEXT NOT NULL,
+        sessionId TEXT NOT NULL,
+        lessonId TEXT NOT NULL,
+        version INTEGER NOT NULL,
+        PRIMARY KEY(callId, lessonId)
+      )`);
+      this.db.exec('INSERT INTO lesson_uses_preserved SELECT callId, sessionId, lessonId, version FROM lesson_uses');
+      this.db.exec('DROP TABLE lesson_uses');
+      this.db.exec('ALTER TABLE lesson_uses_preserved RENAME TO lesson_uses');
+    }).immediate();
   }
 
   projects(): ProjectSpace[] {
@@ -173,11 +191,10 @@ export class ProjectMemoryStore {
     if (edit.terms.some(term => !normalized(term))) throw new MemoryError(400, 'Use meaningful match terms');
     const affected = this.db.transaction(() => {
       if (this.lesson(id).version !== edit.expectedVersion) throw new MemoryError(409, 'Lesson changed; refresh first');
-      const sessions = redactLessonUses(this.db, this.uses(id));
+      const sessions = redactLessonUses(this.db, this.uses(id), id);
       const update = this.db.prepare(`UPDATE shared_lessons SET text = ?, termsJson = ?, version = version + 1
         WHERE id = ? AND version = ?`).run(edit.text, JSON.stringify(edit.terms), id, edit.expectedVersion);
       if (update.changes !== 1) throw new MemoryError(409, 'Lesson changed; refresh first');
-      this.db.prepare('DELETE FROM lesson_uses WHERE lessonId = ?').run(id);
       return sessions;
     }).immediate();
     this.checkpoint();
@@ -187,7 +204,7 @@ export class ProjectMemoryStore {
   removeLesson(id: string, expectedVersion: number): string[] {
     const affected = this.db.transaction(() => {
       if (this.lesson(id).version !== expectedVersion) throw new MemoryError(409, 'Lesson changed; refresh first');
-      const sessions = redactLessonUses(this.db, this.uses(id));
+      const sessions = redactLessonUses(this.db, this.uses(id), id);
       const removed = this.db.prepare('DELETE FROM shared_lessons WHERE id = ? AND version = ?')
         .run(id, expectedVersion);
       if (removed.changes !== 1) throw new MemoryError(409, 'Lesson changed; refresh first');

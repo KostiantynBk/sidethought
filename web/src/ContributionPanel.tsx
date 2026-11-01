@@ -18,6 +18,9 @@ export function ContributionPanel(props: {
         <h3>{item.topic}</h3>
         <p>{item.payload === 'evidence' ? 'Evidence (from sources)' : item.payload}</p>
         {item.text && <p>{item.text}</p>}
+        {item.lessons?.map(lesson => <p key={lesson.lessonId}>
+          <strong>Experience — from your project {lesson.sourceProjectName}:</strong> {lesson.text}
+        </p>)}
         {item.findingId && <a href={`#finding-${item.findingId}`}>View evidence card</a>}
         {item.jobId && job?.state === 'awaiting_user' && <>
           <p>Want me to check {job.publicQuery}?</p>

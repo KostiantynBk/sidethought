@@ -10,6 +10,12 @@ import { researchContext } from './research.js';
 export type RolePrompt = {
   instructions: string;
   input: string;
+  suppliedLessons?: Array<{
+    lessonId: string;
+    version: number;
+    sourceProjectName: string;
+    text: string;
+  }>;
 };
 export type CallEffect = Extract<Effect, { type: 'llm.call' }>;
 

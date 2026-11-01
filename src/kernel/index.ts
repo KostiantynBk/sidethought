@@ -19,6 +19,7 @@ import {
 
 export { initialState } from './state.js';
 export { projectContributions } from './contributions/index.js';
+export { dropCandidatesCitingLesson } from './contributions/purge-lessons.js';
 export type { Call, Context, Decision, State, Timer } from './state.js';
 
 export function hasUninterpretedInput(state: State): boolean {
