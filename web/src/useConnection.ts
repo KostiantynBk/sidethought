@@ -45,7 +45,7 @@ function receive(message: Message, refs: ConnectionRefs, setView: Dispatch<SetSt
   setView(previous => nextView(previous, message));
 }
 
-function useSocket(loggedIn: boolean, setView: Dispatch<SetStateAction<View>>) {
+function useSocket(loggedIn: boolean, projectId: string, setView: Dispatch<SetStateAction<View>>) {
   const refs: ConnectionRefs = {
     socket: useRef<WebSocket | null>(null),
     blocked: useRef(new Set<string>()),
@@ -60,9 +60,12 @@ function useSocket(loggedIn: boolean, setView: Dispatch<SetStateAction<View>>) {
     let reconnect: ReturnType<typeof setTimeout> | undefined;
     const connect = () => {
       const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const ws = new WebSocket(`${protocol}//${location.host}/ws`);
+      const query = projectId === 'local' ? '' : `?project=${encodeURIComponent(projectId)}`;
+      const ws = new WebSocket(`${protocol}//${location.host}/ws${query}`);
       refs.socket.current = ws;
-      ws.onmessage = event => receive(JSON.parse(String(event.data)) as Message, refs, setView);
+      ws.onmessage = event => {
+        if (active && refs.socket.current === ws) receive(JSON.parse(String(event.data)) as Message, refs, setView);
+      };
       ws.onclose = () => {
         if (active) reconnect = setTimeout(connect, 1000);
       };
@@ -73,7 +76,7 @@ function useSocket(loggedIn: boolean, setView: Dispatch<SetStateAction<View>>) {
       if (reconnect) clearTimeout(reconnect);
       refs.socket.current?.close();
     };
-  }, [loggedIn]);
+  }, [loggedIn, projectId]);
 
   function send(type: string, payload: unknown): boolean {
     if (refs.socket.current?.readyState !== WebSocket.OPEN) return false;
@@ -98,9 +101,9 @@ function useAcknowledge(view: View, setView: Dispatch<SetStateAction<View>>, ref
   }, [view.deliveries]);
 }
 
-export function useConnection(loggedIn: boolean) {
+export function useConnection(loggedIn: boolean, projectId = 'local') {
   const [view, setView] = useState<View>(emptyView);
-  const { refs, send } = useSocket(loggedIn, setView);
+  const { refs, send } = useSocket(loggedIn, projectId, setView);
   useAcknowledge(view, setView, refs, send);
   return {
     view,

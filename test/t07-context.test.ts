@@ -30,7 +30,7 @@ it('assembles ordered JSON sections and stable version-tagged Responder instruct
     jobs: [],
     findings: [],
   });
-  expect(prompt.instructions).toContain('[sidethought-responder-v1]');
+  expect(prompt.instructions).toContain('[sidethought-responder-v2]');
   expect(prompt.instructions).toContain('[sidethought-output-rules-v1]');
   expect(prompt.instructions).toContain('[PASS]');
 });
