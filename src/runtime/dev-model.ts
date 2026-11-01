@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { ModelEffect, ModelExecutor, RawEvent } from './model-port.js';
 import type { State } from '../kernel/index.js';
+import { assembleContext } from '../context/index.js';
 
 type Context = { state: State; emit: (event: RawEvent) => void };
 
@@ -16,6 +17,25 @@ function devResearchRequests(state: State, inputIds: string[]) {
       publicQuery: question,
       depItemIds: [],
     }];
+  });
+}
+
+function devStatements(state: State, inputIds: string[]) {
+  return state.domain.inputs.flatMap(input => {
+    if (!inputIds.includes(input.id) || input.origin === 'assistant') return [];
+    const match = /^Requirement: (.+)\nOption: (.+)$/u.exec(input.text);
+    if (!match) return [];
+    return [match[1]!, match[2]!].map((text, index) => {
+      const start = index === 0 ? 0 : input.text.indexOf('\nOption: ') + 1;
+      const end = index === 0 ? input.text.indexOf('\n') : input.text.length;
+      return {
+        op: 'create',
+        kind: index === 0 ? 'requirement' : 'option',
+        status: 'stated',
+        text,
+        quoteSpans: [{ inputId: input.id, start, end, quote: input.text.slice(start, end) }],
+      };
+    });
   });
 }
 
@@ -35,9 +55,9 @@ function devNominations(state: State, effect: Extract<ModelEffect, { type: 'llm.
         kind: 'insight',
         topic,
         depItemIds: [first.id, second.id],
-        insight: `Consider these together: ${first.text} ${second.text}`,
+        insight: `${first.text} ${second.text}`,
         scores: {
-          consequence: 1,
+          consequence: 2,
           uncertainty: 0,
           answerable: false,
           urgency: 0,
@@ -64,7 +84,7 @@ export class DevModel implements ModelExecutor {
         callId: effect.callId,
         output: {
           inputKinds: inputIds.map(inputId => ({ inputId, kind: 'statement' })),
-          ops: [],
+          ops: devStatements(ctx.state, inputIds),
           replacementGroups: [],
           researchRequests: devResearchRequests(ctx.state, inputIds),
           deprioritizedTopics: [],
@@ -80,7 +100,34 @@ export class DevModel implements ModelExecutor {
         output: { nominations: devNominations(ctx.state, effect) },
       });
     } else if (effect.role === 'checker') {
-      // T12a owns the candidate context shape. Fail closed until the seam is integrated.
+      this.check(effect, ctx);
+    }
+  }
+
+  private check(effect: Extract<ModelEffect, { type: 'llm.call' }>, ctx: Context): void {
+    try {
+      const prompt = assembleContext(ctx.state, effect);
+      const candidate = JSON.parse(prompt.input).candidate as {
+        type: string;
+        text?: string;
+        claims?: Array<{ id: string; text: string }>;
+      };
+      const claim = candidate.type === 'evidence' ? candidate.claims?.[0] : undefined;
+      const utterance = claim?.text ?? (candidate.type === 'evidence' ? undefined : candidate.text);
+      if (!utterance || !['evidence', 'inference', 'clarification'].includes(candidate.type)) {
+        throw new Error('missing_payload');
+      }
+      this.emit(ctx, 'check.ready', {
+        requestId: effect.requestId,
+        callId: effect.callId,
+        output: {
+          applies: true,
+          reason: 'synthetic payload',
+          utterance,
+          claimsUsed: claim ? [claim.id] : [],
+        },
+      });
+    } catch {
       this.emit(ctx, 'check.failed', {
         requestId: effect.requestId,
         callId: effect.callId,

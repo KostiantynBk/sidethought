@@ -5,7 +5,7 @@ import { initialState } from '../src/kernel/index.js';
 import { DevModel } from '../src/runtime/dev-model.js';
 import type { RawEvent } from '../src/runtime/model-port.js';
 
-it('nominates one deterministic card-level insight from matching captured items', async () => {
+it('nominates one deterministic insight from matching captured items', async () => {
   const state = initialState('synthetic', loadConfig());
   for (const [id, text] of [['one', 'Keep offline notes.'], ['two', 'Recover offline notes.']]) {
     state.domain.items[id!] = {
@@ -33,7 +33,7 @@ it('nominates one deterministic card-level insight from matching captured items'
   const payload = events[0]!.payload as { output: unknown };
   const result = DeliberatorOutputSchema.parse(payload.output);
   expect(result.nominations).toHaveLength(1);
-  expect(result.nominations[0]?.scores.consequence).toBe(1);
+  expect(result.nominations[0]?.scores.consequence).toBe(2);
   expect(result.nominations[0]?.depItemIds).toEqual(['one', 'two']);
   await model.shutdown();
 });

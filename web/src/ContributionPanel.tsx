@@ -9,7 +9,10 @@ export function ContributionPanel(props: {
 }) {
   return <section aria-label="Contribution cards">
     <h2>Contribution cards</h2>
-    {props.contributions.filter(item => item.state !== 'dropped').map(item => {
+    {props.contributions.filter(item => {
+      const job = props.jobs.find(candidate => candidate.jobId === item.jobId);
+      return item.state === 'card_only' || item.state === 'delivered' || job?.state === 'awaiting_user';
+    }).map(item => {
       const job = props.jobs.find(candidate => candidate.jobId === item.jobId);
       return <article id={`contribution-${item.candidateId}`} key={item.candidateId}>
         <h3>{item.topic}</h3>

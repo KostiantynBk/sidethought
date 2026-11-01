@@ -1,36 +1,18 @@
 // Manual only: npx tsx --env-file=.env scripts/contribution-smoke.ts
 // Makes live paid calls; never run without explicit authorization.
-import { loadConfig } from '../src/config/index.js';
-import { initialState } from '../src/kernel/index.js';
-import type { CallEffect } from '../src/context/index.js';
+import { syntheticState } from './contribution-smoke-state.js';
 import { modelConfiguration, type MetaConnection } from '../src/model/meta/config.js';
 import { MetaModel } from '../src/model/meta/executor.js';
 
 type Role = 'deliberator' | 'checker';
 
 async function call(role: Role, meta: MetaConnection): Promise<void> {
-  const state = initialState('synthetic-smoke', loadConfig());
-  const effect: CallEffect = {
-    type: 'llm.call',
-    role,
-    requestId: `smoke-${role}`,
-    callId: `smoke-${role}-1`,
-    basisRev: 0,
-    capturedInputs: [],
-  };
+  const { state, effect } = syntheticState(role);
   let nominationCount: number | null = null;
   let applies: boolean | null = null;
   let finish!: () => void;
   const done = new Promise<void>(resolve => { finish = resolve; });
   const model = new MetaModel(meta.createClient(), meta.prices, {
-    assemble: () => ({
-      instructions: role === 'deliberator'
-        ? 'Return up to three nominations for the synthetic project using the required schema.'
-        : 'Check the synthetic candidate and return the required schema.',
-      input: role === 'deliberator'
-        ? 'Synthetic project: keep notes on a phone and recover them after losing it.'
-        : 'Synthetic candidate: Keeping notes only on the phone may conflict with recovery after loss.',
-    }),
     onMetric: metric => {
       console.log(JSON.stringify({
         role,

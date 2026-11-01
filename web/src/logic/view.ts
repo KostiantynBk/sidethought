@@ -1,3 +1,4 @@
+import type { ClientMessage } from '../../../src/contract/index.js';
 import type { Finding } from '../../../src/contract/models.js';
 import type { ResearchJob } from '../ResearchPanel.js';
 import { mergeChunk, type TranscriptDelivery } from './transcript.js';
@@ -26,22 +27,12 @@ export type Snapshot = {
   items: Item[];
   jobs?: ResearchJob[];
   findings?: Finding[];
+  contributions?: ContributionView[];
   replyStatus: string;
 };
 
-// Local T12 seam; replace with the shared contract type when T12a is merged.
-export type ContributionView = {
-  type: 'contribution.upserted';
-  candidateId: string;
-  class: 'speak' | 'card';
-  payload: 'evidence' | 'inference' | 'clarification' | 'closure';
-  state: 'candidate' | 'dropped' | 'card_only' | 'checking' | 'delivering' | 'delivered' | 'interrupted' | 'superseded';
-  topic: string;
-  text: string;
-  findingId?: string;
-  jobId?: string;
-  deliveryId?: string;
-};
+type ContributionMessage = Extract<ClientMessage, { type: 'contribution.upserted' }>;
+export type ContributionView = Omit<ContributionMessage, 'type'>;
 
 export type Message = Record<string, unknown> & { type: string };
 export type TimelineEntry = { kind: 'input' | 'delivery'; id: string };
@@ -102,6 +93,7 @@ function snapshotView(snapshot: Snapshot): View {
   view.items = snapshot.items;
   view.jobs = snapshot.jobs ?? [];
   view.findings = snapshot.findings ?? [];
+  view.contributions = snapshot.contributions ?? [];
   view.prefixes = Object.fromEntries(snapshot.deliveries.map(delivery => [delivery.deliveryId, delivery]));
   view.timeline = [
     ...snapshot.inputs.map(input => ({ kind: 'input' as const, id: input.id })),
@@ -138,14 +130,21 @@ export function nextView(view: View, message: Message): View {
     return updateDelivery(view, message.deliveryId as string, { stopped: true });
   }
   if (message.type === 'contribution.upserted') {
-    const contribution = message as ContributionView;
+    const contribution = message as unknown as ContributionMessage;
     return {
       ...view,
-      contributions: [...view.contributions.filter(item => item.candidateId !== contribution.candidateId), contribution],
+      contributions: [
+        ...view.contributions.filter(item => item.candidateId !== contribution.candidateId),
+        contribution,
+      ],
     };
   }
   if (message.type === 'job.updated') {
-    const job = { jobId: message.jobId as string, publicQuery: message.publicQuery as string, state: message.state as string };
+    const job = {
+      jobId: message.jobId as string,
+      publicQuery: message.publicQuery as string,
+      state: message.state as string,
+    };
     return { ...view, jobs: [...view.jobs.filter(previous => previous.jobId !== job.jobId), job] };
   }
   if (message.type === 'finding.upserted') {

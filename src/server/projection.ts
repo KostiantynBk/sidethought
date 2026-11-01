@@ -1,5 +1,5 @@
 import type { Delivery } from '../contract/index.js';
-import type { State } from '../kernel/index.js';
+import { projectContributions, type State } from '../kernel/index.js';
 import { projectFinding } from '../kernel/research/findings.js';
 import { projectJob } from '../kernel/research/lifecycle.js';
 
@@ -65,6 +65,7 @@ export function projectState(state: State) {
     items: Object.values(state.domain.items).map(item => structuredClone(item)),
     jobs: Object.values(state.domain.jobs).map(projectJob),
     findings: Object.values(state.domain.findings).map(projectFinding),
+    contributions: projectContributions(state),
     replyStatus: state.domain.reply?.status ?? 'idle',
   };
 }
