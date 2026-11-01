@@ -6,6 +6,7 @@ import { projectState } from './projection.js';
 export class EventQueue {
   private readonly pending: RawEvent[] = [];
   private draining = false;
+  private closed = false;
 
   constructor(
     private readonly runner: () => SessionRunner,
@@ -13,11 +14,18 @@ export class EventQueue {
   ) {}
 
   emit = (event: RawEvent): void => {
+    if (this.closed) return;
     this.pending.push(event);
     this.drain();
   };
 
+  close(): void {
+    this.closed = true;
+    this.pending.length = 0;
+  }
+
   recover(eventId: string): void {
+    if (this.closed) return;
     this.draining = true;
     try {
       this.runner().recover(eventId);
@@ -28,10 +36,10 @@ export class EventQueue {
   }
 
   private drain(): void {
-    if (this.draining) return;
+    if (this.draining || this.closed) return;
     this.draining = true;
     try {
-      while (this.pending.length) this.accept(this.pending.shift()!);
+      while (!this.closed && this.pending.length) this.accept(this.pending.shift()!);
     } finally {
       this.draining = false;
     }
@@ -39,6 +47,13 @@ export class EventQueue {
 
   private accept(event: RawEvent): void {
     const runner = this.runner();
+    if (runner.isSuspended()) {
+      this.broadcast({
+        type: 'transcript.appended',
+        text: 'This project is paused after a memory change. Restart the server before sending more messages.',
+      });
+      return;
+    }
     const before = runner.current().domain.projectRev;
     const result = runner.accept(event);
     const after = result.state.domain.projectRev;

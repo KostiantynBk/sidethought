@@ -35,8 +35,18 @@ let root: Root;
 
 async function mountAndLogin(model: 'dev' | 'meta'): Promise<void> {
   vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-    if (url === '/health') return { ok: true, json: async () => ({ ok: true, model }) };
     if (url === '/login') return { ok: true };
+    if (url === '/api/projects') return {
+      ok: true,
+      json: async () => ({
+        model,
+        projects: [{ id: 'local', name: 'Current project', memoryEnabled: false }],
+      }),
+    };
+    if (url.endsWith('/input-status')) return {
+      ok: true,
+      json: async () => ({ pending: 0, failedCount: 0, needsRetry: [] }),
+    };
     throw new Error(`Unexpected fetch: ${url}`);
   }));
   await act(async () => root.render(<App />));
@@ -63,14 +73,14 @@ afterEach(() => {
 });
 
 describe('research UI integration', () => {
-  it('shows the dev label only when health reports dev', async () => {
+  it('shows the dev label when the project API reports dev', async () => {
     await mountAndLogin('dev');
     const header = container.querySelector('h1')?.textContent ?? '';
     expect(header).toContain('dev model: no real AI');
     expect(header).not.toContain('Meta Spark');
   });
 
-  it('shows Meta Spark and not the dev label when health reports meta', async () => {
+  it('shows Meta Spark and not the dev label when the project API reports meta', async () => {
     await mountAndLogin('meta');
     const header = container.querySelector('h1')?.textContent ?? '';
     expect(header).toContain('Meta Spark');

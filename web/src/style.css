@@ -7,3 +7,7 @@ small { font-size: .6em; color: #666; }
 .uncertain { color: #666; background: #eee; padding: .6rem; }
 article { border-bottom: 1px solid #eee; }
 mark { margin-right: .3rem; }
+[id^="delivery-"] { white-space: pre-wrap; overflow-wrap: anywhere; }
+textarea { display: block; width: min(100%, 42rem); min-height: 5rem; padding: .5rem; box-sizing: border-box; }
+select { padding: .4rem; margin: .4rem; }
+button { cursor: pointer; }

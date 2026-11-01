@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import { SCHEMA } from './schema.js';
+import { ProjectMemoryStore } from '../memory/store.js';
 import { DuplicateEventError, type JournalEvent, type SessionStore, type Snapshot, type Usage } from './types.js';
 
 type SnapshotRow = {
@@ -97,6 +98,10 @@ export class SqliteStore implements SessionStore {
       secureDelete: this.db.pragma('secure_delete', { simple: true }) as number,
       foreignKeys: this.db.pragma('foreign_keys', { simple: true }) as number,
     };
+  }
+
+  projectMemory(): ProjectMemoryStore {
+    return new ProjectMemoryStore(this.db);
   }
 
   close(): void {

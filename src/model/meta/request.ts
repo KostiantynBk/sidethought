@@ -19,7 +19,9 @@ export function requestBody(state: State, effect: CallEffect, prompt: RolePrompt
     model: 'muse-spark-1.3',
     stream: true,
     store: false,
-    reasoning: { effort: 'low' },
+    // T13 live checks: low exhausted 673/800 Responder tokens and both 1200/1800 Interpreter caps.
+    // Use minimal for these two foreground roles; do not raise caps or weaken schema/quote checks.
+    reasoning: { effort: 'minimal' },
     max_output_tokens: cap,
     instructions: prompt.instructions,
     input: prompt.input,
