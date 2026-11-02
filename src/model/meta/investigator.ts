@@ -266,7 +266,11 @@ UNTRUSTED_SOURCE_DATA_JSON_END`.length;
       reasoning: { effort: 'minimal' },
       max_output_tokens: attempt.context.state.config.investigatorStructureMaxOutputTokens,
       instructions: INVESTIGATOR_STRUCTURE_V2,
-      input: `UNTRUSTED_SOURCE_DATA_JSON_BEGIN\n${JSON.stringify({ answer, results, pages })}\nUNTRUSTED_SOURCE_DATA_JSON_END`,
+      input: [
+        'UNTRUSTED_SOURCE_DATA_JSON_BEGIN',
+        JSON.stringify({ answer, results, pages }),
+        'UNTRUSTED_SOURCE_DATA_JSON_END',
+      ].join('\n'),
       text: {
         format: {
           type: 'json_schema',

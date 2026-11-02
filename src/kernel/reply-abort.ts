@@ -13,7 +13,7 @@ export function wholeWordPrefix(sentText: string, count: number): string {
 export function recordPrefix(delivery: Delivery, renderedUpTo: number | undefined, preserveSent = false): void {
   const sentText = delivery.chunks.filter(chunk => ['sent', 'rendered', 'played'].includes(chunk.state))
     .map(chunk => chunk.text).join('');
-  if (renderedUpTo !== undefined) delivery.renderedOffsetKnown = true;
+  if (renderedUpTo !== undefined && delivery.candidateId) delivery.renderedOffsetKnown = true;
   const reported = renderedUpTo === undefined ? delivery.deliveredChars : Math.min(renderedUpTo, delivery.sentChars);
   delivery.deliveredChars = Math.max(delivery.deliveredChars, reported);
   delivery.interruptedPrefix = wholeWordPrefix(sentText, delivery.deliveredChars);

@@ -146,7 +146,10 @@ export function acceptNominations(
   }
 }
 
-export function approval(context: Context, event: Extract<KernelEvent, { type: 'job.approve' | 'job.decline' }>): string {
+export function approval(
+  context: Context,
+  event: Extract<KernelEvent, { type: 'job.approve' | 'job.decline' }>,
+): string {
   const job = context.domain.jobs[event.payload.jobId];
   if (!job || job.state !== 'awaiting_user') return 'late:retired_job';
   const candidate = Object.values(context.domain.initiative.candidates).find(value => value.jobId === job.id);

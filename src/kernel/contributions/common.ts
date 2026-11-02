@@ -43,7 +43,12 @@ export function publish(context: Context, candidate: Contribution): void {
   });
 }
 
-export function transition(context: Context, candidate: Contribution, state: Contribution['state'], code: string): void {
+export function transition(
+  context: Context,
+  candidate: Contribution,
+  state: Contribution['state'],
+  code: string,
+): void {
   candidate.state = state;
   publish(context, candidate);
   decide(context, code, candidate);

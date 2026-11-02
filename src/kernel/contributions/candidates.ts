@@ -80,7 +80,8 @@ export function ensureClosures(context: Context, at: number): void {
   for (const job of Object.values(context.domain.jobs)) {
     if (!job.promised || job.closureCount || !['succeeded', 'failed', 'timed_out', 'cancelled', 'interrupted']
       .includes(job.state)) continue;
-    const candidates = Object.values(context.domain.initiative.candidates).filter(candidate => candidate.jobId === job.id);
+    const candidates = Object.values(context.domain.initiative.candidates)
+      .filter(candidate => candidate.jobId === job.id);
     const pending = candidates.some(candidate => ['candidate', 'checking', 'delivering', 'interrupted']
       .includes(candidate.state) && candidate.class === 'speak');
     if (pending || candidates.some(candidate => candidate.payload === 'closure')) continue;

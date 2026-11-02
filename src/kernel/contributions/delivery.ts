@@ -99,7 +99,10 @@ export function finishContribution(context: Context, candidate: Contribution, at
   }
 }
 
-export function contributionProgress(context: Context, event: Extract<KernelEvent, { type: 'delivery.progress' }>): void {
+export function contributionProgress(
+  context: Context,
+  event: Extract<KernelEvent, { type: 'delivery.progress' }>,
+): void {
   const delivery = context.domain.deliveries[event.payload.deliveryId];
   const candidate = delivery?.candidateId ? context.domain.initiative.candidates[delivery.candidateId] : undefined;
   if (!delivery || !candidate || candidate.state !== 'delivering') return;

@@ -61,7 +61,8 @@ export const promised_closed_once: Invariant = (before, _event, after, effects) 
     const witnesses = job.state === 'rejected' ? 1 : Object.values(after.domain.deliveries).filter(delivery => {
       const candidate = candidates.find(value => value.id === delivery.candidateId);
       if (candidate?.jobId !== job.id || !validClosureWitness(delivery)) return false;
-      return delivery.promiseWitness === 'fixed_sent' ? candidate.payload === 'closure' : candidate.payload === 'evidence';
+      const payload = delivery.promiseWitness === 'fixed_sent' ? 'closure' : 'evidence';
+      return candidate.payload === payload;
     }).length;
     if (job.closureCount !== witnesses) failures.push(`promised_closed_once: witness count differs: ${job.id}`);
   }
