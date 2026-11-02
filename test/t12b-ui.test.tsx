@@ -35,6 +35,12 @@ it('labels an unprompted inference as reasoning', () => {
   expect(renderToStaticMarkup(<Conversation view={view} />)).toContain('reasoning');
 });
 
+it('labels an unprompted clarification as a question', () => {
+  let view = nextView(emptyView(), { type: 'contribution.upserted', ...contribution, payload: 'clarification' });
+  view = nextView(view, { type: 'assistant.chunk', deliveryId: 'delivery-1', chunkIdx: 0, text: 'What next?' });
+  expect(renderToStaticMarkup(<Conversation view={view} />)).toContain('<span>question</span>');
+});
+
 it('labels a cited lesson as experience from its named project', () => {
   const html = renderToStaticMarkup(<ContributionPanel
     contributions={[{

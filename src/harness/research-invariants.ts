@@ -63,7 +63,8 @@ export const promised_closed_once: Invariant = (before, _event, after, effects) 
     if (effect.type !== 'client.send' || effect.message.type !== 'assistant.chunk') return false;
     const delivery = after.domain.deliveries[effect.message.deliveryId];
     const candidate = delivery?.candidateId ? after.domain.initiative.candidates[delivery.candidateId] : undefined;
-    return candidate?.payload === 'closure' && candidate.jobId
+    return (candidate?.payload === 'closure' || candidate?.payload === 'evidence') && candidate.jobId
+      && after.domain.jobs[candidate.jobId]?.promised
       && (before.domain.jobs[candidate.jobId]?.closureCount ?? 0) === 0;
   });
   if (closures.length + acknowledged.length + startedClosures.length !== added) {

@@ -4,6 +4,7 @@ import { containsCredentialRequest } from '../output-credentials.js';
 import { containsUnapprovedUrl } from '../output-url.js';
 import { ABBREVIATION } from '../output-normalization.js';
 import { consistentClaim } from '../research/support.js';
+import { hasUnsupportedWords } from './common-words.js';
 import { dependencyState } from '../research/policy.js';
 import { publishFinding } from '../research/findings.js';
 import { arm, capturedInputs, clearTimer, transition } from './common.js';
@@ -62,13 +63,13 @@ export function outputFailure(context: Context, candidate: Contribution, output:
     return 'lesson_attribution';
   }
   // Only the claims actually approved by the Checker may authorize evidence words and URLs.
-  const basis = candidate.payload === 'evidence' ? selected.map(claim => claim.text).join(' ')
-    : candidate.payload === 'inference'
-      ? [
-        ...('citedItems' in payload ? payload.citedItems : []).map(item => item.text),
-        ...lessons.map(lesson => `${lesson.sourceProjectName} ${lesson.text}`),
-      ].join(' ')
-      : candidate.text;
+  const basis = candidate.payload === 'evidence'
+    ? selected.flatMap(claim => [claim.text, ...claim.support.map(support => support.quote)]).join(' ')
+    : [
+      candidate.text,
+      ...('citedItems' in payload ? payload.citedItems : []).map(item => item.text),
+      ...lessons.map(lesson => `${lesson.sourceProjectName} ${lesson.text}`),
+    ].join(' ');
   const urls = selected.flatMap(claim => claim.support.map(support => support.url));
   if (containsUnapprovedUrl(text, urls)) return 'url';
   const withoutUrls = urls.reduce((value, url) => value.split(url).join(''), text);
@@ -76,7 +77,9 @@ export function outputFailure(context: Context, candidate: Contribution, output:
     const name = lesson.sourceProjectName.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
     return value.replace(new RegExp(`\\bIn\\s+${name}\\s+you\\s+found\\s*[:,]?\\s*`, 'giu'), '');
   }, withoutUrls);
-  if (!consistentClaim(withoutAttribution, basis)) return 'payload_tokens';
+  if (!consistentClaim(withoutAttribution, basis) || hasUnsupportedWords(withoutUrls, basis)) {
+    return 'payload_tokens';
+  }
   return undefined;
 }
 
@@ -121,7 +124,9 @@ export function checkEvent(
   } else if (check.basisRev !== context.domain.projectRev || check.inputCount !== context.domain.inputs.length) {
     candidate.rechecks += 1;
     const retry = candidate.rechecks <= Math.min(1, context.config.maxCheckerRechecks);
-    transition(context, candidate, retry ? 'candidate' : 'card_only', retry ? 'check:revision_retry' : 'check:revision_card');
+    const state = retry ? 'candidate' : 'card_only';
+    const reason = retry ? 'check:revision_retry' : 'check:revision_card';
+    transition(context, candidate, state, reason);
   } else if (event.type === 'check.failed') {
     transition(context, candidate, 'card_only', 'check:failed');
   } else {

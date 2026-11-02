@@ -13,14 +13,6 @@ type Nomination = DeliberatorOutput['nominations'][number];
 type Investigation = Extract<Nomination, { kind: 'investigation' }>;
 type Lesson = NonNullable<Candidate['source']['lessons']>[number];
 
-function mentionsLesson(nomination: Investigation, lessons: Lesson[]): boolean {
-  if (nomination.lessonIds?.length) return true;
-  const query = new Set(`${nomination.question} ${nomination.publicQuery}`.toLowerCase()
-    .match(/[\p{L}\p{N}]{5,}/gu) ?? []);
-  return lessons.some(lesson => (lesson.text.toLowerCase().match(/[\p{L}\p{N}]{5,}/gu) ?? [])
-    .some(word => query.has(word)));
-}
-
 function queue(context: Context, job: ResearchJob, at: number): void {
   const blocked = refusal(context, job.publicQuery);
   if (blocked) {
@@ -59,7 +51,7 @@ function investigate(
   }
   const scores = nomination.scores;
   const ask = call.causalDepth >= 1 || scores.needsPrivateDetail || scores.consequence === 1
-    || !withinScope(context) || mentionsLesson(nomination, lessons);
+    || !withinScope(context) || lessons.length > 0;
   if (!ask && (scores.consequence < context.config.autoAdmitMinConsequenceScore
     || scores.uncertainty < context.config.autoAdmitMinUncertaintyScore)) {
     decide(context, 'investigation:low_value');
@@ -139,7 +131,8 @@ export function acceptNominations(
       continue;
     }
     addCandidate(context, {
-      class: nominationClass(nomination.scores.consequence),
+      class: nomination.kind === 'clarification' && nomination.scores.consequence < 3
+        ? 'card' : nominationClass(nomination.scores.consequence),
       payload: nomination.kind === 'insight' ? 'inference' : 'clarification',
       topic: nomination.topic,
       text: nomination.kind === 'insight' ? nomination.insight : nomination.question,

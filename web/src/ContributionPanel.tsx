@@ -1,5 +1,6 @@
 import type { ContributionView } from './logic/view.js';
 import type { ResearchJob } from './ResearchPanel.js';
+import { contributionLabel } from './contribution-label.js';
 
 export function ContributionPanel(props: {
   contributions: ContributionView[];
@@ -16,7 +17,7 @@ export function ContributionPanel(props: {
       const job = props.jobs.find(candidate => candidate.jobId === item.jobId);
       return <article id={`contribution-${item.candidateId}`} key={item.candidateId}>
         <h3>{item.topic}</h3>
-        <p>{item.payload === 'evidence' ? 'Evidence (from sources)' : item.payload}</p>
+        <p>{contributionLabel(item)}</p>
         {item.text && <p>{item.text}</p>}
         {item.lessons?.map(lesson => <p key={lesson.lessonId}>
           <strong>Experience — from your project {lesson.sourceProjectName}:</strong> {lesson.text}

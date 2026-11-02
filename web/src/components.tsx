@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { contiguousText } from './logic/transcript.js';
 import type { Item, View } from './logic/view.js';
+import { contributionLabel } from './contribution-label.js';
 
 type LoginProps = {
   onSuccess: () => void;
@@ -43,7 +44,7 @@ function TranscriptEntry({ view, kind, id }: { view: View; kind: 'input' | 'deli
   const text = delivery ? contiguousText(delivery.chunks).slice(0, delivery.visibleLimit) : prefix?.text ?? '';
   return <p>
     <strong>{contribution ? 'Sidethought — unprompted:' : 'Assistant:'}</strong>{' '}
-    {contribution && <><span>{contribution.payload === 'evidence' ? 'evidence (from sources)' : 'reasoning'}</span>{' '}
+    {contribution && <><span>{contributionLabel(contribution)}</span>{' '}
       <a href={`#contribution-${contribution.candidateId}`}>View card</a>{' '}</>}
     <span id={`delivery-${id}`}>{text}</span>
     {contribution?.lessons?.map(lesson => <span key={lesson.lessonId}>

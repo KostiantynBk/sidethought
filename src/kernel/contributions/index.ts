@@ -17,7 +17,9 @@ export function projectContributions(state: State) {
 }
 
 export function contributionEvent(context: Context, event: KernelEvent): string | undefined {
-  if (event.type === 'deliberation.ready' || event.type === 'deliberation.failed') return finishDeliberation(context, event);
+  if (event.type === 'deliberation.ready' || event.type === 'deliberation.failed') {
+    return finishDeliberation(context, event);
+  }
   if (event.type === 'check.ready' || event.type === 'check.failed') return checkEvent(context, event);
   if (event.type === 'job.approve' || event.type === 'job.decline') return approval(context, event);
   if (event.type === 'scope.set') {
@@ -37,7 +39,8 @@ export function contributionEvent(context: Context, event: KernelEvent): string 
 
 export function beforeContributionEvent(context: Context, event: KernelEvent): void {
   if (event.type === 'input.committed' || (event.type === 'input.activity' && event.payload.active)) {
-    interruptContributions(context, 'interrupted', event.type === 'input.committed' ? event.payload.renderedUpTo : undefined);
+    const rendered = event.type === 'input.committed' ? event.payload.renderedUpTo : undefined;
+    interruptContributions(context, 'interrupted', rendered);
     context.domain.lastFloorActivity = event.acceptedAt!;
   }
   if (event.type === 'input.committed') {
@@ -54,7 +57,9 @@ export function contributionTimer(context: Context, timer: Timer, at: number): s
     startDeliberation(context, at);
     return 'deliberator:debounce';
   }
-  if (timer.purpose === 'callDeadline' && deliberationDeadline(context, timer.timerId, at)) return 'deliberator:timeout';
+  if (timer.purpose === 'callDeadline' && deliberationDeadline(context, timer.timerId, at)) {
+    return 'deliberator:timeout';
+  }
   if (timer.purpose === 'checkTimeout' && checkDeadline(context, timer.timerId)) return 'check:timeout';
   if (timer.purpose === 'candidateExpiry') {
     for (const candidate of Object.values(context.domain.initiative.candidates)) {
@@ -100,7 +105,8 @@ function refresh(context: Context): void {
     if (candidate.state !== 'interrupted' || (pendingInput && !failedInput) || context.domain.composerActive) continue;
     const dismissed = context.domain.inputs.at(-1)?.kind === 'dismissal';
     if (dismissed) context.domain.initiative.dismissedTopics.push(candidate.topicKey);
-    transition(context, candidate, interruptionOutcome(dismissed), dismissed ? 'interruption:dismissed' : 'interruption:card');
+    const reason = dismissed ? 'interruption:dismissed' : 'interruption:card';
+    transition(context, candidate, interruptionOutcome(dismissed), reason);
   }
 }
 

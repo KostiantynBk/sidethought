@@ -54,7 +54,7 @@ it('dev Checker copies the clarification question without claiming evidence', ()
       topic: 'local notes',
       question: 'Should notes remain local?',
       depItemIds: [itemId],
-      scores,
+      scores: { ...scores, consequence: 3 },
     }]);
     h.timer('floorGap');
     const { output, payload } = devCheck(h);

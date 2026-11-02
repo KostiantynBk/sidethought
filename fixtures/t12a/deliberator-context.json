@@ -1,6 +1,6 @@
 {
   "role": "deliberator",
-  "promptVersion": "deliberator-v2",
+  "promptVersion": "deliberator-v3",
   "itemText": "Use a local interface.",
   "instruction": "What matters that hasn't been said?",
   "causalDepth": 0

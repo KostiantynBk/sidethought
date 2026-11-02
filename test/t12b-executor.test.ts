@@ -13,7 +13,7 @@ it('sends the Deliberator schema and its own configured budget', async () => {
   test.model.handle(test.effect, test.ctx);
   await finished(test.model);
   const body = JSON.parse(String(test.requests[0]?.body));
-  expect(body.reasoning).toEqual({ effort: 'low' });
+  expect(body.reasoning).toEqual({ effort: 'medium' });
   expect(body.max_output_tokens).toBe(3100);
   expect(body.store).toBe(false);
   expect(body.text.format).toEqual({

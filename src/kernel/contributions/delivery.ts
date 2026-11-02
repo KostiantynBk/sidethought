@@ -30,7 +30,7 @@ export function sendNext(context: Context, candidate: Contribution): void {
   const chunk = delivery.chunks[index]!;
   chunk.state = 'sent';
   delivery.sentChars += chunk.text.length;
-  if (candidate.payload === 'closure' && candidate.jobId) {
+  if ((candidate.payload === 'closure' || candidate.payload === 'evidence') && candidate.jobId) {
     const job = context.domain.jobs[candidate.jobId];
     if (job?.promised && job.closureCount === 0) job.closureCount = 1;
   }

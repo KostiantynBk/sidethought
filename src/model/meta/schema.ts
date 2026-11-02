@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { InterpreterOutputSchema, InvestigatorOutputSchema, DeliberatorOutputSchema, CheckerOutputSchema } from '../../contract/roles.js';
+import {
+  InterpreterOutputSchema,
+  InvestigatorOutputSchema,
+  DeliberatorOutputSchema,
+  CheckerOutputSchema,
+} from '../../contract/roles.js';
 import { object } from './stream.js';
 
 type Schema = Record<string, unknown>;
