@@ -1,6 +1,7 @@
 import type { Delivery } from '../../contract/index.js';
 import type { Context } from '../state.js';
 import { verifiedClaims } from './candidates.js';
+import { transition } from './common.js';
 import type { Contribution } from './types.js';
 
 export function closesPromise(delivery: Delivery): boolean {
@@ -33,6 +34,14 @@ export function reconcilePromise(context: Context, candidate: Contribution, deli
   }
   const job = candidate.jobId ? context.domain.jobs[candidate.jobId] : undefined;
   if (!job?.promised) return;
+  if (delivery.promiseWitness === 'evidence_rendered') {
+    for (const closure of Object.values(context.domain.initiative.candidates)) {
+      if (closure.jobId !== job.id || closure.payload !== 'closure' || closure.state === 'dropped') continue;
+      const sent = closure.deliveryId ? context.domain.deliveries[closure.deliveryId]?.sentChars : 0;
+      // Never retract or repeat a transmitted fixed closure; only retire an unsent fallback.
+      if (!sent) transition(context, closure, 'dropped', 'promise:evidence_rendered');
+    }
+  }
   const deliveries = Object.values(context.domain.deliveries).filter(value => {
     const owner = value.candidateId ? context.domain.initiative.candidates[value.candidateId] : undefined;
     return owner?.jobId === job.id;

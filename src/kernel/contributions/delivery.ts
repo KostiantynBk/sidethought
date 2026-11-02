@@ -54,7 +54,12 @@ export function sendNext(context: Context, candidate: Contribution): void {
   }
 }
 
+export function clearCommitOffsetOwner(context: Context): void {
+  for (const delivery of Object.values(context.domain.deliveries)) delete delivery.awaitingCommitOffset;
+}
+
 export function beginDelivery(context: Context, candidate: Contribution, at: number): void {
+  clearCommitOffsetOwner(context);
   const id = context.id();
   const text = candidate.payload === 'closure' ? candidate.text : candidate.utterance!;
   const parts = sentences(text);
@@ -122,6 +127,10 @@ export function stopContribution(
   if (!delivery || delivery.settled) return;
   // Keep possibly-rendered text until an authoritative offset can settle an interrupted send.
   recordPrefix(delivery, renderedUpTo, preserveSent || renderedUpTo === undefined);
+  if (reason === 'interrupted' && renderedUpTo === undefined) {
+    clearCommitOffsetOwner(context);
+    delivery.awaitingCommitOffset = true;
+  }
   reconcilePromise(context, candidate, delivery);
   candidate.deliveredPrefix = delivery.interruptedPrefix;
   candidate.interruptions += 1;
@@ -141,15 +150,15 @@ export function stopContribution(
 }
 
 export function interruptContributions(context: Context, reason: string, renderedUpTo?: number): void {
-  // Composer activity can precede the commit carrying the authoritative render offset.
-  // Only that latest interrupted delivery owns this offset, never an older disconnected one.
-  const latest = Object.values(context.domain.deliveries).at(-1);
-  const interrupted = latest?.candidateId ? context.domain.initiative.candidates[latest.candidateId] : undefined;
-  if (latest && interrupted?.state === 'interrupted' && renderedUpTo !== undefined
-    && latest.promiseWitness === 'evidence_uncertain') {
-    recordPrefix(latest, renderedUpTo);
-    reconcilePromise(context, interrupted, latest);
-    interrupted.deliveredPrefix = latest.interruptedPrefix;
+  // Presentation may already be card_only, and prior progress may already be incomplete.
+  // Ownership, not presentation/witness state or insertion order, binds this commit offset.
+  const owner = Object.values(context.domain.deliveries).find(delivery => delivery.awaitingCommitOffset);
+  const interrupted = owner?.candidateId ? context.domain.initiative.candidates[owner.candidateId] : undefined;
+  if (owner && interrupted && renderedUpTo !== undefined) {
+    delete owner.awaitingCommitOffset;
+    recordPrefix(owner, renderedUpTo);
+    reconcilePromise(context, interrupted, owner);
+    interrupted.deliveredPrefix = owner.interruptedPrefix;
   }
   for (const candidate of Object.values(context.domain.initiative.candidates)) {
     if (candidate.state === 'delivering') stopContribution(context, candidate, reason, renderedUpTo);

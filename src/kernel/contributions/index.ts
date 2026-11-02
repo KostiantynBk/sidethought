@@ -6,7 +6,9 @@ import { interruptionOutcome } from './cuts.js';
 import { arbitrate } from './arbiter.js';
 import { checkDeadline, checkEvent } from './checking.js';
 import { clearTimer, contributionView, decide, topicKey, transition } from './common.js';
-import { contributionProgress, currentCheck, interruptContributions, stopContribution } from './delivery.js';
+import {
+  clearCommitOffsetOwner, contributionProgress, currentCheck, interruptContributions, stopContribution,
+} from './delivery.js';
 import { approval } from './nominations.js';
 import { deliberationDeadline, finishDeliberation, scheduleDeliberation, startDeliberation } from './scheduling.js';
 
@@ -124,6 +126,7 @@ export function advanceContributions(context: Context, before: State, event: Ker
 }
 
 export function recoverContributions(context: Context): void {
+  clearCommitOffsetOwner(context);
   const initiative = context.domain.initiative;
   initiative.deliberation = null;
   initiative.trigger = null;

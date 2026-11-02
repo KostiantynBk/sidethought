@@ -219,6 +219,8 @@ export const DeliverySchema = z.strictObject({
   deliveredChars: count,
   // An explicit zero is authoritative too; absence is not evidence of zero rendering.
   renderedOffsetKnown: z.boolean().optional(),
+  // Only this interrupted contribution may consume the next authoritative commit offset.
+  awaitingCommitOffset: z.boolean().optional(),
   promiseWitness: z.enum([
     'evidence_pending',
     'evidence_rendered',
