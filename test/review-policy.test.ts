@@ -258,7 +258,7 @@ it('matches the literal policy inventory and default values', () => {
     maxDeliberatorNominations: 3,
     interpreterMaxOutputTokens: 1200,
     responderMaxOutputTokens: 800,
-    deliberatorMaxOutputTokens: 3000,
+    deliberatorMaxOutputTokens: 6000,
     investigatorSearchMaxOutputTokens: 4000,
     investigatorStructureMaxOutputTokens: 3000,
     checkerMaxOutputTokens: 600,
