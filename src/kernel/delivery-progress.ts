@@ -34,6 +34,7 @@ export function deliveryProgress(
   const start = end - chunk.text.length;
   if (reported < start || reported > end) return 'delivery:invalid_offset';
   delivery.deliveredChars = reported;
+  delivery.renderedOffsetKnown = true;
   accountRendered(delivery);
   if (!final) return 'delivery:progress';
   if (!delivery.doneSent || reported !== delivery.sentChars || chunkIdx !== delivery.chunks.length - 1) {

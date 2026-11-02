@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from 'node:util';
-import type { Effect, KernelEvent } from '../contract/index.js';
+import type { Delivery, Effect, KernelEvent } from '../contract/index.js';
 import type { Decision, State } from '../kernel/index.js';
 import { isOpenJob } from '../kernel/research/types.js';
 import { verifiedSupport } from '../kernel/research/support.js';
@@ -37,39 +37,39 @@ export const I11: Invariant = (_before, _event, after, effects, decisions) => {
   return failures;
 };
 
+function validClosureWitness(delivery: Delivery): boolean {
+  switch (delivery.promiseWitness) {
+    case 'evidence_rendered': return delivery.renderedOffsetKnown === true && delivery.claimsDelivered.length > 0;
+    case 'evidence_uncertain': return !!delivery.settled && !delivery.renderedOffsetKnown && delivery.sentChars > 0;
+    case 'fixed_sent': return delivery.sentChars > 0;
+    default: return false;
+  }
+}
+
 export const promised_closed_once: Invariant = (before, _event, after, effects) => {
   const failures: string[] = [];
-  let added = 0;
+  const candidates = Object.values(after.domain.initiative.candidates);
   for (const job of Object.values(after.domain.jobs)) {
     const terminal = !isOpenJob(job) && job.state !== 'proposed' && job.state !== 'awaiting_user';
-    const pending = Object.values(after.domain.initiative.candidates).some(candidate => candidate.jobId === job.id
+    const pending = candidates.some(candidate => candidate.jobId === job.id
       && ['candidate', 'checking', 'delivering', 'interrupted'].includes(candidate.state));
     const expected = job.promised && terminal;
     if (job.closureCount > 1 || job.closureCount < 0 || (!expected && job.closureCount !== 0)
       || (expected && job.closureCount !== 1 && !pending)) failures.push(`promised_closed_once: ${job.id}`);
-    added += job.closureCount - (before.domain.jobs[job.id]?.closureCount ?? 0);
+    if (!job.promised) continue;
+    // Rejected admissions close via a transcript notice, not a delivery.
+    const witnesses = job.state === 'rejected' ? 1 : Object.values(after.domain.deliveries).filter(delivery => {
+      const candidate = candidates.find(value => value.id === delivery.candidateId);
+      if (candidate?.jobId !== job.id || !validClosureWitness(delivery)) return false;
+      return delivery.promiseWitness === 'fixed_sent' ? candidate.payload === 'closure' : candidate.payload === 'evidence';
+    }).length;
+    if (job.closureCount !== witnesses) failures.push(`promised_closed_once: witness count differs: ${job.id}`);
   }
-  const closures = effects.filter(effect => effect.type === 'client.send'
-    && effect.message.type === 'transcript.appended'
-    && /^(?:Finished checking:|Couldn't check |Can't check that now:)/u.test(effect.message.text));
-  const acknowledged = effects.filter(effect => effect.type === 'client.send'
-    && effect.message.type === 'contribution.upserted' && effect.message.state === 'delivered'
-    && (() => {
-      const candidate = after.domain.initiative.candidates[effect.message.candidateId];
-      return candidate?.jobId && after.domain.jobs[candidate.jobId]?.promised
-        && (before.domain.jobs[candidate.jobId]?.closureCount ?? 0) === 0;
-    })());
-  const startedClosures = effects.filter(effect => {
-    if (effect.type !== 'client.send' || effect.message.type !== 'assistant.chunk') return false;
-    const delivery = after.domain.deliveries[effect.message.deliveryId];
-    const candidate = delivery?.candidateId ? after.domain.initiative.candidates[delivery.candidateId] : undefined;
-    return (candidate?.payload === 'closure' || candidate?.payload === 'evidence') && candidate.jobId
-      && after.domain.jobs[candidate.jobId]?.promised
-      && (before.domain.jobs[candidate.jobId]?.closureCount ?? 0) === 0;
-  });
-  if (closures.length + acknowledged.length + startedClosures.length !== added) {
-    failures.push('promised_closed_once: closure effect count differs');
-  }
+  const refused = Object.values(after.domain.jobs).filter(job => job.promised && job.state === 'rejected'
+    && !before.domain.jobs[job.id]?.closureCount).length;
+  const notices = effects.filter(effect => effect.type === 'client.send'
+    && effect.message.type === 'transcript.appended' && effect.message.text.startsWith("Can't check that now:")).length;
+  if (refused !== notices) failures.push('promised_closed_once: refusal effect count differs');
   return failures;
 };
 

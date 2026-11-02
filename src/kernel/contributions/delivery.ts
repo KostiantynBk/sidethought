@@ -5,6 +5,7 @@ import { dependencyState } from '../research/policy.js';
 import { arm, clearTimer, transition } from './common.js';
 import { sentences } from './checking.js';
 import type { Contribution } from './types.js';
+import { reconcilePromise, sentenceClaims } from './promise.js';
 
 export function currentCheck(context: Context, candidate: Contribution): boolean {
   return candidate.payload === 'closure' || (candidate.checkedAtRev === context.domain.projectRev
@@ -30,10 +31,7 @@ export function sendNext(context: Context, candidate: Contribution): void {
   const chunk = delivery.chunks[index]!;
   chunk.state = 'sent';
   delivery.sentChars += chunk.text.length;
-  if ((candidate.payload === 'closure' || candidate.payload === 'evidence') && candidate.jobId) {
-    const job = context.domain.jobs[candidate.jobId];
-    if (job?.promised && job.closureCount === 0) job.closureCount = 1;
-  }
+  reconcilePromise(context, candidate, delivery);
   context.effects.push({
     type: 'client.send',
     message: {
@@ -60,6 +58,7 @@ export function beginDelivery(context: Context, candidate: Contribution, at: num
   const id = context.id();
   const text = candidate.payload === 'closure' ? candidate.text : candidate.utterance!;
   const parts = sentences(text);
+  const claims = sentenceClaims(context, candidate, parts);
   const delivery: Delivery = {
     id,
     candidateId: candidate.id,
@@ -69,8 +68,7 @@ export function beginDelivery(context: Context, candidate: Contribution, at: num
     chunks: parts.map((part, index) => ({
       text: part,
       state: 'pending',
-      // Conservative mapping: a multi-sentence evidence claim counts only after its final sentence.
-      claimIds: index === parts.length - 1 ? candidate.checkedClaims ?? [] : [],
+      claimIds: claims[index]!,
       sentenceFinished: true,
     })),
     deliveredChars: 0,
@@ -88,8 +86,6 @@ export function beginDelivery(context: Context, candidate: Contribution, at: num
 
 export function finishContribution(context: Context, candidate: Contribution, at: number): void {
   transition(context, candidate, 'delivered', 'deliver:acknowledged');
-  const job = candidate.jobId ? context.domain.jobs[candidate.jobId] : undefined;
-  if (job?.promised && job.closureCount === 0) job.closureCount = 1;
   if (candidate.payload === 'clarification') context.domain.initiative.askedTopics.push(candidate.topicKey);
   context.domain.lastFloorActivity = at;
   const delivery = context.domain.deliveries[candidate.deliveryId!]!;
@@ -107,6 +103,7 @@ export function contributionProgress(context: Context, event: Extract<KernelEven
   const delivery = context.domain.deliveries[event.payload.deliveryId];
   const candidate = delivery?.candidateId ? context.domain.initiative.candidates[delivery.candidateId] : undefined;
   if (!delivery || !candidate || candidate.state !== 'delivering') return;
+  reconcilePromise(context, candidate, delivery);
   if (delivery.finalAcknowledged) finishContribution(context, candidate, event.acceptedAt!);
   else if (delivery.deliveredChars === delivery.sentChars) sendNext(context, candidate);
 }
@@ -120,7 +117,9 @@ export function stopContribution(
 ): void {
   const delivery = candidate.deliveryId ? context.domain.deliveries[candidate.deliveryId] : undefined;
   if (!delivery || delivery.settled) return;
-  recordPrefix(delivery, renderedUpTo, preserveSent);
+  // Keep possibly-rendered text until an authoritative offset can settle an interrupted send.
+  recordPrefix(delivery, renderedUpTo, preserveSent || renderedUpTo === undefined);
+  reconcilePromise(context, candidate, delivery);
   candidate.deliveredPrefix = delivery.interruptedPrefix;
   candidate.interruptions += 1;
   context.effects.push({
@@ -139,6 +138,16 @@ export function stopContribution(
 }
 
 export function interruptContributions(context: Context, reason: string, renderedUpTo?: number): void {
+  // Composer activity can precede the commit carrying the authoritative render offset.
+  // Only that latest interrupted delivery owns this offset, never an older disconnected one.
+  const latest = Object.values(context.domain.deliveries).at(-1);
+  const interrupted = latest?.candidateId ? context.domain.initiative.candidates[latest.candidateId] : undefined;
+  if (latest && interrupted?.state === 'interrupted' && renderedUpTo !== undefined
+    && latest.promiseWitness === 'evidence_uncertain') {
+    recordPrefix(latest, renderedUpTo);
+    reconcilePromise(context, interrupted, latest);
+    interrupted.deliveredPrefix = latest.interruptedPrefix;
+  }
   for (const candidate of Object.values(context.domain.initiative.candidates)) {
     if (candidate.state === 'delivering') stopContribution(context, candidate, reason, renderedUpTo);
   }

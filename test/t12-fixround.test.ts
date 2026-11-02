@@ -43,6 +43,38 @@ it('cards a Checker recommendation inventing the lowercase product mongodb', () 
   h.store.close();
 });
 
+it('cards a Checker recommendation inventing the lowercase product aws', () => {
+  const h = inference();
+  h.check('you should use aws.');
+  expect(Object.values(h.state.domain.initiative.candidates)[0]?.state).toBe('card_only');
+  expect(h.effects.some(effect => effect.type === 'client.send' && effect.message.type === 'assistant.chunk'
+    && effect.message.text.includes('aws'))).toBe(false);
+  h.store.close();
+});
+
+it('cards a Checker recommendation inventing the lowercase product box', () => {
+  const h = inference();
+  h.check('you should use box.');
+  expect(Object.values(h.state.domain.initiative.candidates)[0]?.state).toBe('card_only');
+  expect(h.effects.some(effect => effect.type === 'client.send' && effect.message.type === 'assistant.chunk'
+    && effect.message.text.includes('box'))).toBe(false);
+  h.store.close();
+});
+
+it('cards an unsupported two-letter content token', () => {
+  const h = inference();
+  h.check('you should use db.');
+  expect(Object.values(h.state.domain.initiative.candidates)[0]?.state).toBe('card_only');
+  h.store.close();
+});
+
+it('cards an unsupported digit-bearing identifier', () => {
+  const h = inference();
+  h.check('you should use s3.');
+  expect(Object.values(h.state.domain.initiative.candidates)[0]?.state).toBe('card_only');
+  h.store.close();
+});
+
 it('allows an ordinary paraphrase grounded in the inference payload', () => {
   const h = inference();
   h.check('You should have a backup plan for local storage.');
@@ -70,7 +102,7 @@ function startedEvidence() {
   h.check(text);
   const candidate = Object.values(h.state.domain.initiative.candidates).find(c => c.payload === 'evidence')!;
   expect(candidate.state).toBe('delivering');
-  expect(h.state.domain.jobs[candidate.jobId!]?.closureCount).toBe(1);
+  expect(h.state.domain.jobs[candidate.jobId!]?.closureCount).toBe(0);
   return { h, candidate };
 }
 

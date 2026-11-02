@@ -6,6 +6,8 @@ import { modelConfiguration } from '../src/model/meta/config.js';
 import { MetaInvestigator } from '../src/model/meta/investigator.js';
 import type { PageFetchStats } from '../src/model/meta/page-evidence.js';
 import type { RawEvent } from '../src/runtime/model-port.js';
+import type { InvestigatorOutput, RetrievalEvidence } from '../src/contract/index.js';
+import { completedEvidenceStats } from './investigator-smoke-stats.js';
 
 async function main(): Promise<void> {
   const meta = modelConfiguration({ ...process.env, SIDETHOUGHT_MODEL: 'meta' }).meta!;
@@ -33,8 +35,8 @@ async function main(): Promise<void> {
       queries += Number(payload.queries);
     }
     if (event.type === 'job.completed') {
-      const evidence = payload.retrievalEvidence as { completedSearchCalls: number };
-      const output = payload.investigatorOutput as { claims: unknown[] };
+      const evidence = payload.retrievalEvidence as RetrievalEvidence;
+      const output = payload.investigatorOutput as InvestigatorOutput;
       console.log(JSON.stringify({
         elapsedMs: Date.now() - started,
         startToResponseIdMs: timings.responseId,
@@ -44,14 +46,12 @@ async function main(): Promise<void> {
         pagesFetched: pageStats?.pagesFetched,
         pagesBlocked: pageStats?.pagesBlocked,
         pagesFailed: pageStats?.pagesFailed,
-        excerpts: pageStats?.excerpts,
+        ...completedEvidenceStats(evidence, output),
         claimsWithQuoteOnPage: pageStats?.claimsWithQuoteOnPage,
         claims: pageStats?.claims,
         pagesGivenToStructure: pageStats?.pagesGivenToStructure,
         inputChars: pageStats?.inputChars,
-        completedSearchCalls: evidence.completedSearchCalls,
         queryCount: queries,
-        claimCount: output.claims.length,
         costUsd: cost,
       }));
       finish();

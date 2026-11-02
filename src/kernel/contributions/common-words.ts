@@ -1,7 +1,10 @@
 // Frequent English function words and everyday vocabulary. This list is deliberately conservative:
 // an unknown word requires a card rather than authorizing a potentially invented name.
 export const COMMON_WORDS = new Set(`
- able about above across after again against almost along already also although always another answer anyone
+ a i to of in is it on as at be by we or an if my do so up no the and for you use can not but are was has its
+one all any may now new how why our out get set run try add few own per via am he me ox go oh ok nor off too
+who whom his him had did does don isn aren wasn weren hasn haven won wouldn couldn shouldn isn t s re ve ll d
+able about above across after again against almost along already also although always another answer anyone
 anything around away back basic because become been before being below best better between both bring build
 call came can case change check child children clear close come common could course current day days different
 does done down during each early either else enough even ever every everyone everything example fact family
@@ -82,7 +85,8 @@ white whole whose why wide wife window wish woman women wonder word work worker 
 wrong yard yeah year yes yet young youth`.split(/\s+/u));
 
 function tokens(text: string): string[] {
-  return text.toLowerCase().match(/[a-z]{4,}/gu) ?? [];
+  return (text.toLowerCase().match(/[a-z0-9]+/gu) ?? [])
+    .filter(token => token.length >= 2 || /\d/u.test(token));
 }
 
 export function hasUnsupportedWords(text: string, basis: string): boolean {

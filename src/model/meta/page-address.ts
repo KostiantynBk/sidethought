@@ -32,6 +32,11 @@ for (const [address, prefix] of [
   ['224.0.0.0', 4],
   ['240.0.0.0', 4],
 ] as const) blockedV4.addSubnet(address, prefix, 'ipv4');
+// Azure host-node WireServer/platform VIP is public-looking, but is not an Internet page.
+// https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16
+blockedV4.addAddress('168.63.129.16', 'ipv4');
+// 255.255.255.255 is already denied by 240/4; keep the broadcast boundary explicit.
+blockedV4.addAddress('255.255.255.255', 'ipv4');
 
 const globalV6 = new BlockList();
 globalV6.addSubnet('2000::', 3, 'ipv6');

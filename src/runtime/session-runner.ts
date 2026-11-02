@@ -4,7 +4,7 @@ import { initialState, reduce, type Decision, type State } from '../kernel/index
 import { DuplicateEventError, type JournalEvent, type SessionStore, type Snapshot } from '../store/index.js';
 import { invariantRegistry } from '../harness/invariants.js';
 
-export const REDUCER_VERSION = '11';
+export const REDUCER_VERSION = '12';
 
 export class ReducerVersionMismatchError extends Error {
   constructor(readonly found: string) {
@@ -145,7 +145,9 @@ export class SessionRunner {
         const event = this.parser.parse(raw);
         if (event.sessionId !== this.sessionId || seq !== state.meta.seq + 1) throw new Error('Invalid sequence');
         const result = reduce(state, { ...event, seq });
-        if (invariantRegistry.some(check => check(state, event, result.state, result.effects, result.decisions).length)) {
+        const failed = invariantRegistry.some(check =>
+          check(state, event, result.state, result.effects, result.decisions).length);
+        if (failed) {
           throw new Error('Invariant failure');
         }
         state = result.state;

@@ -217,6 +217,15 @@ export const DeliverySchema = z.strictObject({
   state: DeliveryStateSchema,
   chunks: z.array(ChunkSchema),
   deliveredChars: count,
+  // An explicit zero is authoritative too; absence is not evidence of zero rendering.
+  renderedOffsetKnown: z.boolean().optional(),
+  promiseWitness: z.enum([
+    'evidence_pending',
+    'evidence_rendered',
+    'evidence_incomplete',
+    'evidence_uncertain',
+    'fixed_sent',
+  ]).optional(),
   sentChars: count,
   finalAcknowledged: z.boolean(),
   aborted: z.boolean(),

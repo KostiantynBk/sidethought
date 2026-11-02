@@ -171,7 +171,9 @@ export async function createRuntime(
     if (!(error instanceof ProjectUpgradeError)) throw error;
   }
   const fallback = new SessionRunner('local', loadConfig(), store, Date.now, () => {});
-  gateway = await createGateway(config, () => (local?.runner ?? fallback).current(), event => local?.queue.emit(event), {
+  const currentState = () => (local?.runner ?? fallback).current();
+  const emitEvent: Parameters<typeof createGateway>[2] = event => local?.queue.emit(event);
+  gateway = await createGateway(config, currentState, emitEvent, {
     memory,
     invalidate,
     projectStatus: projectId => {
