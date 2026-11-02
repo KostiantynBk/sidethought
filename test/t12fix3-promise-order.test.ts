@@ -301,3 +301,17 @@ it('old delivery snapshots parse without introducing commit ownership', () => {
   expect(DeliverySchema.parse(old)).not.toHaveProperty('awaitingCommitOffset');
   h.store.close();
 });
+
+it('a started reply clears composer ownership so its commit offset never reaches the old remark', () => {
+  const { h, delivery } = startEvidence('memory');
+  interrupt(h);
+  expect(h.state.domain.deliveries[delivery.id]?.awaitingCommitOffset).toBe(true);
+  h.interpret();
+  if (h.state.domain.reply?.status !== 'streaming') h.timer('replyDebounce');
+  expect(h.state.domain.reply?.status).toBe('streaming');
+  expect(h.state.domain.deliveries[delivery.id]?.awaitingCommitOffset).toBeUndefined();
+  const before = structuredClone(h.state.domain.deliveries[delivery.id]);
+  interrupt(h, 7);
+  expect(h.state.domain.deliveries[delivery.id]).toEqual(before);
+  h.store.close();
+});

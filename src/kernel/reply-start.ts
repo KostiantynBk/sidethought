@@ -2,6 +2,7 @@ import type { Config } from '../config/index.js';
 import type { ReplyGeneration } from '../contract/index.js';
 import type { Context } from './state.js';
 import { startReplyTimers } from './reply-timers.js';
+import { clearCommitOffsetOwner } from './contributions/delivery.js';
 
 export function uninterpretedIds(context: Context): string[] {
   return context.domain.inputs.filter(input =>
@@ -45,6 +46,8 @@ function generation(context: Context, retry?: ReplyGeneration): ReplyGeneration 
 
 export function startReply(context: Context, at: number, config: Config, retry?: ReplyGeneration): void {
   clearReplyWait(context);
+  // A new reply owns the next commit offset; an older interrupted remark must never take it.
+  clearCommitOffsetOwner(context);
   const reply = generation(context, retry);
   context.domain.reply = reply;
   context.domain.deliveries[reply.deliveryId] = {
