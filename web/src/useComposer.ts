@@ -30,7 +30,7 @@ function committedView(view: View, text: string, id: string | null, rendered: nu
   };
 }
 
-export function useComposer(connection: ComposerConnection) {
+export function useComposer(connection: ComposerConnection, cancelSpeech?: () => void) {
   const [draft, setDraft] = useState('');
   const activityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activity = useRef<ActivityState>({ active: false, idleAt: null });
@@ -46,6 +46,7 @@ export function useComposer(connection: ComposerConnection) {
   }
 
   function onTyping(value: string) {
+    cancelSpeech?.();
     setDraft(value);
     if (!activity.current.active) connection.send('input.activity', { channel: 'composer', active: true });
     activity.current = typing(Date.now());
@@ -54,6 +55,7 @@ export function useComposer(connection: ComposerConnection) {
   }
 
   function commit() {
+    cancelSpeech?.();
     const text = draft.trim();
     if (!text || connection.socket.current?.readyState !== WebSocket.OPEN) return;
     const id = connection.currentDelivery.current;
