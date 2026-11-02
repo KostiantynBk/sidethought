@@ -49,7 +49,6 @@ export function beforeContributionEvent(context: Context, event: KernelEvent): v
       clearTimer(context, timer.timerId);
     }
   }
-  if (event.type === 'client.disconnected') interruptContributions(context, 'disconnected');
 }
 
 export function contributionTimer(context: Context, timer: Timer, at: number): string | undefined {

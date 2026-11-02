@@ -116,10 +116,11 @@ export function stopContribution(
   candidate: Contribution,
   reason: string,
   renderedUpTo?: number,
+  preserveSent = false,
 ): void {
   const delivery = candidate.deliveryId ? context.domain.deliveries[candidate.deliveryId] : undefined;
   if (!delivery || delivery.settled) return;
-  recordPrefix(delivery, renderedUpTo);
+  recordPrefix(delivery, renderedUpTo, preserveSent);
   candidate.deliveredPrefix = delivery.interruptedPrefix;
   candidate.interruptions += 1;
   context.effects.push({
@@ -130,7 +131,7 @@ export function stopContribution(
       reason,
     },
   });
-  if (candidate.payload === 'closure') {
+  if (candidate.payload === 'closure' || preserveSent) {
     transition(context, candidate, 'card_only', `deliver:${reason}`);
   } else {
     transition(context, candidate, 'interrupted', `deliver:${reason}`);

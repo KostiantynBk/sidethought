@@ -1,6 +1,7 @@
 import { kernelId, type KernelEvent, type Effect } from '../contract/index.js';
 import type { Context, State, Timer, Result } from './state.js';
 import { connectClient, recoverDomain } from './recovery.js';
+import { settleConnectionDeliveries } from './connection-settlement.js';
 import { itemAction } from './items/index.js';
 import { interpret, startWaiting } from './interpretation-lifecycle.js';
 import { clearReplyWait, replyEvent, replyTimer } from './reply.js';
@@ -143,8 +144,10 @@ function applyEvent(context: Context, state: State, event: KernelEvent): string 
       ensureClosures(context, event.acceptedAt!);
       return recoverDomain(context);
     case 'client.connected':
+      settleConnectionDeliveries(context);
       return connectClient(context, state, event.acceptedAt!, event.payload.modality);
     case 'client.disconnected':
+      settleConnectionDeliveries(context);
       context.domain.clientConnected = false;
       clearComposer(context, event.acceptedAt!, state.config);
       return 'client:disconnected';

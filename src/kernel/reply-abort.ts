@@ -10,7 +10,7 @@ export function wholeWordPrefix(sentText: string, count: number): string {
   return prefix.replace(/\S+$/u, '').trimEnd();
 }
 
-export function recordPrefix(delivery: Delivery, renderedUpTo: number | undefined): void {
+export function recordPrefix(delivery: Delivery, renderedUpTo: number | undefined, preserveSent = false): void {
   const sentText = delivery.chunks.filter(chunk => ['sent', 'rendered', 'played'].includes(chunk.state))
     .map(chunk => chunk.text).join('');
   const reported = renderedUpTo === undefined ? delivery.deliveredChars : Math.min(renderedUpTo, delivery.sentChars);
@@ -24,10 +24,14 @@ export function recordPrefix(delivery: Delivery, renderedUpTo: number | undefine
     const chars = sent ? Math.min(remaining, chunk.text.length) : 0;
     const finished = sent && chunk.sentenceFinished && chars >= chunk.text.trimEnd().length;
     if (finished) for (const claimId of chunk.claimIds) claims.add(claimId);
-    chunk.text = chunk.text.slice(0, chars);
-    chunk.state = chars ? 'rendered' : 'discarded';
-    chunk.sentenceFinished = finished;
-    if (!finished) chunk.claimIds = [];
+    if (!preserveSent || !sent) {
+      chunk.text = chunk.text.slice(0, chars);
+      chunk.state = chars ? 'rendered' : 'discarded';
+      chunk.sentenceFinished = finished;
+      if (!finished) chunk.claimIds = [];
+    } else if (chars === chunk.text.length) {
+      chunk.state = 'rendered';
+    }
     remaining -= chars;
   }
   delivery.claimsDelivered = [...claims];
@@ -35,7 +39,7 @@ export function recordPrefix(delivery: Delivery, renderedUpTo: number | undefine
   delivery.aborted = true;
 }
 
-export function interruptReply(context: Context, renderedUpTo: number | undefined): void {
+export function interruptReply(context: Context, renderedUpTo: number | undefined, settleOpen = false): void {
   const reply = context.domain.reply;
   const streaming = reply?.status === 'streaming';
   if (streaming) {
@@ -48,13 +52,14 @@ export function interruptReply(context: Context, renderedUpTo: number | undefine
     context.domain.replyPending = false;
   }
   // Decisions 7–8: a completed generation is not evidence that its text was rendered.
-  const latest = Object.values(context.domain.deliveries).findLast(delivery => !delivery.candidateId && !delivery.finalAcknowledged);
+  const latest = Object.values(context.domain.deliveries).findLast(delivery =>
+    !delivery.candidateId && !delivery.finalAcknowledged && !delivery.settled);
   // Generation retirement is distinct from settlement of its client delivery.
-  if (!latest || latest.settled || (!streaming && renderedUpTo === undefined)) {
+  if (!latest || latest.settled || (!streaming && renderedUpTo === undefined && !settleOpen)) {
     if (streaming) clearReplyTimers(context);
     return;
   }
-  recordPrefix(latest, renderedUpTo);
+  recordPrefix(latest, renderedUpTo, settleOpen);
   context.effects.push({
     type: 'audio.stop',
     deliveryId: latest.id,
