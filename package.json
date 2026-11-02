@@ -12,6 +12,7 @@
     "dev": "concurrently -k \"node --env-file-if-exists=.env --import tsx src/server/main.ts\" \"node --env-file-if-exists=.env node_modules/vite/bin/vite.js web\"",
     "build": "tsc -p tsconfig.build.json && vite build web",
     "start": "node --env-file-if-exists=.env dist/server/main.js --serve-static",
+    "start:judge": "node --env-file-if-exists=.env --env-file=.env.judge dist/server/main.js --serve-static",
     "fixture:accept": "tsx scripts/fixture-accept.ts"
   },
   "dependencies": {

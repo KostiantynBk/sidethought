@@ -1,93 +1,76 @@
 # Sidethought
 
-Sidethought is a text-first, voice-later thinking partner for solo builders. All code in this repository is written
-for the Meta Global AI Developer Hackathon build window, starting 2026-10-27.
+Sidethought is a text-first thinking partner for solo builders that remembers named projects and can speak up on its own when something matters. It combines background reasoning, live web research with quote-verified sources, and explicitly reviewed lessons from other projects. Its dependency-aware checks are designed to suppress advice when its basis changes, rather than keep repeating an obsolete point.
 
-## Local development
+## Built and planned
 
-Use Node 24 or newer. Run `npm ci --ignore-scripts`, then `npm run typecheck` and
-`npx vitest run --maxWorkers=2` serially. Installation scripts are disabled
-by the repository's `.npmrc`; the installed platform-specific prebuilt SQLite binary must load on your system.
+**Built:** text conversation; named projects; reviewed cross-project lessons; a background Deliberator; unprompted contributions gated by a final Checker; web research with independently fetched page quotes; finding cards; stale-advice suppression; and old-project upgrade by journal replay.
 
-Copy `.env.example` to `.env` and provide `SIDETHOUGHT_PASSCODE`, a `SIDETHOUGHT_COOKIE_SECRET` of at least
-32 characters, and comma-separated `SIDETHOUGHT_ALLOWED_ORIGINS`. Do not share or commit this file. Configure
-`SIDETHOUGHT_DB_PATH` and `PORT` if the defaults are unsuitable. The model defaults to `dev` without a model key;
-set `SIDETHOUGHT_MODEL=meta` and `MODEL_API_KEY` to use Meta Spark. A key also selects Meta when the model
-selector is unset. Explicit `dev` remains network-free even with a key present. Meta without a key fails startup.
-Keys stay in server-only configuration and are never sent to the browser. `/health` reports the selected model.
-The UI model badge comes from the authenticated project API; `/health` remains a direct backend check.
-See [Meta policy and smoke-run notes](META_POLICY.md) for caps, pricing, transport assumptions and manual verification.
+**Planned:** voice, broad automatic memory, general project/session deletion (T08), and Hold/Mute controls. This is a prototype, not a production service.
 
-Run `npm run dev` for the gateway and Vite. Add the exact Vite origin to the allowed origins. For local HTTP on
-`127.0.0.1` **only**, set `SIDETHOUGHT_DEV_INSECURE_COOKIE` to `1`; it is off by default. Never use this option
-for tailnet or public access. For the built app run `npm run build` and `npm start`.
+## Quick start
 
-## iPhone over Tailscale
-
-Build and start the app, then run `tailscale serve --bg <port>` on the host. Tailscale Serve provides HTTPS to
-other tailnet devices. Enable HTTPS certificates in the tailnet if needed, run Tailscale on the iPhone, and use
-Safari. Add the exact HTTPS origin to `SIDETHOUGHT_ALLOWED_ORIGINS` and keep the insecure-cookie option off.
-Run `tailscale serve reset` to disable the proxy. Judge access is a separate, undecided deployment step.
-
-## Named projects and reviewed cross-project lessons
-
-The existing conversation remains **Current project**. Use **Create project** for a clean, independently stored
-conversation; switch back to continue earlier work. New tables are additive to the existing SQLite database.
-Do not delete the database to start over: it now holds all projects and lessons.
-
-1. In project A, send a message containing a genuine lesson or relevant experience.
-2. Open **reviewed cross-project memory**, choose the source user message, review its exact quote, and write
-   the lesson you confirm. Enter 1–8 comma-separated applicability words or phrases.
-3. Click **Confirm and share this lesson**. Nothing is learned or shared automatically.
-4. Create project B and enable **Use relevant shared lessons for new replies** (off by default).
-5. Discuss a relevant situation without repeating A's specific lesson. The Responder receives at most three
-   matching lessons, with source project, message, quote, and version. Its suggestions are not B's decisions.
-6. Inspect **Recently supplied** records to verify what context was sent. This is not proof it was useful.
-
-Lessons are manually reviewed snapshots, not an automatically updated profile. Later source-project
-messages do not silently rewrite a saved lesson: correct or forget that lesson explicitly in this panel.
-
-Project interpretation status is shown separately from chat. If a message failed to reach project state,
-click its **Retry interpretation** button explicitly; this makes another Meta call, not a new user message.
-Old failures are not automatically retried on restart, and creating a new project does not clear old failures.
-
-Matching is deliberately lexical, not semantic recall or model training. Whole histories and project items
-are not shared. Foreign lessons never enter the Interpreter's quote witness. If using Meta, selected lessons
-are sent to Meta for the foreground reply, not web search. Disabling retrieval affects new calls; earlier
-conversation can still contain memory-derived content.
-
-**Editing or forgetting:** confirm the displayed warning. To prevent indirect stale reuse, the prototype
-removes assistant replies from first use onward and clears extracted state in affected target projects.
-Original user messages and the source project remain. The source quote is immutable historical provenance;
-the edited lesson is current. Active calls are aborted; late responses cannot restore old content.
-If recovery fails the project is paused until server restart. Pending SQLite WAL cleanup is reported explicitly.
-No local backups are made. Previously sent provider data cannot be recalled by a local deletion.
-
-**Privacy/access limitations:** this is one passcode-authenticated owner's workspace, not separate user accounts.
-All projects and explicitly shared lessons are visible to that owner. Normal conversations persist; temporary
-sessions and project/session deletion are not implemented in this slice. Do not run multiple server instances
-against one database. Judges must get a separate clean demo database with synthetic data, not personal projects.
-
-## Manual live checks
-
-These scripts make paid, bounded synthetic calls only when explicitly run. They do not open your conversation
-DB or print keys. The guidance/memory scripts print synthetic replies for manual quality assessment.
+Requirements: Node 24, npm, and a platform-compatible prebuilt `better-sqlite3` binary. From this repository:
 
 ```sh
-npx tsx --env-file=.env scripts/guidance-smoke.ts
-npx tsx --env-file=.env scripts/interpreter-smoke.ts
-npx tsx --env-file=.env scripts/memory-smoke.ts
+npm ci --ignore-scripts
 ```
 
-Guidance checks actual explanations/code. Interpreter smoke uses the real prompt and kernel quote/item checks,
-not a trivial substitute instruction. Memory smoke compares off/on plus an unrelated control.
-An ordinary suggestion inside a reply is **not** proof of asynchronous unsolicited contribution.
+Copy `.env.example` to `.env` and configure the following **server-side** variables; do not share or commit `.env`:
 
-## Current limitations
+- Required: `SIDETHOUGHT_PASSCODE`, `SIDETHOUGHT_COOKIE_SECRET` (at least 32 characters), `SIDETHOUGHT_ALLOWED_ORIGINS` (comma-separated exact origins).
+- For Meta: `MODEL_API_KEY`, optionally `SIDETHOUGHT_MODEL`. Without a key, the default dev model is network-free and synthetic; it cannot demonstrate live research or real model quality. An explicit dev selection remains network-free even if a key is present.
+- Optional: `PORT`, `SIDETHOUGHT_DB_PATH`, `META_API_BASE_URL`, `META_INPUT_USD_PER_MILLION`, `META_CACHED_INPUT_USD_PER_MILLION`, `META_OUTPUT_USD_PER_MILLION`, `NODE_ENV`. For **local HTTP on 127.0.0.1 only**, enable `SIDETHOUGHT_DEV_INSECURE_COOKIE`; never enable it for public or tailnet access. See `.env.example` for the variable names.
 
-The dev model produces synthetic replies and does no network calls; it does not demonstrate intelligent memory
-use. Meta implements Interpreter and Responder only; research jobs, Deliberator and Checker remain unsupported
-in this checkout. Real strict-schema smoke passed Oct 31; bounded guidance and reviewed-lesson recall were
-checked live Nov 1. These few examples are not a broad quality benchmark or proof of improved decisions.
-Voice and background unsolicited contributions remain unfinished. Missing delivery acknowledgment can produce
-an honest “may not have been shown” card on reconnect rather than confirmed transcript text.
+```sh
+npm run build
+npm start
+```
+
+Open the app at the configured local address and port (default port: 3000), and enter your passcode. The exact browser origin must be in `SIDETHOUGHT_ALLOWED_ORIGINS`. The server binds to 127.0.0.1; remote access requires a separately configured HTTPS proxy. This is a single-owner workspace, not a multi-user service.
+
+**A second, separate instance (e.g. for judges).** `npm run start:judge` loads `.env` and then `.env.judge` (git-ignored; it must exist), whose values win. Give it its own `PORT`, `SIDETHOUGHT_DB_PATH`, `SIDETHOUGHT_PASSCODE`, `SIDETHOUGHT_COOKIE_SECRET` and its public HTTPS origin in `SIDETHOUGHT_ALLOWED_ORIGINS`, and set `SIDETHOUGHT_DEV_INSECURE_COOKIE=0`. Never point it at your personal database. Spend caps apply per project, so total spend grows with the number of projects created.
+
+## A five-minute tour
+
+Use Meta mode for live behavior; research and unsolicited contributions are not guaranteed to appear on cue.
+
+1. **Create a project.** Describe a plan with a real tension, such as keeping notes only on one phone while expecting recovery after losing it. Continue normally, then pause without asking for a risk assessment: the background Deliberator may raise a relevant checked remark.
+2. **Ask for a check.** Type “Check whether …” about a concrete public question. Watch for the **Checking…** line and then a finding card. Open its sources and distinguish verified quotes from citation-only claims; a check can be inconclusive or fail.
+3. **Correct the plan.** Change a requirement while a dependent check is running, or correct an earlier point. Inspect the project state and finding: obsolete work should be dropped or marked stale rather than presented as current.
+4. **Save a lesson in project A.** Select a source user message in **Reviewed cross-project lessons**, review its quote, write a lesson and applicability terms, and explicitly confirm sharing.
+5. **Try project B.** Create a separate project, turn cross-project recall ON, and describe a matching situation without repeating the source fact. The Deliberator can raise the lesson unprompted with its source; it is experience to consider, not evidence or a decision. A foreground reply may mention it instead and is not proof of an asynchronous contribution. Check **Recently supplied** for provenance.
+
+## How it uses Meta
+
+The server uses `muse-spark-1.3` through Meta's Responses API. Interpreter extracts project changes, Responder answers, Deliberator nominates possible contributions, Checker reviews unprompted contributions, and Investigator conducts focused research. Structured roles use strict JSON-schema outputs; the Responder streams text. Reasoning effort is **minimal** for Interpreter, Responder and Checker; **medium** for Deliberator; and **medium** for Investigator search followed by **minimal** for structuring. Search uses background-mode `web_search` and supports cancellation; cancellation and billing are best effort.
+
+Configured list-price defaults: $1.25 per million input tokens, $0.15 per million cached input tokens, $4.25 per million output tokens, and $2.50 per 1,000 search queries. Reasoning tokens count as output. Pricing and actual billed usage can change (verify). See [META_POLICY.md](META_POLICY.md) and [RESEARCH_POLICY.md](RESEARCH_POLICY.md); some older passages describe earlier slices of the implementation.
+
+## Architecture and safety
+
+A deterministic single-writer reducer owns each project's versioned state, with a journal and snapshots stored in SQLite. Model roles propose; application code validates and decides. Research checks require actual searches and per-claim quote support; the Checker reviews unprompted remarks against current state and evidence. Web content is treated as untrusted data, not instructions; a matching quote alone does not establish truth or entailment.
+
+- Keys stay on the server; the app is protected by a passcode. Use a separate clean database for any demo; don't expose a personal workspace.
+- The page fetcher restricts URLs and public IPs, pins validated DNS answers, rechecks redirects, and bounds time, size and content types to reduce SSRF risk. See [RESEARCH_POLICY.md](RESEARCH_POLICY.md).
+- Search is designed to use a public abstraction, not private project text; the Investigator does not receive project history or reviewed lessons. Privacy filters are lexical, can miss paraphrases, and are not a guarantee against disclosure: don't enter secrets or sensitive information.
+- Lessons are shared only after explicit review and confirmation; target-project recall is off by default and matches supplied terms lexically. Editing or forgetting a lesson can conservatively remove affected assistant replies and extracted target state; already-sent provider data cannot be recalled.
+- On a version mismatch, journal replay attempts an upgrade without replaying effects and creates a backup before writing. Some projects fail closed, including those with changed or forgotten lesson uses. Backups may retain data later removed from the active database.
+
+## Limitations
+
+Live model quality, timing and initiative vary; the five-minute sequence is not a guaranteed outcome. The Nov 1 live lesson test showed recall in a reply, not an independently delivered lesson contribution or an improved decision; the unsolicited lesson path was tested synthetically. The fetch-before-structuring research path passed two live script runs on 2026-11-02 (4 of 4 and 6 of 6 claims quoted from fetched pages, about $0.06 each); results inside the app vary by question and site. Some sites block fetching, and JavaScript-rendered pages and PDFs are not extracted. Quote and consistency checks are imperfect; not every source or claim will verify. Voice, general deletion and Hold/Mute are not built; there are no temporary sessions. Run one server per database.
+
+## Tests
+
+```sh
+npm run typecheck
+npx vitest run --maxWorkers=2
+npm run build
+```
+
+At commit `af3371b`, the full Vitest run after `npm ci --ignore-scripts` passed **120 test files / 1,269 tests** on 2026-11-02. Automated tests do not establish live usefulness or safety in every case.
+
+## Event work and license
+
+All repository code was written from 2026-10-27 for the event; no prior code was reused. A similar idea was explored in an earlier hackathon, separately from this implementation. **MIT License**; see [LICENSE](LICENSE).
