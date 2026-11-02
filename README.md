@@ -4,9 +4,9 @@ Sidethought is a text-first thinking partner for solo builders that remembers na
 
 ## Built and planned
 
-**Built:** text conversation; named projects; reviewed cross-project lessons; a background Deliberator; unprompted contributions gated by a final Checker; web research with independently fetched page quotes; finding cards; stale-advice suppression; and old-project upgrade by journal replay.
+**Built:** text conversation; named projects; reviewed cross-project lessons; a background Deliberator; unprompted contributions gated by a final Checker; web research with independently fetched page quotes; finding cards; stale-advice suppression; old-project upgrade by journal replay; and optional read-aloud of new replies and unprompted remarks (browser speech synthesis).
 
-**Planned:** voice, broad automatic memory, general project/session deletion (T08), and Hold/Mute controls. This is a prototype, not a production service.
+**Planned:** voice input and spoken turn-taking, broad automatic memory, general project/session deletion (T08), and Hold/Mute controls. This is a prototype, not a production service.
 
 ## Quick start
 
@@ -40,6 +40,7 @@ Use Meta mode for live behavior; research and unsolicited contributions are not 
 3. **Correct the plan.** Change a requirement while a dependent check is running, or correct an earlier point. Inspect the project state and finding: obsolete work should be dropped or marked stale rather than presented as current.
 4. **Save a lesson in project A.** Select a source user message in **Reviewed cross-project lessons**, review its quote, write a lesson and applicability terms, and explicitly confirm sharing.
 5. **Try project B.** Create a separate project, turn cross-project recall ON, and describe a matching situation without repeating the source fact. The Deliberator can raise the lesson unprompted with its source; it is experience to consider, not evidence or a decision. A foreground reply may mention it instead and is not proof of an asynchronous contribution. Check **Recently supplied** for provenance.
+6. **Read aloud.** Turn on **Read aloud** in the header to hear new replies and delivered unprompted remarks (browser speech; off by default). Typing stops it. It never reads cards, web quotes or history, and it can lag behind the text: delivery is tracked by displayed text, not finished speech.
 
 ## How it uses Meta
 
@@ -59,7 +60,7 @@ A deterministic single-writer reducer owns each project's versioned state, with 
 
 ## Limitations
 
-Live model quality, timing and initiative vary; the five-minute sequence is not a guaranteed outcome. The Nov 1 live lesson test showed recall in a reply, not an independently delivered lesson contribution or an improved decision; the unsolicited lesson path was tested synthetically. The fetch-before-structuring research path passed two live script runs on 2026-11-02 (4 of 4 and 6 of 6 claims quoted from fetched pages, about $0.06 each); results inside the app vary by question and site. Some sites block fetching, and JavaScript-rendered pages and PDFs are not extracted. Quote and consistency checks are imperfect; not every source or claim will verify. Voice, general deletion and Hold/Mute are not built; there are no temporary sessions. Run one server per database.
+Live model quality, timing and initiative vary; the five-minute sequence is not a guaranteed outcome. The Nov 1 live lesson test showed recall in a reply, not an independently delivered lesson contribution or an improved decision; the unsolicited lesson path was tested synthetically. The fetch-before-structuring research path passed two live script runs on 2026-11-02 (4 of 4 and 6 of 6 claims quoted from fetched pages, about $0.06 each); results inside the app vary by question and site. Some sites block fetching, and JavaScript-rendered pages and PDFs are not extracted. Quote and consistency checks are imperfect; not every source or claim will verify. Voice input, general deletion and Hold/Mute are not built (read-aloud is output only and untested on iOS); there are no temporary sessions. Run one server per database.
 
 ## Tests
 
@@ -69,7 +70,7 @@ npx vitest run --maxWorkers=2
 npm run build
 ```
 
-At commit `af3371b`, the full Vitest run after `npm ci --ignore-scripts` passed **120 test files / 1,269 tests** on 2026-11-02. Automated tests do not establish live usefulness or safety in every case.
+On 2026-11-02, after `npm ci --ignore-scripts`, typecheck, the full Vitest run (**126 test files / 1,380 tests**) and the production build passed. Automated tests do not establish live usefulness or safety in every case.
 
 ## Event work and license
 
