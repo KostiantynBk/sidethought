@@ -1,11 +1,13 @@
 import type OpenAI from 'openai';
 import type { Effect } from '../../contract/events.js';
-import { InvestigatorOutputSchema } from '../../contract/roles.js';
+import { InvestigatorOutputSchema, type InvestigatorOutput } from '../../contract/roles.js';
 import { INVESTIGATOR_SEARCH_V1, INVESTIGATOR_STRUCTURE_V1 } from '../../context/prompts/investigator.js';
 import type { State } from '../../kernel/index.js';
 import type { RawEvent } from '../../runtime/model-port.js';
 import type { MetaPrices } from './config.js';
 import { extractEvidence } from './investigator-evidence.js';
+import { addPageEvidence, type PageFetchStats } from './page-evidence.js';
+import { defaultPageFetchIo, type PageFetchIo } from './page-fetch.js';
 import { investigatorJsonSchema, normalizeInvestigatorWire } from './schema.js';
 import { object, readEvents } from './stream.js';
 import { tokenUsage } from './usage.js';
@@ -24,6 +26,7 @@ type Attempt = {
   controller: AbortController;
   startController: AbortController;
   timer: ReturnType<typeof setTimeout>;
+  deadline: number;
   providerId?: string;
   stop?: 'cancelled' | 'timedOut';
   cancelPromise?: Promise<void>;
@@ -40,7 +43,11 @@ export class MetaInvestigator implements InvestigatorExecutor {
     private client: OpenAI,
     private prices: MetaPrices,
     private lookup: JobLookup,
-    private onStage?: (stage: 'responseId' | 'searchDone' | 'structureDone') => void,
+    private onStage?: (
+      stage: 'responseId' | 'searchDone' | 'structureDone' | 'pagesFetched',
+      stats?: PageFetchStats,
+    ) => void,
+    private pageIo: PageFetchIo = defaultPageFetchIo,
   ) {}
 
   handle(effect: JobEffect, context: JobContext): void {
@@ -56,6 +63,7 @@ export class MetaInvestigator implements InvestigatorExecutor {
       controller: new AbortController(),
       startController: new AbortController(),
       timer: setTimeout(() => this.stop(attempt, 'timedOut'), context.state.config.jobDeadlineMs),
+      deadline: Date.now() + context.state.config.jobDeadlineMs,
       terminal: false,
       searchMetered: false,
     };
@@ -142,19 +150,7 @@ export class MetaInvestigator implements InvestigatorExecutor {
       this.emit(attempt, 'started', 'job.started', this.identity(attempt));
       const response = await this.poll(attempt, initial as unknown as Record<string, unknown>);
       if (attempt.stop) return;
-      this.onStage?.('searchDone');
-      const { evidence, queryCount, answer } = extractEvidence(response, attempt.context.state.config);
-      this.usage(attempt, 'search:usage', response.usage, queryCount);
-      attempt.searchMetered = true;
-      const output = await this.structure(attempt, answer, evidence.results);
-      if (attempt.stop) return;
-      this.onStage?.('structureDone');
-      this.emit(attempt, 'completed', 'job.completed', {
-        ...this.identity(attempt),
-        investigatorOutput: output,
-        retrievalEvidence: evidence,
-      });
-      attempt.terminal = true;
+      await this.completeResearch(attempt, response);
     } catch (error) {
       if (attempt.stop) {
         if (attempt.providerId) await this.cancel(attempt);
@@ -170,6 +166,30 @@ export class MetaInvestigator implements InvestigatorExecutor {
       if (attempt.cancelPromise) await attempt.cancelPromise;
       this.active.delete(attempt.effect.callId);
     }
+  }
+
+  private async completeResearch(attempt: Attempt, response: Record<string, unknown>): Promise<void> {
+    this.onStage?.('searchDone');
+    const { evidence, queryCount, answer } = extractEvidence(response, attempt.context.state.config);
+    this.usage(attempt, 'search:usage', response.usage, queryCount);
+    attempt.searchMetered = true;
+    const output = await this.structure(attempt, answer, evidence.results);
+    if (Date.now() >= attempt.deadline) this.stop(attempt, 'timedOut');
+    if (attempt.stop) return;
+    this.onStage?.('structureDone');
+    const stats = await addPageEvidence(
+      output, evidence, attempt.context.state.config, attempt.controller.signal, this.pageIo,
+    );
+    // Synchronous extraction must not win a race against an already elapsed job deadline.
+    if (Date.now() >= attempt.deadline) this.stop(attempt, 'timedOut');
+    if (attempt.stop) return;
+    this.onStage?.('pagesFetched', stats);
+    this.emit(attempt, 'completed', 'job.completed', {
+      ...this.identity(attempt),
+      investigatorOutput: output,
+      retrievalEvidence: evidence,
+    });
+    attempt.terminal = true;
   }
 
   private start(attempt: Attempt) {
@@ -228,7 +248,7 @@ export class MetaInvestigator implements InvestigatorExecutor {
     return response;
   }
 
-  private async structure(attempt: Attempt, answer: string, results: unknown): Promise<unknown> {
+  private async structure(attempt: Attempt, answer: string, results: unknown): Promise<InvestigatorOutput> {
     const response = await this.client.responses.create({
       model: 'muse-spark-1.3',
       stream: true,

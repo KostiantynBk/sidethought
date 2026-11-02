@@ -1,4 +1,57 @@
-# T11a research policy inventory
+# Research policy inventory
+
+## T14 independently fetched page evidence (2026-11-02)
+
+Live Meta searches returned empty `web_search_call.results[].snippet` values at both medium and high
+context sizes. After structuring and before `job.completed`, the Investigator now independently fetches
+cited pages. Original Meta results remain unchanged. Bounded exact substrings of extracted page text
+are appended as additional evidence results under the original cited URL (including after redirects).
+The completed event journals those snippets; replay performs no page I/O. No kernel code changed.
+
+- The page stage receives only citation URLs and uses fixed GET headers, including
+  `Sidethought/0.1 (research quote verification)`. No user/project text, quote, title, cookies, auth,
+  referrer or Meta credentials are added to requests. Set-Cookie responses are never reused.
+- Only HTTP/HTTPS, no URL credentials, only default ports. Every hop resolves **all** hostname addresses
+  and rejects the whole answer if any address is non-public. Literal IPs are checked directly.
+- IPv4 denials: unspecified/this-network, private ranges, loopback, link-local (including metadata),
+  CGNAT, protocol-assignment, documentation, deprecated relay, benchmark, multicast and reserved/broadcast
+  ranges. IPv6 is limited to global unicast `2000::/3`, excluding special-purpose `2001::/23`,
+  documentation and 6to4 ranges. This also denies mapped IPv4, NAT64, unspecified, loopback,
+  unique-local, link-local, multicast and zone-scoped addresses. Some otherwise reachable special-purpose
+  addresses are intentionally overblocked.
+- Connections use a pinned lookup returning only the validated IP, preserve the original HTTP Host/TLS
+  hostname, disable pooled agents, and do not use environment proxies. No second DNS lookup can rebind
+  the connection. Redirects are manual, at most three, with fresh URL and DNS validation each hop.
+- At most six distinct cited URLs per attempt, fetched concurrently. Five seconds per page includes
+  DNS and all redirects; the existing job deadline/cancellation also aborts all page requests. Late DNS
+  completion cannot start a request. Node's underlying `dns.lookup` cannot itself be cancelled.
+- At most 2 MiB of streamed bytes per page, aborting on overflow even if Content-Length lies. Only
+  `text/html`, `application/xhtml+xml`, `text/plain` and successful HTTP responses are accepted.
+  Requests ask for identity encoding; compressed responses are rejected (no decompression bombs).
+  Unsupported charset/decode errors, failed requests, blocked targets, content-type failures and page
+  timeouts contribute no excerpts, never a job failure. No exception content is logged.
+- HTML extraction drops head, script, style, noscript, SVG, comments and tags; decodes common named and
+  numeric entities once; and collapses whitespace. Plain text keeps literal tags/entities. This is a
+  bounded text extractor, **not** a browser: no JavaScript, CSS visibility/layout, subresources or PDF
+  extraction. Unknown entities remain literal; malformed/unclosed hidden blocks fail conservatively.
+- Quote matching imports the kernel's `normalizeEvidence`; Unicode offsets are mapped back to the
+  original extracted text. The stored snippet is never normalized, rewritten or synthesized. Up to
+  300 characters of context per side are retained, within `maxSnippetChars` and `maxEvidenceResults`.
+  An absent/non-fitting quote adds nothing. Full Meta result capacity leaves no room for new excerpts.
+- Quote occurrence alone is not support: the unchanged completed-search and claim-consistency checks
+  still apply, followed by the semantic Checker before speech. Fetch success is not a guarantee that
+  a claim is true, relevant or speakable. Page text never becomes model instructions.
+
+The optional `pagesFetched` stage callback and manual smoke expose counts and elapsed timing only.
+`pagesFetched` counts usable fetched pages, `pagesBlocked` security-policy denials, and `pagesFailed`
+all other unusable pages. `excerpts` counts appended snippets. `claimsWithQuoteOnPage` counts claims
+with at least one normalized quote found on a fetched page, out of `claims`; this is **not** the number
+of kernel-verified claims, and can exceed appended excerpts when evidence limits are full.
+
+Open policy question: robots.txt handling remains deferred by the T14 scope (single research-triggered
+fetches). JavaScript rendering, caching, PDF extraction and a full DOM/CSS visibility engine are out of scope.
+
+## Original kernel policy inventory
 
 Pure kernel implementation of architecture §§4.5, 5.2, 5.4, 8.2, 8.4 and 9.2. Explicit Interpreter requests only; no proactive nominations, Checker or unsolicited speech.
 

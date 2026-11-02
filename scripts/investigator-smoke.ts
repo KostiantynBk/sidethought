@@ -4,17 +4,22 @@ import { loadConfig } from '../src/config/index.js';
 import { initialState } from '../src/kernel/index.js';
 import { modelConfiguration } from '../src/model/meta/config.js';
 import { MetaInvestigator } from '../src/model/meta/investigator.js';
+import type { PageFetchStats } from '../src/model/meta/page-evidence.js';
 import type { RawEvent } from '../src/runtime/model-port.js';
 
 async function main(): Promise<void> {
   const meta = modelConfiguration({ ...process.env, SIDETHOUGHT_MODEL: 'meta' }).meta!;
   const started = Date.now();
   const timings: Record<string, number> = {};
+  let pageStats: PageFetchStats | undefined;
   const model = new MetaInvestigator(
     meta.createClient(),
     meta.prices,
     () => ({ publicQuery: 'What are the public HTTP caching directives in RFC 9111?' }),
-    stage => { timings[stage] = Date.now() - started; },
+    (stage, stats) => {
+      timings[stage] = Date.now() - started;
+      if (stats) pageStats = stats;
+    },
   );
   const state = initialState('smoke', loadConfig());
   let cost = 0;
@@ -35,6 +40,8 @@ async function main(): Promise<void> {
         startToResponseIdMs: timings.responseId,
         startToSearchDoneMs: timings.searchDone,
         startToStructureDoneMs: timings.structureDone,
+        startToPagesFetchedMs: timings.pagesFetched,
+        ...pageStats,
         completedSearchCalls: evidence.completedSearchCalls,
         queryCount: queries,
         claimCount: output.claims.length,
