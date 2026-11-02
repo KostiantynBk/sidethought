@@ -89,7 +89,7 @@ export const ConfigSchema = z.strictObject({
   maxDeliberatorNominations: int(3, MAX_DELIBERATOR_NOMINATIONS), // Contract ceiling.
   interpreterMaxOutputTokens: int(1200, 4800), // At most four times default.
   responderMaxOutputTokens: int(800, 3200), // At most four times default.
-  deliberatorMaxOutputTokens: int(3000, 12000), // At most four times default.
+  deliberatorMaxOutputTokens: int(6000, 12000), // At most twice default; v4 follow-ups used 3000+ (2026-11-02).
   investigatorSearchMaxOutputTokens: int(4000, 16000), // Four times default; max 16k.
   // Raised Nov 2: page text before structuring makes live outputs exceed 1,500 tokens (§8.4 tune from measurements).
   investigatorStructureMaxOutputTokens: int(3000, 6000), // At most twice default.
