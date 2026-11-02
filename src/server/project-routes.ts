@@ -7,6 +7,7 @@ import type { ServerConfig } from './config.js';
 type Ports = {
   memory: ProjectMemoryStore;
   invalidate: (projectIds: string[]) => void;
+  projectStatus?: (projectId: string) => string | undefined;
 };
 const projectParams = z.strictObject({ projectId: ProjectId });
 const lessonParams = z.strictObject({ lessonId: z.string().uuid() });
@@ -31,7 +32,13 @@ export async function registerProjectRoutes(app: FastifyInstance, config: Server
       // Do not expose SQL, provider, or filesystem diagnostics.
       return reply.code(500).send({ error: 'Project operation failed' });
     });
-    api.get('/projects', async () => ({ projects: ports.memory.projects(), model: config.model }));
+    api.get('/projects', async () => ({
+      projects: ports.memory.projects().map(project => ({
+        ...project,
+        upgradeStatus: ports.projectStatus?.(project.id),
+      })),
+      model: config.model,
+    }));
     api.post('/projects', async request => {
       const { name } = ProjectInput.parse(request.body);
       return { project: ports.memory.createProject(name) };

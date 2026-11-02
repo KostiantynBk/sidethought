@@ -22,6 +22,7 @@ export type ProjectSpace = {
   id: string;
   name: string;
   memoryEnabled: boolean;
+  upgradeStatus?: string;
 };
 export type SharedLesson = {
   id: string;

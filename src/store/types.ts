@@ -24,6 +24,8 @@ export type Usage = {
 export interface SessionStore {
   commit(sessionId: string, events: JournalEvent[], snapshot: Snapshot): void;
   loadSnapshot(sessionId: string): Snapshot | undefined;
+  upgradeSnapshot?(sessionId: string, snapshot: Snapshot): void;
+  hasChangedLessonUse?(sessionId: string): boolean;
   readJournal(sessionId: string, fromSeq?: number): JournalEvent[];
   hasEventId(eventId: string): boolean;
   writeUsage(row: Usage): void;

@@ -23,6 +23,7 @@ export async function createGateway(
     resolveSession?: (projectId: string) => SocketSession;
     memory?: ProjectMemoryStore;
     invalidate?: (projectIds: string[]) => void;
+    projectStatus?: (projectId: string) => string | undefined;
   } = {},
 ) {
   const app = Fastify({
@@ -42,7 +43,11 @@ export async function createGateway(
   registerLogin(app, config, throttle);
   const broadcast = registerSockets(app, config, state, accept, options.resolveSession);
   if (options.memory && options.invalidate) {
-    await registerProjectRoutes(app, config, { memory: options.memory, invalidate: options.invalidate });
+    await registerProjectRoutes(app, config, {
+      memory: options.memory,
+      invalidate: options.invalidate,
+      projectStatus: options.projectStatus,
+    });
   }
   if (process.env.NODE_ENV === 'production' || process.argv.includes('--serve-static')) {
     await app.register(fastifyStatic, { root: resolve('web/dist') });

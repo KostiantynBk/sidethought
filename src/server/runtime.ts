@@ -10,7 +10,7 @@ import { MetaInvestigator, type InvestigatorExecutor, type JobLookup } from '../
 import { DevModel } from '../runtime/dev-model.js';
 import { MetaModel } from '../model/meta/executor.js';
 import type { ModelExecutor } from '../runtime/model-port.js';
-import { SessionRunner } from '../runtime/session-runner.js';
+import { ProjectUpgradeError, SessionRunner } from '../runtime/session-runner.js';
 import { SqliteStore } from '../store/sqlite.js';
 import type { ServerConfig } from './config.js';
 import { createEffectSink } from './effects.js';
@@ -80,8 +80,8 @@ export async function createRuntime(
     });
     runner = new SessionRunner(projectId, loadConfig(), store, Date.now, sink);
     const runtime = { runner, queue, timers, investigator };
-    sessions.set(projectId, runtime);
     if (store.loadSnapshot(projectId)) queue.recover(randomUUID());
+    sessions.set(projectId, runtime);
     return runtime;
   }
 
@@ -164,10 +164,25 @@ export async function createRuntime(
     }
   }
 
-  const local = session('local');
-  gateway = await createGateway(config, () => local.runner.current(), local.queue.emit, {
+  let local: ProjectRuntime | undefined;
+  try {
+    local = session('local');
+  } catch (error) {
+    if (!(error instanceof ProjectUpgradeError)) throw error;
+  }
+  const fallback = new SessionRunner('local', loadConfig(), store, Date.now, () => {});
+  gateway = await createGateway(config, () => (local?.runner ?? fallback).current(), event => local?.queue.emit(event), {
     memory,
     invalidate,
+    projectStatus: projectId => {
+      try {
+        session(projectId);
+        return undefined;
+      } catch (error) {
+        if (error instanceof ProjectUpgradeError) return error.message;
+        throw error;
+      }
+    },
     resolveSession: projectId => {
       const runtime = session(projectId);
       return { state: () => runtime.runner.current(), accept: runtime.queue.emit };
@@ -175,7 +190,7 @@ export async function createRuntime(
   });
   return {
     ...gateway,
-    runner: local.runner,
+    runner: local?.runner ?? fallback,
     projectRunner: (projectId: string) => session(projectId).runner,
     memory,
     close(): Promise<void> {

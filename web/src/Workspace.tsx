@@ -83,7 +83,9 @@ export function Workspace() {
     {error && <p role="alert">{error}</p>}
     <section aria-label="Project workspace">
       <label>Active project<select value={projectId} onChange={e => setProjectId(e.target.value)}>
-        {projects.map(candidate => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}
+        {projects.map(candidate => <option key={candidate.id} value={candidate.id}>
+          {candidate.name}{candidate.upgradeStatus ? ' — upgrade unavailable' : ''}
+        </option>)}
       </select></label>
       <p>Projects keep separate conversations. Switching discards an unsent draft.</p>
       <form onSubmit={event => { void create(event); }}>
@@ -92,15 +94,16 @@ export function Workspace() {
         </label>
         <button>Create project</button>
       </form>
-      {project && <label><input type="checkbox" checked={project.memoryEnabled}
+      {project?.upgradeStatus && <p role="alert">{project.upgradeStatus}</p>}
+      {project && !project.upgradeStatus && <label><input type="checkbox" checked={project.memoryEnabled}
         onChange={e => { void enable(e.target.checked); }} />
         Use relevant shared lessons for new replies in this project
       </label>}
-      {project && <p role="status">
+      {project && !project.upgradeStatus && <p role="status">
         {`Cross-project recall is ${project.memoryEnabled ? 'ON' : 'OFF'} for ${project.name}.`}
       </p>}
       <p>Retrieval is off by default in each new project. Disabling it does not erase earlier conversation.</p>
     </section>
-    {project && <ProjectChat key={project.id} project={project} />}
+    {project && !project.upgradeStatus && <ProjectChat key={project.id} project={project} />}
   </main>;
 }

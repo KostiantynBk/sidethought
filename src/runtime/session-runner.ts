@@ -2,12 +2,22 @@ import type { Config } from '../config/index.js';
 import { eventSchemaWithEvidenceLimits, TELEMETRY_EVENT_TYPES, type Effect } from '../contract/index.js';
 import { initialState, reduce, type Decision, type State } from '../kernel/index.js';
 import { DuplicateEventError, type JournalEvent, type SessionStore, type Snapshot } from '../store/index.js';
+import { invariantRegistry } from '../harness/invariants.js';
 
 export const REDUCER_VERSION = '11';
 
 export class ReducerVersionMismatchError extends Error {
   constructor(readonly found: string) {
     super(`reducerVersion mismatch: expected ${REDUCER_VERSION}, found ${found}`);
+  }
+}
+
+export class ProjectUpgradeError extends ReducerVersionMismatchError {
+  constructor(readonly reason: 'lesson_changed' | 'replay_failed') {
+    super('unavailable');
+    this.message = reason === 'lesson_changed'
+      ? "Saved by an older version; a lesson it used was later changed, so it can't be upgraded automatically."
+      : "Saved by an older version; this project can't be upgraded automatically.";
   }
 }
 
@@ -121,10 +131,41 @@ export class SessionRunner {
     return result;
   }
 
+  private upgrade(snapshot: Snapshot): Snapshot {
+    if (!this.store.upgradeSnapshot || !this.store.hasChangedLessonUse) {
+      throw new ReducerVersionMismatchError(snapshot.reducerVersion);
+    }
+    if (this.store.hasChangedLessonUse(this.sessionId)) throw new ProjectUpgradeError('lesson_changed');
+    let state = initialState(this.sessionId, this.config);
+    try {
+      const journal = this.store.readJournal(this.sessionId);
+      if (!journal.length || journal.at(-1)!.seq !== snapshot.seq) throw new Error('Incomplete journal');
+      for (const row of journal) {
+        const { seq, ...raw } = row;
+        const event = this.parser.parse(raw);
+        if (event.sessionId !== this.sessionId || seq !== state.meta.seq + 1) throw new Error('Invalid sequence');
+        const result = reduce(state, { ...event, seq });
+        if (invariantRegistry.some(check => check(state, event, result.state, result.effects, result.decisions).length)) {
+          throw new Error('Invariant failure');
+        }
+        state = result.state;
+      }
+    } catch {
+      throw new ProjectUpgradeError('replay_failed');
+    }
+    const upgraded = { seq: state.meta.seq, reducerVersion: REDUCER_VERSION, state };
+    try {
+      this.store.upgradeSnapshot(this.sessionId, upgraded);
+    } catch {
+      throw new ProjectUpgradeError('replay_failed');
+    }
+    return upgraded;
+  }
+
   recover(eventId: string): RunnerResult {
-    const snapshot = this.store.loadSnapshot(this.sessionId);
+    let snapshot = this.store.loadSnapshot(this.sessionId);
     if (!snapshot) throw new Error(`no snapshot for ${this.sessionId}`);
-    if (snapshot.reducerVersion !== REDUCER_VERSION) throw new ReducerVersionMismatchError(snapshot.reducerVersion);
+    if (snapshot.reducerVersion !== REDUCER_VERSION) snapshot = this.upgrade(snapshot);
     this.state = snapshot.state;
     this.committed = structuredClone(snapshot);
     this.pending = [];

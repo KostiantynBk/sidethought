@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import { existsSync } from 'node:fs';
 import { SCHEMA } from './schema.js';
 import { ProjectMemoryStore } from '../memory/store.js';
 import { DuplicateEventError, type JournalEvent, type SessionStore, type Snapshot, type Usage } from './types.js';
@@ -18,7 +19,7 @@ type Pragmas = {
 export class SqliteStore implements SessionStore {
   private readonly db: Database.Database;
 
-  constructor(path: string) {
+  constructor(private readonly path: string) {
     this.db = new Database(path);
     this.db.pragma('journal_mode = WAL');
     this.db.pragma('secure_delete = ON');
@@ -53,6 +54,35 @@ export class SqliteStore implements SessionStore {
       }
       throw error;
     }
+  }
+
+  hasChangedLessonUse(sessionId: string): boolean {
+    const tables = this.db.prepare(`SELECT count(*) AS count FROM sqlite_master
+      WHERE type = 'table' AND name IN ('lesson_uses', 'shared_lessons')`).get() as { count: number };
+    if (tables.count === 0) return false;
+    if (tables.count !== 2) throw new Error('Incomplete memory schema');
+    return this.db.prepare(`SELECT 1 FROM lesson_uses u
+      LEFT JOIN shared_lessons l ON l.id = u.lessonId
+      WHERE u.sessionId = ? AND (l.id IS NULL OR l.version > u.version) LIMIT 1`)
+      .get(sessionId) !== undefined;
+  }
+
+  upgradeSnapshot(sessionId: string, snapshot: Snapshot): void {
+    if (this.path === ':memory:') throw new Error('Cannot back up an in-memory database');
+    const backup = `${this.path}.pre-v${snapshot.reducerVersion}.bak`;
+    if (!existsSync(backup)) {
+      this.db.prepare('VACUUM INTO ?').run(backup);
+      console.info(`Database backup created for reducer version ${snapshot.reducerVersion}`);
+    } else {
+      const copy = new Database(backup, { readonly: true, fileMustExist: true });
+      try {
+        if (copy.pragma('integrity_check', { simple: true }) !== 'ok') throw new Error('Invalid backup');
+      } finally {
+        copy.close();
+      }
+    }
+    this.db.prepare(`UPDATE snapshots SET seq = ?, reducerVersion = ?, stateJson = ? WHERE sessionId = ?`)
+      .run(snapshot.seq, snapshot.reducerVersion, JSON.stringify(snapshot.state), sessionId);
   }
 
   loadSnapshot(sessionId: string): Snapshot | undefined {
