@@ -70,7 +70,7 @@ npx vitest run --maxWorkers=2
 npm run build
 ```
 
-On 2026-11-02, after `npm ci --ignore-scripts`, typecheck, the full Vitest run (**126 test files / 1,380 tests**) and the production build passed. Automated tests do not establish live usefulness or safety in every case.
+On 2026-11-02, after `npm ci --ignore-scripts`, typecheck, the full Vitest run (**126 test files / 1,381 tests**) and the production build passed. Automated tests do not establish live usefulness or safety in every case.
 
 ## Event work and license
 
