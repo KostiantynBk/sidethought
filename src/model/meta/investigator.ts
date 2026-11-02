@@ -1,7 +1,7 @@
 import type OpenAI from 'openai';
 import type { Effect } from '../../contract/events.js';
 import { InvestigatorOutputSchema, type InvestigatorOutput } from '../../contract/roles.js';
-import { INVESTIGATOR_SEARCH_V1, INVESTIGATOR_STRUCTURE_V2 } from '../../context/prompts/investigator.js';
+import { INVESTIGATOR_SEARCH_V1, INVESTIGATOR_STRUCTURE_V3 } from '../../context/prompts/investigator.js';
 import type { State } from '../../kernel/index.js';
 import type { RawEvent } from '../../runtime/model-port.js';
 import type { MetaPrices } from './config.js';
@@ -265,7 +265,7 @@ UNTRUSTED_SOURCE_DATA_JSON_END`.length;
       store: false,
       reasoning: { effort: 'minimal' },
       max_output_tokens: attempt.context.state.config.investigatorStructureMaxOutputTokens,
-      instructions: INVESTIGATOR_STRUCTURE_V2,
+      instructions: INVESTIGATOR_STRUCTURE_V3,
       input: [
         'UNTRUSTED_SOURCE_DATA_JSON_BEGIN',
         JSON.stringify({ answer, results, pages }),

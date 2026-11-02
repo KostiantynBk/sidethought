@@ -84,6 +84,7 @@ export function appendExcerpts(
   limits: PageEvidenceLimits,
   stats: PageFetchStats,
 ): void {
+  const excerpts: RetrievalEvidence['results'] = [];
   for (const claim of output.claims) {
     let matched = false;
     for (const support of claim.support) {
@@ -92,16 +93,36 @@ export function appendExcerpts(
       const quote = normalizeEvidence(support.quote);
       if (!quote || !normalizeEvidence(text).includes(quote)) continue;
       matched = true;
-      if (evidence.results.length >= limits.maxEvidenceResults) continue;
       const snippet = pageExcerpt(text, support.quote, limits.maxSnippetChars);
       if (snippet === undefined) continue;
-      evidence.results.push({
+      excerpts.push({
         url: support.url,
         ...(support.title ? { title: support.title } : {}),
         snippet,
       });
-      stats.excerpts++;
     }
     if (matched) stats.claimsWithQuoteOnPage++;
   }
+  mergeExcerpts(evidence, excerpts, limits.maxEvidenceResults, stats);
+}
+
+// Meta's search results arrive with empty snippets (live, 2026-11-02) and can fill every slot.
+// Verifiable text goes first; URL-only results keep any remaining slots, once per URL.
+function mergeExcerpts(
+  evidence: RetrievalEvidence,
+  excerpts: RetrievalEvidence['results'],
+  maxResults: number,
+  stats: PageFetchStats,
+): void {
+  const withText = evidence.results.filter(result => result.snippet?.trim());
+  const seen = new Set<string>();
+  const urlOnly = evidence.results.filter(result => {
+    if (result.snippet?.trim() || seen.has(result.url)) return false;
+    seen.add(result.url);
+    return true;
+  });
+  const kept = withText.slice(0, maxResults);
+  const added = excerpts.slice(0, maxResults - kept.length);
+  evidence.results = [...kept, ...added, ...urlOnly].slice(0, maxResults);
+  stats.excerpts += added.length;
 }

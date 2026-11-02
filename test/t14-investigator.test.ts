@@ -105,7 +105,7 @@ describe('T14 Investigator page stage', () => {
       });
       const finding = Object.values(harness.state.domain.findings)[0]!;
       expect(finding.claims[0]!.support[0]!.quoteVerified).toBe(true);
-      expect(finding.retrievalEvidence.results[1]!.snippet).toBe(pageQuote);
+      expect(finding.retrievalEvidence.results[0]!.snippet).toBe(pageQuote);
     } finally {
       await test.model.shutdown();
       harness.store.close();

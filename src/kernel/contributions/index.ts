@@ -74,8 +74,15 @@ export function contributionTimer(context: Context, timer: Timer, at: number): s
 }
 
 function triggers(context: Context, before: State, event: KernelEvent): void {
-  if (context.domain.projectRev !== before.domain.projectRev
-    && (event.type === 'interpretation.ready' || event.type === 'item.action')) {
+  // A substantive turn wakes the Deliberator even when its proposed items were all rejected
+  // (e.g. span:partial_clause): extraction failure must not silence the second person (decision 2026-11-02 B).
+  const changed = context.domain.projectRev !== before.domain.projectRev;
+  const call = before.domain.call;
+  const proposed = event.type === 'interpretation.ready' && call?.callId === event.payload.callId
+    && call.requestId === event.payload.requestId && event.payload.output.ops.length > 0
+    // Retried interpretations (ambiguous quote, atomic conflict) wake it through their final result instead.
+    && call.inputIds.every(id => context.domain.inputs.find(input => input.id === id)?.status === 'interpreted');
+  if ((changed && (event.type === 'interpretation.ready' || event.type === 'item.action')) || proposed) {
     const inputIds = event.type === 'interpretation.ready' ? before.domain.call?.inputIds ?? []
       : [context.domain.inputs.at(-1)?.id ?? `action:${event.eventId}`];
     scheduleDeliberation(context, { inputIds, causalDepth: 0 }, event.acceptedAt!);

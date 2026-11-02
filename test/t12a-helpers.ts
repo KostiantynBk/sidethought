@@ -73,7 +73,7 @@ export class ContributionHarness extends ResearchHarness {
       basisRev: call.basisRev,
       capturedInputs: call.capturedInputs,
     });
-    expect(context.instructions).toContain('deliberator-v3');
+    expect(context.instructions).toContain('deliberator-v4');
     this.send('deliberation.ready', {
       requestId: call.requestId,
       callId: call.callId,

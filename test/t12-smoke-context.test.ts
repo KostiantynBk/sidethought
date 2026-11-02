@@ -5,7 +5,7 @@ import { assembleContext } from '../src/context/index.js';
 it('assembles the real Deliberator context for the synthetic smoke state', () => {
   const { state, effect } = syntheticState('deliberator');
   const prompt = assembleContext(state, effect);
-  expect(prompt.instructions).toContain('deliberator-v3');
+  expect(prompt.instructions).toContain('deliberator-v4');
   expect(JSON.parse(prompt.input).task.role).toBe('deliberator');
 });
 

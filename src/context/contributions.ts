@@ -45,7 +45,9 @@ export function contributionContext(state: State, effect: CallEffect, items: Ite
         })),
       task: {
         role: 'deliberator',
-        instruction: "What matters that hasn't been said?",
+        instruction: call.causalDepth >= 1
+          ? 'Research you started has finished (see researchState). As a colleague, what is your idea now?'
+          : "What matters that hasn't been said?",
         causalDepth: call.causalDepth,
         triggeringInputIds: call.inputIds,
       },

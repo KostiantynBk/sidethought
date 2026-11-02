@@ -33,38 +33,59 @@ describe('T14 bounded evidence assembly', () => {
     expect(stats.claimsWithQuoteOnPage).toBe(2);
   });
 
-  it('preserves the original Meta result byte-for-byte', async () => {
+  it('preserves the original Meta result byte-for-byte after the verifiable excerpt', async () => {
     const fake = fakePageIo();
     const evidence = emptyEvidence();
     const original = structuredClone(evidence.results[0]);
     await addPageEvidence(pageOutput(), evidence, pageLimits, signal(), fake.io);
-    expect(evidence.results[0]).toEqual(original);
-    expect(evidence.results[1]).toEqual({
+    expect(evidence.results[0]).toEqual({
       url: pageUrl,
       title: 'Public documentation',
       snippet: pageQuote,
     });
+    expect(evidence.results[1]).toEqual(original);
   });
 
-  it('never exceeds maxEvidenceResults or discards existing Meta results', async () => {
+  it('never exceeds maxEvidenceResults and gives excerpts priority over URL-only results', async () => {
     const fake = fakePageIo();
     const evidence = emptyEvidence();
     const limits = { ...pageLimits, maxEvidenceResults: 2 };
     const stats = await addPageEvidence(pageOutput([pageUrl, pageUrl]), evidence, limits, signal(), fake.io);
     expect(evidence.results).toHaveLength(2);
-    expect(evidence.results[0]!.snippet).toBe('');
-    expect(stats.excerpts).toBe(1);
+    expect(evidence.results.map(result => result.snippet)).toEqual([pageQuote, pageQuote]);
+    expect(stats.excerpts).toBe(2);
   });
 
-  it('adds nothing when all evidence slots are occupied', async () => {
+  it('replaces a URL-only Meta result with a verifiable excerpt when every slot is occupied', async () => {
     const fake = fakePageIo();
     const evidence = emptyEvidence();
-    const before = structuredClone(evidence);
     const limits = { ...pageLimits, maxEvidenceResults: 1 };
     const stats = await addPageEvidence(pageOutput(), evidence, limits, signal(), fake.io);
-    expect(evidence).toEqual(before);
-    expect(stats.excerpts).toBe(0);
+    expect(evidence.results).toEqual([{ url: pageUrl, title: 'Public documentation', snippet: pageQuote }]);
+    expect(stats.excerpts).toBe(1);
     expect(stats.claimsWithQuoteOnPage).toBe(1);
+  });
+
+  it('keeps Meta results that carry text ahead of excerpts', async () => {
+    const fake = fakePageIo();
+    const evidence = emptyEvidence();
+    evidence.results[0]!.snippet = 'Meta text';
+    const limits = { ...pageLimits, maxEvidenceResults: 1 };
+    const stats = await addPageEvidence(pageOutput(), evidence, limits, signal(), fake.io);
+    expect(evidence.results.map(result => result.snippet)).toEqual(['Meta text']);
+    expect(stats.excerpts).toBe(0);
+  });
+
+  it('still adds excerpts when twenty empty Meta results fill the cap, as observed live', async () => {
+    const fake = fakePageIo();
+    const urls = [pageUrl, ...Array.from({ length: 19 }, (_, index) => `https://other.example/${index}`)];
+    const evidence = emptyEvidence([...urls]);
+    evidence.results.push(...structuredClone(evidence.results.slice(0, 5)));
+    const stats = await addPageEvidence(pageOutput(), evidence, pageLimits, signal(), fake.io);
+    expect(evidence.results).toHaveLength(20);
+    expect(evidence.results[0]).toEqual({ url: pageUrl, title: 'Public documentation', snippet: pageQuote });
+    expect(new Set(evidence.results.slice(1).map(result => result.url)).size).toBe(19);
+    expect(stats.excerpts).toBe(1);
   });
 
   it('adds no excerpt after a page timeout', async () => {
@@ -99,7 +120,7 @@ describe('T14 bounded evidence assembly', () => {
     const evidence = emptyEvidence(urls);
     await addPageEvidence(pageOutput(urls), evidence, pageLimits, signal(), fake.io);
     expect(evidence.results.filter(result => result.snippet)).toHaveLength(1);
-    expect(evidence.results.at(-1)!.url).toBe(pageUrl);
+    expect(evidence.results.find(result => result.snippet)!.url).toBe(pageUrl);
   });
 });
 
