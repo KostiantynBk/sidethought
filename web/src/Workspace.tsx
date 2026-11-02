@@ -8,10 +8,11 @@ import { InputStatus } from './InputStatus.js';
 import { projectApi } from './project-api.js';
 import { useComposer } from './useComposer.js';
 import { useConnection } from './useConnection.js';
+import { browserSynthesizer, ReadAloud } from './logic/speech.js';
 
-function ProjectChat({ project }: { project: ProjectSpace }) {
-  const connection = useConnection(true, project.id);
-  const composer = useComposer(connection);
+function ProjectChat({ project, speech }: { project: ProjectSpace; speech: ReadAloud }) {
+  const connection = useConnection(true, project.id, speech);
+  const composer = useComposer(connection, () => speech.cancel());
   const [memoryOpen, setMemoryOpen] = useState(false);
   return <>
     <h2>{project.name}</h2>
@@ -40,11 +41,27 @@ function ProjectChat({ project }: { project: ProjectSpace }) {
 }
 
 export function Workspace() {
+  const [speech] = useState(() => new ReadAloud(browserSynthesizer()));
+  const [readAloud, setReadAloud] = useState(() => {
+    try { return localStorage.getItem('sidethought.readAloud') === 'on'; } catch { return false; }
+  });
   const [projects, setProjects] = useState<ProjectSpace[]>([]);
   const [projectId, setProjectId] = useState('local');
   const [name, setName] = useState('');
   const [model, setModel] = useState('');
   const [error, setError] = useState('');
+  useEffect(() => {
+    speech.setEnabled(readAloud);
+  }, [speech, readAloud]);
+  useEffect(() => {
+    const visibility = () => speech.setHidden(document.hidden);
+    visibility();
+    document.addEventListener('visibilitychange', visibility);
+    return () => {
+      document.removeEventListener('visibilitychange', visibility);
+      speech.cancel();
+    };
+  }, [speech]);
   useEffect(() => {
     let active = true;
     projectApi<{ projects: ProjectSpace[]; model: string }>('/projects').then(result => {
@@ -59,6 +76,7 @@ export function Workspace() {
     try {
       const result = await projectApi<{ project: ProjectSpace }>('/projects', 'POST', { name });
       setProjects(previous => [...previous, result.project]);
+      speech.switchProject();
       setProjectId(result.project.id);
       setName('');
       setError('');
@@ -80,9 +98,21 @@ export function Workspace() {
     <h1>Sidethought <small>
       {model === 'meta' ? 'Meta Spark' : model === 'dev' ? 'dev model: no real AI' : ''}
     </small></h1>
+    <label><input type="checkbox" checked={readAloud && speech.available} disabled={!speech.available}
+      onChange={event => {
+        const enabled = event.target.checked;
+        if (enabled) speech.unlock();
+        speech.setEnabled(enabled);
+        setReadAloud(enabled);
+        try { localStorage.setItem('sidethought.readAloud', enabled ? 'on' : 'off'); } catch { /* optional */ }
+      }} /> Read aloud</label>
+    {!speech.available && <p>This browser can't read aloud</p>}
     {error && <p role="alert">{error}</p>}
     <section aria-label="Project workspace">
-      <label>Active project<select value={projectId} onChange={e => setProjectId(e.target.value)}>
+      <label>Active project<select value={projectId} onChange={e => {
+        if (e.target.value !== projectId) speech.switchProject();
+        setProjectId(e.target.value);
+      }}>
         {projects.map(candidate => <option key={candidate.id} value={candidate.id}>
           {candidate.name}{candidate.upgradeStatus ? ' — upgrade unavailable' : ''}
         </option>)}
@@ -104,6 +134,6 @@ export function Workspace() {
       </p>}
       <p>Retrieval is off by default in each new project. Disabling it does not erase earlier conversation.</p>
     </section>
-    {project && !project.upgradeStatus && <ProjectChat key={project.id} project={project} />}
+    {project && !project.upgradeStatus && <ProjectChat key={project.id} project={project} speech={speech} />}
   </main>;
 }

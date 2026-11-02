@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import { finalProgress, pendingProgress, type TranscriptDelivery } from './logic/transcript.js';
 import { emptyView, nextView, type Message, type Snapshot, type View } from './logic/view.js';
+import type { ReadAloud } from './logic/speech.js';
 
 type Send = (type: string, payload: unknown) => boolean;
 type ConnectionRefs = {
@@ -45,7 +46,8 @@ function receive(message: Message, refs: ConnectionRefs, setView: Dispatch<SetSt
   setView(previous => nextView(previous, message));
 }
 
-function useSocket(loggedIn: boolean, projectId: string, setView: Dispatch<SetStateAction<View>>) {
+function useSocket(loggedIn: boolean, projectId: string, setView: Dispatch<SetStateAction<View>>,
+  speech?: ReadAloud) {
   const refs: ConnectionRefs = {
     socket: useRef<WebSocket | null>(null),
     blocked: useRef(new Set<string>()),
@@ -64,9 +66,14 @@ function useSocket(loggedIn: boolean, projectId: string, setView: Dispatch<SetSt
       const ws = new WebSocket(`${protocol}//${location.host}/ws${query}`);
       refs.socket.current = ws;
       ws.onmessage = event => {
-        if (active && refs.socket.current === ws) receive(JSON.parse(String(event.data)) as Message, refs, setView);
+        if (!active || refs.socket.current !== ws) return;
+        const message = JSON.parse(String(event.data)) as Message;
+        if (message.type !== 'assistant.chunk' || (!refs.blocked.current.has(message.deliveryId as string)
+          && !refs.finalAcknowledged.current.has(message.deliveryId as string))) speech?.receive(message);
+        receive(message, refs, setView);
       };
       ws.onclose = () => {
+        if (active && refs.socket.current === ws) speech?.cancel();
         if (active) reconnect = setTimeout(connect, 1000);
       };
     };
@@ -76,7 +83,7 @@ function useSocket(loggedIn: boolean, projectId: string, setView: Dispatch<SetSt
       if (reconnect) clearTimeout(reconnect);
       refs.socket.current?.close();
     };
-  }, [loggedIn, projectId]);
+  }, [loggedIn, projectId, speech]);
 
   function send(type: string, payload: unknown): boolean {
     if (refs.socket.current?.readyState !== WebSocket.OPEN) return false;
@@ -101,9 +108,9 @@ function useAcknowledge(view: View, setView: Dispatch<SetStateAction<View>>, ref
   }, [view.deliveries]);
 }
 
-export function useConnection(loggedIn: boolean, projectId = 'local') {
+export function useConnection(loggedIn: boolean, projectId = 'local', speech?: ReadAloud) {
   const [view, setView] = useState<View>(emptyView);
-  const { refs, send } = useSocket(loggedIn, projectId, setView);
+  const { refs, send } = useSocket(loggedIn, projectId, setView, speech);
   useAcknowledge(view, setView, refs, send);
   return {
     view,
