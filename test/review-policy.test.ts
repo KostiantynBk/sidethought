@@ -260,7 +260,7 @@ it('matches the literal policy inventory and default values', () => {
     responderMaxOutputTokens: 800,
     deliberatorMaxOutputTokens: 3000,
     investigatorSearchMaxOutputTokens: 4000,
-    investigatorStructureMaxOutputTokens: 1500,
+    investigatorStructureMaxOutputTokens: 3000,
     checkerMaxOutputTokens: 600,
     voiceSampleRateHz: 24000,
     voiceFrameMinMs: 40,

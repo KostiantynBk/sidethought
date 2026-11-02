@@ -91,7 +91,8 @@ export const ConfigSchema = z.strictObject({
   responderMaxOutputTokens: int(800, 3200), // At most four times default.
   deliberatorMaxOutputTokens: int(3000, 12000), // At most four times default.
   investigatorSearchMaxOutputTokens: int(4000, 16000), // Four times default; max 16k.
-  investigatorStructureMaxOutputTokens: int(1500, 6000), // At most four times default.
+  // Raised Nov 2: page text before structuring makes live outputs exceed 1,500 tokens (§8.4 tune from measurements).
+  investigatorStructureMaxOutputTokens: int(3000, 6000), // At most twice default.
   checkerMaxOutputTokens: int(600, 2400), // At most four times default.
 
   // §10: voice wire constraints; bounded to plausible browser audio settings.

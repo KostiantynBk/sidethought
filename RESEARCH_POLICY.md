@@ -3,8 +3,9 @@
 ## T14 independently fetched page evidence (2026-11-02)
 
 Live Meta searches returned empty `web_search_call.results[].snippet` values at both medium and high
-context sizes. After structuring and before `job.completed`, the Investigator now independently fetches
-cited pages. Original Meta results remain unchanged. Bounded exact substrings of extracted page text
+context sizes. Before structuring, the Investigator independently fetches search-result URLs, prioritizing cited results.
+The structure input includes bounded exact page-text extracts as untrusted data; summary text is not a quote source.
+The fetched texts are reused for evidence after structuring, without a second fetch. Original Meta results remain unchanged. Bounded exact substrings of extracted page text
 are appended as additional evidence results under the original cited URL (including after redirects).
 The completed event journals those snippets; replay performs no page I/O. No kernel code changed.
 
@@ -22,7 +23,7 @@ The completed event journals those snippets; replay performs no page I/O. No ker
 - Connections use a pinned lookup returning only the validated IP, preserve the original HTTP Host/TLS
   hostname, disable pooled agents, and do not use environment proxies. No second DNS lookup can rebind
   the connection. Redirects are manual, at most three, with fresh URL and DNS validation each hop.
-- At most six distinct cited URLs per attempt, fetched concurrently. Five seconds per page includes
+- At most six distinct search-result URLs per attempt, fetched concurrently. Five seconds per page includes
   DNS and all redirects; the existing job deadline/cancellation also aborts all page requests. Late DNS
   completion cannot start a request. Node's underlying `dns.lookup` cannot itself be cancelled.
 - At most 2 MiB of streamed bytes per page, aborting on overflow even if Content-Length lies. Only
@@ -42,7 +43,11 @@ The completed event journals those snippets; replay performs no page I/O. No ker
   still apply, followed by the semantic Checker before speech. Fetch success is not a guarantee that
   a claim is true, relevant or speakable. Page text never becomes model instructions.
 
+Extracts are at most 4,000 characters per page and 20,000 characters total, selected by public query terms.
+`pagesGivenToStructure` counts nonempty extracts; `inputChars` is the entire serialized structure input length.
+
 The optional `pagesFetched` stage callback and manual smoke expose counts and elapsed timing only.
+The callback runs before structuring; its stats object is populated with excerpt/claim counts after structuring.
 `pagesFetched` counts usable fetched pages, `pagesBlocked` security-policy denials, and `pagesFailed`
 all other unusable pages. `excerpts` counts appended snippets. `claimsWithQuoteOnPage` counts claims
 with at least one normalized quote found on a fetched page, out of `claims`; this is **not** the number

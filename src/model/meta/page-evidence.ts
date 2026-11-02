@@ -14,6 +14,8 @@ export type PageFetchStats = {
   excerpts: number;
   claimsWithQuoteOnPage: number;
   claims: number;
+  pagesGivenToStructure?: number;
+  inputChars?: number;
 };
 
 function sourceOffset(text: string, normalizedOffset: number): number {
@@ -75,7 +77,7 @@ export async function addPageEvidence(
   return stats;
 }
 
-function appendExcerpts(
+export function appendExcerpts(
   output: InvestigatorOutput,
   evidence: RetrievalEvidence,
   texts: Map<string, string>,

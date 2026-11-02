@@ -1,12 +1,13 @@
 import type OpenAI from 'openai';
 import type { Effect } from '../../contract/events.js';
 import { InvestigatorOutputSchema, type InvestigatorOutput } from '../../contract/roles.js';
-import { INVESTIGATOR_SEARCH_V1, INVESTIGATOR_STRUCTURE_V1 } from '../../context/prompts/investigator.js';
+import { INVESTIGATOR_SEARCH_V1, INVESTIGATOR_STRUCTURE_V2 } from '../../context/prompts/investigator.js';
 import type { State } from '../../kernel/index.js';
 import type { RawEvent } from '../../runtime/model-port.js';
 import type { MetaPrices } from './config.js';
 import { extractEvidence } from './investigator-evidence.js';
-import { addPageEvidence, type PageFetchStats } from './page-evidence.js';
+import { appendExcerpts, type PageFetchStats } from './page-evidence.js';
+import { fetchSearchPages, type StructurePage } from './investigator-pages.js';
 import { defaultPageFetchIo, type PageFetchIo } from './page-fetch.js';
 import { investigatorJsonSchema, normalizeInvestigatorWire } from './schema.js';
 import { object, readEvents } from './stream.js';
@@ -173,17 +174,24 @@ export class MetaInvestigator implements InvestigatorExecutor {
     const { evidence, queryCount, answer } = extractEvidence(response, attempt.context.state.config);
     this.usage(attempt, 'search:usage', response.usage, queryCount);
     attempt.searchMetered = true;
-    const output = await this.structure(attempt, answer, evidence.results);
+    const query = this.lookup(attempt.context.state, attempt.effect.jobId)?.publicQuery ?? '';
+    const fetched = await fetchSearchPages(response, query, attempt.controller.signal, this.pageIo);
+    if (Date.now() >= attempt.deadline) this.stop(attempt, 'timedOut');
+    if (attempt.stop) return;
+    fetched.stats.inputChars = `UNTRUSTED_SOURCE_DATA_JSON_BEGIN
+${JSON.stringify({
+      answer, results: evidence.results, pages: fetched.pages,
+    })}
+UNTRUSTED_SOURCE_DATA_JSON_END`.length;
+    this.onStage?.('pagesFetched', fetched.stats);
+    const output = await this.structure(attempt, answer, evidence.results, fetched.pages);
     if (Date.now() >= attempt.deadline) this.stop(attempt, 'timedOut');
     if (attempt.stop) return;
     this.onStage?.('structureDone');
-    const stats = await addPageEvidence(
-      output, evidence, attempt.context.state.config, attempt.controller.signal, this.pageIo,
-    );
-    // Synchronous extraction must not win a race against an already elapsed job deadline.
+    fetched.stats.claims = output.claims.length;
+    appendExcerpts(output, evidence, fetched.texts, attempt.context.state.config, fetched.stats);
     if (Date.now() >= attempt.deadline) this.stop(attempt, 'timedOut');
     if (attempt.stop) return;
-    this.onStage?.('pagesFetched', stats);
     this.emit(attempt, 'completed', 'job.completed', {
       ...this.identity(attempt),
       investigatorOutput: output,
@@ -248,15 +256,17 @@ export class MetaInvestigator implements InvestigatorExecutor {
     return response;
   }
 
-  private async structure(attempt: Attempt, answer: string, results: unknown): Promise<InvestigatorOutput> {
+  private async structure(
+    attempt: Attempt, answer: string, results: unknown, pages: StructurePage[],
+  ): Promise<InvestigatorOutput> {
     const response = await this.client.responses.create({
       model: 'muse-spark-1.3',
       stream: true,
       store: false,
       reasoning: { effort: 'minimal' },
       max_output_tokens: attempt.context.state.config.investigatorStructureMaxOutputTokens,
-      instructions: INVESTIGATOR_STRUCTURE_V1,
-      input: `UNTRUSTED_SOURCE_DATA_JSON_BEGIN\n${JSON.stringify({ answer, results })}\nUNTRUSTED_SOURCE_DATA_JSON_END`,
+      instructions: INVESTIGATOR_STRUCTURE_V2,
+      input: `UNTRUSTED_SOURCE_DATA_JSON_BEGIN\n${JSON.stringify({ answer, results, pages })}\nUNTRUSTED_SOURCE_DATA_JSON_END`,
       text: {
         format: {
           type: 'json_schema',

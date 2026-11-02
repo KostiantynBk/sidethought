@@ -92,7 +92,7 @@ describe('T14 Investigator page stage', () => {
     try {
       test.model.handle(test.effect, test.context);
       await vi.waitFor(() => expect(test.emitted.at(-1)?.type).toBe('job.completed'));
-      expect(test.stages).toEqual(['responseId', 'searchDone', 'structureDone', 'pagesFetched']);
+      expect(test.stages).toEqual(['responseId', 'searchDone', 'pagesFetched', 'structureDone']);
       expect(test.stats()).toEqual({
         pagesFetched: 1,
         pagesBlocked: 0,
@@ -100,6 +100,8 @@ describe('T14 Investigator page stage', () => {
         excerpts: 1,
         claimsWithQuoteOnPage: 1,
         claims: 1,
+        pagesGivenToStructure: 1,
+        inputChars: expect.any(Number),
       });
       const finding = Object.values(harness.state.domain.findings)[0]!;
       expect(finding.claims[0]!.support[0]!.quoteVerified).toBe(true);
@@ -124,11 +126,10 @@ describe('T14 Investigator page stage', () => {
   });
 
   it('cancels all ongoing page fetches and emits nothing after job.cancelled', async () => {
-    const urls = [pageUrl, 'https://other.example/'];
     const fake = fakePageIo([{ hang: true }]);
-    const test = setup(fake, pageOutput(urls));
+    const test = setup(fake);
     test.model.handle(test.effect, test.context);
-    await vi.waitFor(() => expect(fake.requests).toHaveLength(2));
+    await vi.waitFor(() => expect(fake.requests).toHaveLength(1));
     test.model.handle({ type: 'job.abort', callId: test.effect.callId }, test.context);
     await vi.waitFor(() => expect(test.emitted.at(-1)?.type).toBe('job.cancelled'));
     const eventsAtCancel = structuredClone(test.emitted);
