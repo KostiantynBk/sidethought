@@ -5,7 +5,7 @@ import { publishJob } from '../research/lifecycle.js';
 import { dependencyState, questionKey } from '../research/policy.js';
 import type { ResearchJob } from '../research/types.js';
 import { nominationClass, withinScope } from './cuts.js';
-import { addCandidate } from './candidates.js';
+import { addCandidate, researchClaims } from './candidates.js';
 import { decide, topicBlocked, topicExists, topicKey, transition } from './common.js';
 import type { RoleCall, Trigger } from './types.js';
 
@@ -112,6 +112,13 @@ export function acceptNominations(
   supplied: Lesson[] = [],
 ): void {
   for (const nomination of nominations.slice(0, context.config.maxDeliberatorNominations)) {
+    if (nomination.kind === 'insight' && nomination.findingIds?.some(id => {
+      const finding = context.domain.findings[id];
+      return !finding || finding.validity.state !== 'current' || !researchClaims(finding).length;
+    })) {
+      decide(context, 'nomination:invalid_finding');
+      continue;
+    }
     const key = topicKey(nomination.topic);
     if (topicBlocked(context, key) || topicExists(context, key)) {
       decide(context, topicBlocked(context, key) ? 'nomination:dismissed' : 'nomination:duplicate');
@@ -139,8 +146,13 @@ export function acceptNominations(
       deps,
       basisRev: call.basisRev,
       causalDepth: call.causalDepth,
-      ...(nomination.kind === 'insight' && nomination.lessonIds?.length ? {
-        source: { lessons: supplied.filter(lesson => nomination.lessonIds!.includes(lesson.lessonId)) },
+      ...(nomination.kind === 'insight' ? {
+        source: {
+          ...(nomination.lessonIds?.length ? {
+            lessons: supplied.filter(lesson => nomination.lessonIds!.includes(lesson.lessonId)),
+          } : {}),
+          ...(nomination.findingIds?.length ? { findingIds: [...nomination.findingIds] } : {}),
+        },
       } : {}),
     }, at);
   }

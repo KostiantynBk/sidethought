@@ -48,7 +48,7 @@ describe.each(['memory', 'sqlite'] as const)('T11a context and URLs (%s)', store
     });
   });
 
-  it('assembles verified current findings as structured data without raw evidence or caveats', () => {
+  it('assembles current finding IDs, caveats and verified claims without raw evidence', () => {
     h = new ResearchHarness(store);
     h.request();
     h.complete();
@@ -61,6 +61,8 @@ describe.each(['memory', 'sqlite'] as const)('T11a context and URLs (%s)', store
     const prompt = assembleContext(h.state, dispatch);
     const research = JSON.parse(prompt.input).researchState;
     expect(research.findings[0]).toEqual({
+      id: Object.values(h.state.domain.findings)[0]!.id,
+      caveats: ['Card-only secondary note'],
       question: 'Does Provider A work offline?',
       verdict: 'mixed',
       claims: [
@@ -76,7 +78,7 @@ describe.each(['memory', 'sqlite'] as const)('T11a context and URLs (%s)', store
       validity: 'current',
     });
     expect(prompt.input).not.toContain('unlimited backups');
-    expect(prompt.input).not.toContain('Card-only secondary note');
+    expect(prompt.input).toContain('Card-only secondary note');
     expect(prompt.input).not.toContain('snippet');
     expect(prompt.input).not.toContain('quote');
   });

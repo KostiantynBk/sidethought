@@ -11,6 +11,8 @@ export function researchContext(state: State) {
       })),
     findings: Object.values(state.domain.findings).filter(finding => hasCurrentDependencies(state, finding))
       .map(finding => ({
+        id: finding.id,
+        caveats: finding.caveats,
         question: state.domain.jobs[finding.jobId]?.question ?? '',
         verdict: finding.verdict,
         claims: finding.claims.filter(claim => claim.support.some(support => support.quoteVerified))

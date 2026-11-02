@@ -40,7 +40,13 @@ export function addCandidate(context: Context, draft: CandidateDraft, at: number
 }
 
 export function verifiedClaims(finding: Finding) {
-  if (finding.verdict === 'not_researched' || finding.verdict === 'inconclusive') return [];
+  if (finding.verdict === 'inconclusive') return [];
+  return researchClaims(finding);
+}
+
+// An inconclusive check may still supply a verified fact for a suggested next step (T20).
+export function researchClaims(finding: Finding) {
+  if (finding.verdict === 'not_researched') return [];
   return finding.claims.flatMap((claim, index) => {
     const support = claim.support.filter(source => source.quoteVerified && source.quote
       && consistentClaim(claim.text, source.quote));

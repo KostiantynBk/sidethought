@@ -56,6 +56,7 @@ function devNominations(state: State, effect: Extract<ModelEffect, { type: 'llm.
         topic,
         depItemIds: [first.id, second.id],
         insight: `${first.text} ${second.text}`,
+        findingIds: [],
         scores: {
           consequence: 2,
           uncertainty: 0,
@@ -112,6 +113,7 @@ export class DevModel implements ModelExecutor {
         topic: 'Relevant past experience',
         depItemIds: items.map(item => item.itemId),
         lessonIds: [lesson.lessonId],
+        findingIds: [],
         insight: lesson.text,
         scores: { consequence: 2, uncertainty: 0, answerable: false, urgency: 0, needsPrivateDetail: false },
       }] : devNominations(ctx.state, effect);

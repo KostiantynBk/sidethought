@@ -1,6 +1,6 @@
 import type { State } from '../state.js';
 import type { Contribution } from './types.js';
-import { verifiedClaims } from './candidates.js';
+import { researchClaims, verifiedClaims } from './candidates.js';
 
 export function candidatePayload(domain: State['domain'], candidate: Contribution) {
   const finding = candidate.source.findingId ? domain.findings[candidate.source.findingId] : undefined;
@@ -13,6 +13,21 @@ export function candidatePayload(domain: State['domain'], candidate: Contributio
       text: item.text,
     }] : [];
   });
+  const research = candidate.payload === 'inference' ? (candidate.source.findingIds ?? []).flatMap(id => {
+    const source = domain.findings[id];
+    return source ? [{
+      findingId: source.id,
+      question: domain.jobs[source.jobId]?.question ?? '',
+      verdict: source.verdict,
+      caveats: source.caveats,
+      claims: researchClaims(source).map(claim => ({
+        id: claim.id,
+        text: claim.text,
+        quote: claim.support[0]!.quote!,
+        url: claim.support[0]!.url,
+      })),
+    }] : [];
+  }) : [];
   return {
     type: candidate.payload,
     ...(candidate.payload === 'evidence' ? {
@@ -22,6 +37,7 @@ export function candidatePayload(domain: State['domain'], candidate: Contributio
       text: candidate.text,
       citedItems: items,
       ...(candidate.source.lessons?.length ? { lessons: candidate.source.lessons } : {}),
+      ...(research.length ? { research } : {}),
     }),
   };
 }

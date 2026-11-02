@@ -27,7 +27,10 @@ it('replays S1 through the next model-context checkpoint identically in memory a
   const fixture = JSON.parse(readFileSync(path, 'utf8'));
   const input: string = fixture.contextCheckpoints[0].expected.input;
   expect(input).not.toContain('RAW_SNIPPET_ONLY');
-  expect(input).not.toContain('Card-only secondary note');
+  expect(JSON.parse(input).researchState.findings[0]).toMatchObject({
+    id: 's.4.1',
+    caveats: ['Card-only secondary note'],
+  });
   expect(input).not.toContain('unlimited backups');
   expect(JSON.parse(input).researchState.findings[0].claims).toHaveLength(2);
 });

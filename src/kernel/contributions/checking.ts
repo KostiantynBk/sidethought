@@ -69,6 +69,8 @@ export function outputFailure(context: Context, candidate: Contribution, output:
       candidate.text,
       ...('citedItems' in payload ? payload.citedItems : []).map(item => item.text),
       ...lessons.map(lesson => `${lesson.sourceProjectName} ${lesson.text}`),
+      ...('research' in payload ? payload.research ?? [] : [])
+        .flatMap(finding => finding.claims.flatMap(claim => [claim.text, claim.quote])),
     ].join(' ');
   const urls = selected.flatMap(claim => claim.support.map(support => support.url));
   if (containsUnapprovedUrl(text, urls)) return 'url';

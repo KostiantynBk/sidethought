@@ -20,7 +20,7 @@ it('assembles the real Checker context for the synthetic smoke candidate', () =>
   const { state, effect } = syntheticState('checker');
   const prompt = assembleContext(state, effect);
   const input = JSON.parse(prompt.input);
-  expect(prompt.instructions).toContain('checker-v2');
+  expect(prompt.instructions).toContain('checker-v3');
   expect(input.candidate.type).toBe('inference');
   expect(input.candidate.text).toBe('Keep notes on the phone.');
   expect(input.candidate.citedItems).toHaveLength(1);

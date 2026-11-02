@@ -145,6 +145,7 @@ export const CandidateSchema = z.strictObject({
   payload: z.enum(['evidence', 'inference', 'clarification', 'closure']),
   source: z.strictObject({
     findingId: id.optional(),
+    findingIds: z.array(id).optional(),
     insightId: id.optional(),
     clarification: text.optional(),
     correctionOfDeliveryId: id.optional(),
