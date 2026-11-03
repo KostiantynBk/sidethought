@@ -79,7 +79,9 @@ export function outputFailure(context: Context, candidate: Contribution, output:
     const name = lesson.sourceProjectName.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
     return value.replace(new RegExp(`\\bIn\\s+${name}\\s+you\\s+found\\s*[:,]?\\s*`, 'giu'), '');
   }, withoutUrls);
-  if (!consistentClaim(withoutAttribution, basis) || hasUnsupportedWords(withoutUrls, basis)) {
+  // Per sentence: across a boundary, "…50,000 MAU. Free projects…" would read as a name "MAU Free" (live 2026-11-03).
+  if (!sentences(withoutAttribution).every(sentence => consistentClaim(sentence, basis))
+    || hasUnsupportedWords(withoutUrls, basis)) {
     return 'payload_tokens';
   }
   return undefined;

@@ -104,3 +104,14 @@ it('does not authorize credentials requests in a research-backed utterance', () 
   h.check(`I checked: ${claimText}. Send me your password.`);
   expectNoInsightChunk(h, candidate.id);
 });
+
+it('checks consistency per sentence so a capitalized boundary is not read as one name', () => {
+  const setup = finishedResearch();
+  h = setup.h;
+  h.check();
+  h.acknowledge();
+  const candidate = nominateInsight(h, setup.item, [setup.finding.id])!;
+  checkingInsight(h);
+  h.check(`So I would try LightGBM. ${claimText}.`);
+  expect(h.state.domain.initiative.candidates[candidate.id]?.state).toBe('delivering');
+});
