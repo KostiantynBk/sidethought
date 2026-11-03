@@ -117,6 +117,6 @@ it('explains research-backed suggestions and inconclusive caveats in Checker v3'
   expect(CHECKER_PROMPT).toContain('With verdict inconclusive');
   expect(CHECKER_PROMPT).toContain('using the caveats');
   expect(CHECKER_PROMPT).toContain('or the insight text when it names an option as a suggestion');
-  expect(CHECKER_PROMPT).toContain('Inference/clarification claimsUsed is empty.');
+  expect(CHECKER_PROMPT).toContain('claimsUsed lists the research claim IDs an inference states');
   expect(CHECKER_PROMPT).toContain('Must never add facts, numbers, names or links absent from the payload.');
 });

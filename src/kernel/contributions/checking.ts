@@ -56,7 +56,12 @@ export function outputFailure(context: Context, candidate: Contribution, output:
     if (!output.claimsUsed.length || output.claimsUsed.some(id => !claims.some(claim => claim.id === id))) {
       return 'claims';
     }
-  } else if (output.claimsUsed.length) return 'claims';
+  } else {
+    // A research-backed idea may state, and so list, claims from its own cited research only.
+    const research = 'research' in payload ? payload.research ?? [] : [];
+    const researchIds = new Set(research.flatMap(finding => finding.claims.map(claim => claim.id)));
+    if (output.claimsUsed.some(id => !researchIds.has(id))) return 'claims';
+  }
   const selected = claims.filter(claim => output.claimsUsed.includes(claim.id));
   const lessons = candidate.source.lessons ?? [];
   if (lessons.some(lesson => !text.toLowerCase().includes(lesson.sourceProjectName.toLowerCase()))) {
@@ -79,7 +84,8 @@ export function outputFailure(context: Context, candidate: Contribution, output:
     const name = lesson.sourceProjectName.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
     return value.replace(new RegExp(`\\bIn\\s+${name}\\s+you\\s+found\\s*[:,]?\\s*`, 'giu'), '');
   }, withoutUrls);
-  // Per sentence: across a boundary, "…50,000 MAU. Free projects…" would read as a name "MAU Free" (live 2026-11-03).
+  // Per sentence: across a boundary, "…50,000 MAU. Free projects…" would read as one name "MAU Free"
+  // (live 2026-11-03).
   if (!sentences(withoutAttribution).every(sentence => consistentClaim(sentence, basis))
     || hasUnsupportedWords(withoutUrls, basis)) {
     return 'payload_tokens';
@@ -152,7 +158,8 @@ function acceptCheck(context: Context, candidate: Contribution, output: CheckerO
   }
   rebase(context, candidate, callId);
   candidate.checkCallId = callId;
-  candidate.checkedClaims = [...output.claimsUsed];
+  // I12: an idea may state its research, but only evidence remarks record delivered evidence claims.
+  candidate.checkedClaims = candidate.payload === 'evidence' ? [...output.claimsUsed] : [];
   candidate.checkedInputCount = context.domain.inputs.length;
   candidate.utterance = output.utterance.trim();
   // A valid result cannot bypass floor changes during the call (e.g. composer activity).

@@ -115,3 +115,34 @@ it('checks consistency per sentence so a capitalized boundary is not read as one
   h.check(`So I would try LightGBM. ${claimText}.`);
   expect(h.state.domain.initiative.candidates[candidate.id]?.state).toBe('delivering');
 });
+
+function checkWithClaims(h: ContributionHarness, utterance: string, claimsUsed: string[]): void {
+  const candidate = Object.values(h.state.domain.initiative.candidates).find(value => value.state === 'checking')!;
+  h.send('check.ready', {
+    requestId: candidate.check!.requestId,
+    callId: candidate.check!.callId,
+    output: { applies: true, reason: 'Supported and current', utterance, claimsUsed },
+  });
+}
+
+it('delivers a research-backed idea that lists the research claim it states', () => {
+  const setup = finishedResearch();
+  h = setup.h;
+  h.check();
+  h.acknowledge();
+  const candidate = nominateInsight(h, setup.item, [setup.finding.id])!;
+  checkingInsight(h);
+  checkWithClaims(h, `I checked: ${claimText}. So I would try LightGBM for the pilot.`, [`${setup.finding.id}:claim:0`]);
+  expect(h.state.domain.initiative.candidates[candidate.id]?.state).toBe('delivering');
+});
+
+it('demotes a research-backed idea that lists a claim outside its cited research', () => {
+  const setup = finishedResearch();
+  h = setup.h;
+  h.check();
+  h.acknowledge();
+  const candidate = nominateInsight(h, setup.item, [setup.finding.id])!;
+  checkingInsight(h);
+  checkWithClaims(h, `I checked: ${claimText}. So I would try LightGBM for the pilot.`, ['other:claim:0']);
+  expectNoInsightChunk(h, candidate.id);
+});

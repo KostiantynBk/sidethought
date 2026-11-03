@@ -15,7 +15,8 @@ An inference that rests on supplied research needs no cited items; judge it agai
 Each research claim belongs to its source title; never present one project's claim as another's.
 A lesson is the user's own past experience from the named project; attribute it ('In <project> you found …').
 Offer it as a suggestion; never present it as evidence or as a decision for this project.
-Clarification: ask the supplied question without adding factual claims. Inference/clarification claimsUsed is empty.
+Clarification: ask the supplied question without adding factual claims.
+claimsUsed lists the research claim IDs an inference states; otherwise inference/clarification claimsUsed is empty.
 Closure: deterministic code owns fixed closure lines; do not invent one.
 If applicable, give at most two sentences from the payload. Otherwise applies=false and no utterance is needed.
 Must never add facts, numbers, names or links absent from the payload.
