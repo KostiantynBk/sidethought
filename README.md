@@ -51,7 +51,7 @@ Configured list-price defaults: $1.25 per million input tokens, $0.15 per millio
 
 ## Architecture and safety
 
-A deterministic single-writer reducer owns each project's versioned state, with a journal and snapshots stored in SQLite. Model roles propose; application code validates and decides. Research checks require actual searches and per-claim quote support; the Checker reviews unprompted remarks against current state and evidence. Web content is treated as untrusted data, not instructions; a matching quote alone does not establish truth or entailment.
+A deterministic single-writer reducer owns each project's versioned state, with a journal and snapshots stored in SQLite. Model roles propose; application code validates and decides. Research checks require actual searches; a claim counts as verified only when its own quote is found on a page Sidethought fetched, and other claims are shown as citation-only; the Checker reviews unprompted remarks against current state and evidence. Web content is treated as untrusted data, not instructions; a matching quote alone does not establish truth or entailment.
 
 - Keys stay on the server; the app is protected by a passcode. Use a separate clean database for any demo; don't expose a personal workspace.
 - The page fetcher restricts URLs and public IPs, pins validated DNS answers, rechecks redirects, and bounds time, size and content types to reduce SSRF risk. See [RESEARCH_POLICY.md](RESEARCH_POLICY.md).
