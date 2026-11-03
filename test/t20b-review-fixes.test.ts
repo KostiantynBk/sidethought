@@ -32,7 +32,22 @@ it('rejects a sentence naming an option absent from every group', () => {
   expect(sentencesSupported('Nvidia Grace runs the benchmark.', supportGroups)).toBe(false);
 });
 
-function researchFixture(claim: string, index: number) {
+it('requires the union check when appending a finding changes a terminal number quantity', () => {
+  const a = 'Alpha supports 5 seats Alpha supports 5 seats Alpha 5';
+  const b = 'Bravo handles billing Bravo handles billing Billing Guide';
+  // Group A ends with a unitless 5; appending B changes that derived quantity to 5|bravo.
+  expect(sentencesSupported('Alpha 5.', [`${ownText} ${a}`, `${ownText} ${b}`])).toBe(true);
+  expect(sentencesSupported('Alpha 5.', [`${ownText} ${a} ${b}`])).toBe(false);
+});
+
+interface ResearchSource {
+  claim: string;
+  title?: string;
+}
+
+const benchmarkSources: ResearchSource[] = [appleClaim, snapdragonClaim].map(claim => ({ claim }));
+
+function researchFixture(claim: string, index: number, title?: string) {
   const url = `https://benchmarks.example/platform-${index}`;
   const output: InvestigatorOutput = {
     verdict: 'supported',
@@ -40,6 +55,7 @@ function researchFixture(claim: string, index: number) {
       text: claim,
       support: [{
         url,
+        title,
         quote: claim,
         sourceKind: 'official',
       }],
@@ -51,19 +67,23 @@ function researchFixture(claim: string, index: number) {
     issuedQueries: [claim],
     results: [{
       url,
+      title,
       snippet: claim,
     }],
   };
   return { output, evidence };
 }
 
-function finishedBenchmarkResearch() {
+function finishedTwoFindingResearch(
+  itemText = 'Plan a small pilot on this laptop.',
+  sources = benchmarkSources,
+) {
   const harness = new ContributionHarness('memory', {}, []);
   h = harness;
   harness.connect();
-  const item = harness.statement('Plan a small pilot on this laptop.');
+  const item = harness.statement(itemText);
   harness.passReply();
-  harness.nominate([appleClaim, snapdragonClaim].map((claim, index) => ({
+  harness.nominate(sources.map(({ claim }, index) => ({
     kind: 'investigation' as const,
     topic: `Benchmark platform ${index}`,
     question: `Can I confirm that ${claim}?`,
@@ -75,8 +95,8 @@ function finishedBenchmarkResearch() {
   expect(jobs).toHaveLength(2);
   expect(jobs.map(job => job.state)).toEqual(['running', 'running']);
   harness.at += 3000;
-  for (const [index, claim] of [appleClaim, snapdragonClaim].entries()) {
-    const { output, evidence } = researchFixture(claim, index);
+  for (const [index, { claim, title }] of sources.entries()) {
+    const { output, evidence } = researchFixture(claim, index, title);
     harness.complete(jobs[index]!.id, output, evidence);
   }
   const findings = Object.values(harness.state.domain.findings);
@@ -102,8 +122,8 @@ function deliverEvidence(harness: ContributionHarness): void {
   expect(evidence.map(candidate => candidate.state)).toEqual(['delivered', 'delivered']);
 }
 
-function checkingBenchmarkInsight() {
-  const { harness, item, findingIds } = finishedBenchmarkResearch();
+function checkingTwoFindingInsight(itemText?: string, sources?: ResearchSource[]) {
+  const { harness, item, findingIds } = finishedTwoFindingResearch(itemText, sources);
   deliverEvidence(harness);
   const candidate = nominateInsight(harness, item, findingIds, ownText)!;
   expect(candidate.source.findingIds).toEqual(findingIds);
@@ -121,8 +141,29 @@ function decisionSince(harness: ContributionHarness, start: number, reason: stri
     && effect.message.reason === `contribution:${reason}${suffix}`);
 }
 
+it('demotes an insight whose finding join synthesizes an unsupported number-unit pair', () => {
+  const sources = [
+    { claim: 'requests remain bounded', title: 'Request Guide' },
+    { claim: 'seats remain available', title: 'Seat Guide' },
+  ];
+  const { harness, candidate } = checkingTwoFindingInsight('Use a pilot size of 5.', sources);
+  const payload = checkingInsight(harness);
+  expect(payload).toMatchObject({
+    text: ownText,
+    citedItems: [{ text: 'Use a pilot size of 5.' }],
+    research: sources.map(({ claim, title }) => ({ claims: [{ text: claim, quote: claim, title }] })),
+  });
+  const start = harness.effects.length;
+  harness.check('So I would try 5 seats.');
+  expect(harness.state.domain.initiative.candidates[candidate.id]?.state).toBe('card_only');
+  expect(decisionSince(harness, start, 'check:payload_tokens', candidate.id)).toBe(true);
+  expect(harness.state.domain.initiative.candidates[candidate.id]?.deliveryId).toBeUndefined();
+  expect(harness.effects.slice(start).some(effect => effect.type === 'client.send'
+    && effect.message.type === 'assistant.chunk')).toBe(false);
+});
+
 it('demotes a two-finding insight whose Checker fuses both names without sending any chunk', () => {
-  const { harness, candidate } = checkingBenchmarkInsight();
+  const { harness, candidate } = checkingTwoFindingInsight();
   const start = harness.effects.length;
   harness.check('Apple Silicon and Snapdragon Elite both run the benchmark.');
   expect(harness.state.domain.initiative.candidates[candidate.id]).toMatchObject({ state: 'card_only' });
@@ -133,7 +174,7 @@ it('demotes a two-finding insight whose Checker fuses both names without sending
 });
 
 it('delivers a two-finding insight with one supported sentence per finding', () => {
-  const { harness, candidate } = checkingBenchmarkInsight();
+  const { harness, candidate } = checkingTwoFindingInsight();
   const start = harness.effects.length;
   const utterance = `${appleClaim}. ${snapdragonClaim}.`;
   harness.check(utterance);
