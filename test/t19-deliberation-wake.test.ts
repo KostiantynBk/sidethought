@@ -42,3 +42,21 @@ it('does not wake the Deliberator for a final turn that proposes nothing and cha
   expect(debounced(h)).toBe(false);
   h.store.close();
 });
+
+it('drops a stray non-item reference from a nomination and keeps the nomination', () => {
+  const h = new ContributionHarness('memory');
+  h.connect();
+  const itemId = h.statement('Use a local interface.');
+  h.nominate([{
+    kind: 'insight',
+    insight: 'A local interface keeps the first test fast.',
+    lessonIds: [],
+    topic: 'local interface',
+    depItemIds: [itemId, 'input-not-an-item'],
+    scores: { consequence: 2, uncertainty: 1, answerable: true, urgency: 1, needsPrivateDetail: false },
+  }]);
+  const candidates = Object.values(h.state.domain.initiative.candidates);
+  expect(candidates).toHaveLength(1);
+  expect(candidates[0]!.deps.map(dep => dep.itemId)).toEqual([itemId]);
+  h.store.close();
+});

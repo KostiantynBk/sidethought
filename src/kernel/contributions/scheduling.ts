@@ -91,13 +91,18 @@ export function finishDeliberation(context: Context, event: DeliberationEvent): 
     const nominations = event.payload.output.nominations;
     const supplied = event.payload.suppliedLessons ?? [];
     const lessonIds = new Set(supplied.map(lesson => lesson.lessonId));
-    const invalid = nominations.some(nomination => nomination.depItemIds.some(id => !captured.has(id))
-      || ('lessonIds' in nomination && nomination.lessonIds?.some(id => !lessonIds.has(id))));
-    if (invalid) {
-      decide(context, 'deliberator:schema_failure');
-    } else {
-      acceptNominations(context, nominations, call, event.acceptedAt!, supplied);
-    }
+    // One stray reference must not discard every nomination (live 2026-11-03: an input ID cited as an item).
+    // Unknown item IDs cannot be tracked, so they are dropped; a fabricated lesson citation drops its nomination.
+    const valid = nominations.flatMap(nomination => {
+      if ('lessonIds' in nomination && nomination.lessonIds?.some(id => !lessonIds.has(id))) {
+        decide(context, 'nomination:unknown_lesson');
+        return [];
+      }
+      const depItemIds = nomination.depItemIds.filter(id => captured.has(id));
+      if (depItemIds.length < nomination.depItemIds.length) decide(context, 'nomination:unknown_item_dropped');
+      return [{ ...nomination, depItemIds }];
+    });
+    acceptNominations(context, valid, call, event.acceptedAt!, supplied);
   }
   // Results never cause new reasoning by themselves; only a recorded dirty trigger can do so.
   startDeliberation(context, event.acceptedAt!);

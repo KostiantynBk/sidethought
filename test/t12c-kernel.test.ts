@@ -55,7 +55,7 @@ it('rejects a citation when no lessons were supplied', () => {
   insight(h, item, []);
   expect(Object.values(h.state.domain.initiative.candidates)).toHaveLength(0);
   expect(h.effects.some(effect => effect.type === 'client.send' && effect.message.type === 'inspector.decision'
-    && effect.message.reason.includes('schema_failure'))).toBe(true);
+    && effect.message.reason.includes('unknown_lesson'))).toBe(true);
   h.store.close();
 });
 
