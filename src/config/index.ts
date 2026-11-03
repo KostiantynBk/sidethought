@@ -28,7 +28,7 @@ export const ConfigSchema = z.strictObject({
   streamStallMs: int(5000, 60000), // Bound mid-stream silence.
   callDeadlineMs: int(20000, 120000), // Bound an entire reply.
   interpreterTimeoutMs: int(15000, 60000), // Bound interpretation latency.
-  deliberatorTimeoutMs: int(30000, 60000), // Bound background reasoning.
+  deliberatorTimeoutMs: int(60000, 120000), // Background; a 6000-token output took >30 s live (2026-11-03).
   checkerTimeoutMs: int(6000, 10000), // Research-backed payloads took >2.5 s live (2026-11-02); nobody waits.
   // Floor timers remain responsive; explicit user waits are allowed up to two minutes.
   waitExpiryMs: int(4000, 30000), // Avoid a stuck provisional voice turn.

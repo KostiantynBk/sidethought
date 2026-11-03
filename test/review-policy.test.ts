@@ -204,7 +204,7 @@ it('matches the literal policy inventory and default values', () => {
     streamStallMs: 5000,
     callDeadlineMs: 20000,
     interpreterTimeoutMs: 15000,
-    deliberatorTimeoutMs: 30000,
+    deliberatorTimeoutMs: 60000,
     checkerTimeoutMs: 6000,
     waitExpiryMs: 4000,
     answerWaitMs: 20000,
