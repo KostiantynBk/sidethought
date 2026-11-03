@@ -146,3 +146,31 @@ it('demotes a research-backed idea that lists a claim outside its cited research
   checkWithClaims(h, `I checked: ${claimText}. So I would try LightGBM for the pilot.`, ['other:claim:0']);
   expectNoInsightChunk(h, candidate.id);
 });
+
+function sameTopicInsight(h: ContributionHarness, item: string, findingIds: string[]): boolean {
+  h.nominate([{
+    kind: 'insight',
+    topic: 'Platform support',
+    insight: insightText,
+    depItemIds: [item],
+    findingIds,
+    scores,
+  }]);
+  return Object.values(h.state.domain.initiative.candidates).some(candidate => candidate.payload === 'inference');
+}
+
+it('accepts an idea sharing a topic with the evidence remark of the research it cites', () => {
+  const setup = finishedResearch();
+  h = setup.h;
+  h.check();
+  h.acknowledge();
+  expect(sameTopicInsight(h, setup.item, [setup.finding.id])).toBe(true);
+});
+
+it('still treats a same-topic idea that does not cite that research as a duplicate', () => {
+  const setup = finishedResearch();
+  h = setup.h;
+  h.check();
+  h.acknowledge();
+  expect(sameTopicInsight(h, setup.item, [])).toBe(false);
+});

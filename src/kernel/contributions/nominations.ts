@@ -120,7 +120,8 @@ export function acceptNominations(
       continue;
     }
     const key = topicKey(nomination.topic);
-    if (topicBlocked(context, key) || topicExists(context, key)) {
+    const builtOn = nomination.kind === 'insight' ? nomination.findingIds ?? [] : [];
+    if (topicBlocked(context, key) || topicExists(context, key, builtOn)) {
       decide(context, topicBlocked(context, key) ? 'nomination:dismissed' : 'nomination:duplicate');
       continue;
     }

@@ -100,7 +100,9 @@ export function topicBlocked(context: Context, key: string): boolean {
     || context.domain.deprioritizedTopics.some(topic => topicKey(topic) === key);
 }
 
-export function topicExists(context: Context, key: string): boolean {
+export function topicExists(context: Context, key: string, builtOn: string[] = []): boolean {
+  // An idea built on finished research is not a repeat of that research's own evidence remark.
   return Object.values(context.domain.initiative.candidates).some(candidate => candidate.topicKey === key
-    && !['dropped', 'superseded', 'interrupted'].includes(candidate.state));
+    && !['dropped', 'superseded', 'interrupted'].includes(candidate.state)
+    && !(candidate.payload === 'evidence' && builtOn.includes(candidate.source.findingId ?? '')));
 }
