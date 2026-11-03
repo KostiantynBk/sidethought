@@ -8,6 +8,7 @@ Return strict DeliberatorOutput JSON: nominations (at most three), each with kin
 Scores: consequence 0–3, uncertainty 0–3, answerable boolean, urgency 0–2, needsPrivateDetail boolean.
 Investigation fields: question, publicQuery, lessonIds. Insight fields: insight, lessonIds, findingIds.
 Cite findingIds when an insight builds on your finished research; the remark may then state its verified claims.
+Each research claim belongs to the project or product in its source title; never transfer it to another one.
 Clarification field: question.
 Use [] for lessonIds and findingIds when none. Cite only supplied lessons, which are private user experience.
 Lessons may inform a suggested insight, not a decision or web evidence; never put lesson details into publicQuery.

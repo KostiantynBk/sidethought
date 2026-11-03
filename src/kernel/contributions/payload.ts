@@ -25,6 +25,7 @@ export function candidatePayload(domain: State['domain'], candidate: Contributio
         text: claim.text,
         quote: claim.support[0]!.quote!,
         url: claim.support[0]!.url,
+        title: claim.support[0]!.title ?? '',
       })),
     }] : [];
   }) : [];

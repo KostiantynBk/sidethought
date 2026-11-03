@@ -12,6 +12,7 @@ It may state those claims attributed ('I checked: …'), then the idea as a sugg
 With verdict inconclusive, say what could not be confirmed, using the caveats.
 Only supplied research claims are researched evidence; the idea remains a suggestion.
 An inference that rests on supplied research needs no cited items; judge it against the snapshot.
+Each research claim belongs to its source title; never present one project's claim as another's.
 A lesson is the user's own past experience from the named project; attribute it ('In <project> you found …').
 Offer it as a suggestion; never present it as evidence or as a decision for this project.
 Clarification: ask the supplied question without adding factual claims. Inference/clarification claimsUsed is empty.

@@ -29,7 +29,7 @@ export const ConfigSchema = z.strictObject({
   callDeadlineMs: int(20000, 120000), // Bound an entire reply.
   interpreterTimeoutMs: int(15000, 60000), // Bound interpretation latency.
   deliberatorTimeoutMs: int(30000, 60000), // Bound background reasoning.
-  checkerTimeoutMs: int(2500, 10000), // Protect delivery responsiveness.
+  checkerTimeoutMs: int(6000, 10000), // Research-backed payloads took >2.5 s live (2026-11-02); nobody waits.
   // Floor timers remain responsive; explicit user waits are allowed up to two minutes.
   waitExpiryMs: int(4000, 30000), // Avoid a stuck provisional voice turn.
   answerWaitMs: int(20000, 120000), // Bound floor reservation after a question.

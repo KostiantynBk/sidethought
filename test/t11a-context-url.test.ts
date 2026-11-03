@@ -69,10 +69,12 @@ describe.each(['memory', 'sqlite'] as const)('T11a context and URLs (%s)', store
         {
           text: 'Provider A edits work offline after first sign-in',
           urls: [url],
+          titles: [],
         },
         {
           text: 'First sign-in requires a network',
           urls: [url],
+          titles: [],
         },
       ],
       validity: 'current',

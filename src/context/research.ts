@@ -19,6 +19,8 @@ export function researchContext(state: State) {
           .map(claim => ({
             text: claim.text,
             urls: claim.support.filter(support => support.quoteVerified).map(support => support.url),
+            // A restated claim omits its project name; the page title says whose fact it is.
+            titles: claim.support.flatMap(support => support.quoteVerified && support.title ? [support.title] : []),
           })),
         validity: finding.validity.state,
       })),

@@ -104,6 +104,7 @@ it('supplies finding id and caveats to a depth-1 Deliberator with prompt v4 cita
     claims: [{
       text: claimText,
       urls: ['https://library.example/platform'],
+      titles: [],
     }],
     validity: 'current',
   }]);

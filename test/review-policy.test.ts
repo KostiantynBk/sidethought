@@ -205,7 +205,7 @@ it('matches the literal policy inventory and default values', () => {
     callDeadlineMs: 20000,
     interpreterTimeoutMs: 15000,
     deliberatorTimeoutMs: 30000,
-    checkerTimeoutMs: 2500,
+    checkerTimeoutMs: 6000,
     waitExpiryMs: 4000,
     answerWaitMs: 20000,
     userWaitMs: 20000,
