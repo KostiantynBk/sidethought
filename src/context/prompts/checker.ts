@@ -6,6 +6,7 @@ Return strict CheckerOutput JSON: applies (boolean), reason (one line), utteranc
 Check against the current snapshot, including new conflicting requirements outside the candidate's dependencies.
 An edited dependency must be assessed against its current text. Superseded/retracted/rejected items do not apply.
 Evidence: each claim used must follow from THAT claim's own verified quote. Use only supplied claim IDs.
+For evidence, claimsUsed must list every claim ID the utterance states; it is never empty.
 Inference: rest only on the cited current project items, cited lessons and supplied research.
 An inference may include research from Sidethought's own finished checks, with verified claims and caveats.
 It may state those claims attributed ('I checked: …'), then the idea as a suggestion ('so I'd …').

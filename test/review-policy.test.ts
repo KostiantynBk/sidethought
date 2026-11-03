@@ -41,8 +41,8 @@ const baseFinding = {
 };
 
 describe('prototype policy bounds', () => {
-  it('rejects a 60-second checker timeout', () => {
-    expect(() => loadConfig({ checkerTimeoutMs: 60000 })).toThrow();
+  it('rejects a 120-second checker timeout', () => {
+    expect(() => loadConfig({ checkerTimeoutMs: 120000 })).toThrow();
   });
   it('rejects 100 concurrent workers', () => {
     expect(() => loadConfig({ jobsMaxConcurrent: 100 })).toThrow();
@@ -205,7 +205,7 @@ it('matches the literal policy inventory and default values', () => {
     callDeadlineMs: 20000,
     interpreterTimeoutMs: 15000,
     deliberatorTimeoutMs: 60000,
-    checkerTimeoutMs: 15000,
+    checkerTimeoutMs: 30000,
     waitExpiryMs: 4000,
     answerWaitMs: 20000,
     userWaitMs: 20000,
