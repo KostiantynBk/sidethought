@@ -1,109 +1,65 @@
-# Meta Spark executor — T09 policy inventory
+# Meta model policy
 
-This is a text-only Interpreter/Responder adapter. Strict-schema live smoke passed Oct 31; bounded guidance
-and reviewed cross-project lesson recall were checked Nov 1. This is not general live coverage of every error path.
-The server uses the exact-pinned `openai` 7.45.1 SDK (Apache-2.0). Its automatic retries and logging are disabled.
-The SDK builds/sends the request; a small local SSE decoder preserves error envelopes and their usage, which
-its high-level stream iterator otherwise turns into exceptions.
+Sidethought uses Meta's Responses API through the server-side, pinned `openai` SDK. Model roles propose;
+the kernel validates results and controls research admission and delivery. See [RESEARCH_POLICY.md](RESEARCH_POLICY.md)
+for evidence and contribution gates. This is a prototype; live model behavior and latency vary.
 
-## Existing model-cap policies used by this adapter
+## Roles and default limits
 
-Values come from `State.config` (`src/config/index.ts`), not duplicate executor constants:
+All roles use `muse-spark-1.3`. Output caps include reasoning tokens, not just visible text or JSON.
+Defaults and configurable bounds are in `src/config/index.ts`.
 
-| Policy | Default | Meaning |
-|---|---:|---|
-| `interpreterMaxOutputTokens` | 1200 | Initial Interpreter cap, including reasoning and visible JSON |
-| `structuredRetryTokenMultiplier` | 1.5 | Interpreter attempt >= 2 gets `ceil(normal cap × multiplier)` |
-| Effective default Interpreter retry cap | 1800 | Only a fresh kernel-issued call can use this cap |
-| `responderMaxOutputTokens` | 800 | Responder cap, including reasoning and visible text |
+| Role | Purpose | Reasoning effort | Default output cap |
+|---|---|---|---:|
+| Interpreter | Extract project changes and requests | minimal | 1,200; 1,800 on a fresh retry by default |
+| Responder | Stream a conversational reply | minimal | 800 |
+| Deliberator | Nominate insights, questions and investigations | medium | 6,000 |
+| Checker | Review an unprompted contribution | minimal | 3,000 |
+| Investigator search | Search the web in background mode | medium | 4,000 |
+| Investigator structure | Structure search and fetched-page data | minimal | 3,000 |
 
-These include reasoning, not 1200/800 visible tokens plus reasoning. In the Nov 1 guidance run, low effort
-used 673/800 output tokens for reasoning and truncated a simple explanation. Responder now uses minimal
-(reasoning 173/330 and 57/251 in two complete examples). The real UI then exposed Interpreter failures at
-both 1200/1800 caps with low effort. Interpreter also now uses minimal: three actual-prompt/kernel samples
-completed at 536, 1072 and 899 total output tokens with quote-backed item application. No cap was raised.
-No adapter repair call or retry exists.
-The existing config bounds remain unchanged: Interpreter normal cap <= 4800, Responder <= 3200, multiplier <= 4.
+Interpreter, Deliberator, Checker and Investigator structuring use strict JSON schemas; Responder streams text.
+The Interpreter retry cap is the normal cap multiplied by the configured structured retry multiplier (default 1.5).
+A retry is a fresh kernel-issued call, not an SDK or adapter repair request.
 
-## Server-only configuration
+Default role deadlines are 15 seconds for Interpreter and Checker, 60 seconds for Deliberator, 20 seconds for a
+reply, and 90 seconds for a research job. Reply first-token and stream-stall defaults are 8 and 5 seconds.
+These are local controls, not provider latency or billing guarantees.
 
-- Model: `muse-spark-1.3`, Standard mode only.
-- `META_API_BASE_URL`: defaults to `https://api.meta.ai/v1`; HTTPS URL without embedded credentials/query/fragment.
-- `MODEL_API_KEY`: read only in `src/model/meta/config.ts`, captured privately and passed into the SDK constructor.
-- `SIDETHOUGHT_MODEL`: `dev` by default without a key, `meta` by default with a key; an explicit choice wins.
-- Meta requires a nonblank key. No connection or API call is made merely to construct the runtime.
-- `META_INPUT_USD_PER_MILLION`: 1.25 default.
-- `META_CACHED_INPUT_USD_PER_MILLION`: 0.15 default.
-- `META_OUTPUT_USD_PER_MILLION`: 4.25 default.
-- Pricing overrides must be finite, positive and <= 100. Empty values use defaults.
-- Cost subtracts cached tokens from regular input; reasoning is already included in total output tokens.
-- Invalid/missing usage is not fabricated. Missing cached/reasoning detail counts default to zero; validate these
-  optional provider details in the live run. The `llm.usage` event cannot carry their separate counts, so local
-  metrics retain them. Aborted calls emit no further events; billed post-abort work cannot be measured here.
+## Requests, usage and cancellation
 
-## Request and outcome behavior
+The regular role calls stream with `store: false`; Investigator structuring does likewise. Investigator search
+uses background `web_search`, requests result details and polls the response; it is not the same request path.
+The SDK's automatic retries and logging are disabled. A local SSE decoder handles streaming terminal events;
+HTTP success or an end-of-stream marker alone does not establish a completed response.
 
-All calls use `stream: true`, `store: false`, explicit instructions/input and an output cap.
-Interpreter and Responder reasoning effort are `minimal` after the Nov 1 measured real-prompt fixes.
-No history ID, tools, encrypted reasoning replay, `response_format`, provider fallback or extra repair request.
-Only the Interpreter uses `text.format` with `type: json_schema` and `strict: true`.
+A Responder output-cap incomplete result may release the checked final tail; an Interpreter output cap fails the
+attempt and the kernel may authorize a retry. Other incomplete outcomes fail. Cancellation is best effort:
+local aborts and background cancellation do not establish that provider generation or billing stopped.
+Missing or invalid usage is not fabricated; work billed after abort may be unmeasured.
 
-The schema is generated with zod 4 from `InterpreterOutputSchema`, then adapted only on the wire:
+Server configuration selects `dev` by default without a key and `meta` by default with one; an explicit selection
+wins. The Meta key remains server-side. The default API endpoint is `https://api.meta.ai/v1`; configuration requires
+HTTPS without embedded credentials, query or fragment. See `src/model/meta/config.ts` and the README for setup.
 
-- Disjoint discriminated `oneOf` branches become nested `anyOf` branches.
-- Optional fields become required nullable fields, as Meta's strict subset requires all properties to be required.
-- The decoder restores null to absence only at the original schema's optional positions, then performs unchanged
-  zod validation. Required nulls, unknown null fields, quote-bound refinements and per-input request limits are
-  still rejected. No kernel schema or role prompt changes.
-- References are inlined, recursive schemas throw, and tests enforce strict objects and nesting <= 10.
-  Nesting measures object/array schema structure, not JSON keyword-wrapper depth.
+## Cost estimates
 
-Only `response.completed`, `response.incomplete`, `response.failed`, and `error` are terminal outcomes.
-`[DONE]` or EOF without a terminal event fails. HTTP 200 alone is not success.
+Configured defaults are $1.25 per million input tokens, $0.15 per million cached input tokens and $4.25 per
+million output tokens. The server supports bounded positive overrides for these token prices. Cached input is
+subtracted from regular input, and reasoning is already included in output. Search accounting uses $2.50 per
+1,000 queries; actual queries are counted when available and unreadable query details are estimated.
+These are local estimates, not a guarantee of current provider prices or final billing. Verify current pricing.
 
-T09 decision 2 / architecture §12:
+The default per-project research soft cap is $3, the hard cap is $5 and the development daily cap is $10.
+Reservations and incomplete usage can make local admission conservative; they are not provider-enforced caps.
+Multiple projects can incur additional spend. See `src/kernel/research/budget.ts` and the README.
 
-- Responder `incomplete_details.reason=max_output_tokens`: emit `reply.done`, meter `cap_reached`. The kernel
-  checks and flushes the final tail. This never bypasses output checks.
-- Interpreter cap: emit `interpretation.failed` with `output_cap`; the kernel may authorize its single retry.
-- Other incomplete reasons fail. No adapter-level retry occurs.
+## Limitations
 
-Usage is emitted before the outcome, so a synchronous kernel abort/retry cannot lose the terminal's known cost.
-IDs are deterministic per call (`chunk:0`, `chunk:1`, `usage`, `ready`, `done`, `failed`). Repeated effects for the
-same call are suppressed locally; replay through a fresh executor produces the same IDs for runner deduplication.
-Abort cancels the HTTP request and stream reader. No later event for the call is emitted. This is local/best-effort
-cancellation, not a claim that Meta stops generating or billing server-side.
+Structured output and checks can fail or time out; a safe, useful unsolicited contribution is not guaranteed.
+Reviewed lessons are opt-in context, not web evidence. Search privacy filtering is lexical and can miss
+paraphrases. Do not enter secrets or sensitive information. Further limitations are in the README.
 
-Local per-call metrics carry IDs, role, start/first-delta/terminal timing, output character count, terminal type,
-outcome, schema-pass flag and token/cost counts only. Provider exceptions, prompt text, output text and keys are
-never logged or forwarded as failures. The optional metrics callback receives only this whitelist.
-
-## Manual smoke run — not run by T09 builder
-
-After separately authorizing live calls and setting server environment values:
-
-```sh
-npx tsx --env-file=.env scripts/spark-smoke.ts
-```
-
-It performs one synthetic Interpreter and one synthetic Responder call, each locally aborted after 25 seconds.
-It exits with a clear configuration message if the key is missing. It prints no prompts or outputs: only timing,
-token counts (including cached/reasoning), cost, terminal/outcome and Interpreter schema-pass status.
-It is statically typechecked but never imported by the test suite.
-
-## Original T09 verification checklist (partially verified Oct 31 / Nov 1)
-
-Documentation read: https://dev.meta.ai/docs/protocols/responses and https://dev.meta.ai/docs/structured-output.
-
-- Actual participant-account acceptance of the generated strict schema, including optional-null unions, numeric
-  constraints, JSON Schema metadata and depth interpretation.
-- Actual `response.output_text.delta` text field, lifecycle ordering, `response` envelope, error event shape,
-  `incomplete_details.reason=max_output_tokens`, and terminal usage detail fields.
-- Whether account responses omit optional cached/reasoning details; actual latency and useful cap sizes.
-- Server-side billing/generation behavior following a locally aborted `store:false` request.
-
-The real root is exercised with fake fetch, authenticated in-memory websocket injection, in-memory SQLite and
-manual time. It verifies context assembly, quote-backed state changes, checked sentence release and completion.
-T13 wired the browser header to authenticated model metadata. `/health` and server startup reporting also
-identify the model. Reusable lesson context is selected only for opted-in Responder calls; it is never a tool
-request or web query. Other projects' raw histories and Interpreter quote witnesses remain isolated.
+For the protocol and structured-output documentation, see
+[Meta Responses](https://dev.meta.ai/docs/protocols/responses) and
+[Meta structured output](https://dev.meta.ai/docs/structured-output).
