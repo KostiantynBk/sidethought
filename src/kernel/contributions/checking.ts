@@ -46,6 +46,12 @@ export function startCheck(context: Context, candidate: Contribution, at: number
   });
 }
 
+// Per sentence: across a boundary, "…50,000 MAU. Free projects…" would read as one name "MAU Free"
+// (live 2026-11-03). A sentence passes when one support group covers it.
+export function sentencesSupported(text: string, groups: string[]): boolean {
+  return sentences(text).every(sentence => groups.some(group => consistentClaim(sentence, group)));
+}
+
 export function outputFailure(context: Context, candidate: Contribution, output: CheckerOutput): string | undefined {
   const text = output.utterance.trim();
   if (!text || sentences(text).length > Math.min(2, context.config.maxCheckerSentences)) return 'sentences';
@@ -68,15 +74,19 @@ export function outputFailure(context: Context, candidate: Contribution, output:
     return 'lesson_attribution';
   }
   // Only the claims actually approved by the Checker may authorize evidence words and URLs.
+  const own = [
+    candidate.text,
+    ...('citedItems' in payload ? payload.citedItems : []).map(item => item.text),
+    ...lessons.map(lesson => `${lesson.sourceProjectName} ${lesson.text}`),
+  ].join(' ');
+  const findings = ('research' in payload ? payload.research ?? [] : [])
+    .map(finding => finding.claims.flatMap(claim => [claim.text, claim.quote, claim.title]).join(' '));
   const basis = candidate.payload === 'evidence'
     ? selected.flatMap(claim => [claim.text, ...claim.support.map(support => support.quote)]).join(' ')
-    : [
-      candidate.text,
-      ...('citedItems' in payload ? payload.citedItems : []).map(item => item.text),
-      ...lessons.map(lesson => `${lesson.sourceProjectName} ${lesson.text}`),
-      ...('research' in payload ? payload.research ?? [] : [])
-        .flatMap(finding => finding.claims.flatMap(claim => [claim.text, claim.quote, claim.title])),
-    ].join(' ');
+    : [own, ...findings].join(' ');
+  // With several cited findings, each sentence must rest on one finding plus the idea's own text, so names
+  // from two different findings are never fused into one statement (review T19-T20, finding 1).
+  const groups = findings.length > 1 ? findings.map(finding => `${own} ${finding}`) : [basis];
   const urls = selected.flatMap(claim => claim.support.map(support => support.url));
   if (containsUnapprovedUrl(text, urls)) return 'url';
   const withoutUrls = urls.reduce((value, url) => value.split(url).join(''), text);
@@ -84,10 +94,7 @@ export function outputFailure(context: Context, candidate: Contribution, output:
     const name = lesson.sourceProjectName.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
     return value.replace(new RegExp(`\\bIn\\s+${name}\\s+you\\s+found\\s*[:,]?\\s*`, 'giu'), '');
   }, withoutUrls);
-  // Per sentence: across a boundary, "…50,000 MAU. Free projects…" would read as one name "MAU Free"
-  // (live 2026-11-03).
-  if (!sentences(withoutAttribution).every(sentence => consistentClaim(sentence, basis))
-    || hasUnsupportedWords(withoutUrls, basis)) {
+  if (!sentencesSupported(withoutAttribution, groups) || hasUnsupportedWords(withoutUrls, basis)) {
     return 'payload_tokens';
   }
   return undefined;

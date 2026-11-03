@@ -82,7 +82,7 @@ export const ConfigSchema = z.strictObject({
   searchUsdPerThousandQueries: number(2.5, 100), // Reject implausible unit prices.
   assumedQueriesPerToolCall: int(3, 20), // Bound conservative accounting.
   transcriptionUsdPerHour: number(0.18, 10), // Reject implausible unit prices.
-  deliberatorEstimateUsd: number(0.05, 3), // Conservative unmeasured bounded reasoning reservation.
+  deliberatorEstimateUsd: number(0.1, 3), // Doubled with the 6000-token cap (review T19-T20, finding 3).
   deliberationDebounceMs: int(2000, 5000), // Avoid delayed background decisions.
   maxDeliberatorRunsPerInput: int(3, 10), // Bound repeated reasoning.
   maxDeliberatorRunsPerMinute: int(4, 20), // Bound rate and cost.

@@ -252,7 +252,7 @@ it('matches the literal policy inventory and default values', () => {
     assumedQueriesPerToolCall: 3,
     transcriptionUsdPerHour: 0.18,
     deliberationDebounceMs: 2000,
-    deliberatorEstimateUsd: 0.05,
+    deliberatorEstimateUsd: 0.1,
     maxDeliberatorRunsPerInput: 3,
     maxDeliberatorRunsPerMinute: 4,
     maxDeliberatorNominations: 3,

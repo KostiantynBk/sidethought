@@ -99,6 +99,11 @@ export function finishDeliberation(context: Context, event: DeliberationEvent): 
         return [];
       }
       const depItemIds = nomination.depItemIds.filter(id => captured.has(id));
+      // Losing every cited item would leave nothing to go stale on (review T19-T20, finding 2).
+      if (nomination.depItemIds.length && !depItemIds.length) {
+        decide(context, 'nomination:unknown_items');
+        return [];
+      }
       if (depItemIds.length < nomination.depItemIds.length) decide(context, 'nomination:unknown_item_dropped');
       return [{ ...nomination, depItemIds }];
     });
