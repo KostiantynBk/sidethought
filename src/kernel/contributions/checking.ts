@@ -94,7 +94,9 @@ export function outputFailure(context: Context, candidate: Contribution, output:
     const name = lesson.sourceProjectName.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
     return value.replace(new RegExp(`\\bIn\\s+${name}\\s+you\\s+found\\s*[:,]?\\s*`, 'giu'), '');
   }, withoutUrls);
-  if (!sentencesSupported(withoutAttribution, groups) || hasUnsupportedWords(withoutUrls, basis)) {
+  // Both: the union check keeps the old guarantees; the groups add per-finding grounding (re-review R1).
+  if (!sentencesSupported(withoutAttribution, [basis]) || !sentencesSupported(withoutAttribution, groups)
+    || hasUnsupportedWords(withoutUrls, basis)) {
     return 'payload_tokens';
   }
   return undefined;
