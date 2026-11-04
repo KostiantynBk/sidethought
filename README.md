@@ -7,7 +7,8 @@ Sidethought is a text-first thinking partner for solo builders that remembers na
 **Built:** text conversation; named projects; reviewed cross-project lessons; a background Deliberator that starts its
 own research and turns finished research into its own idea ("I checked: … so I'd …"); unprompted contributions
 gated by a final Checker, with each unprompted remark saying why it spoke now; web research with independently
-fetched page quotes; finding cards; stale-advice suppression; old-project upgrade by journal replay; and optional
+fetched page quotes; finding cards; dependency-based stale checks (natural-language corrections are unreliable;
+see Limitations); old-project upgrade by journal replay; and optional
 read-aloud of new replies and unprompted remarks (browser speech synthesis).
 
 **Planned:** voice input and spoken turn-taking, broad automatic memory, general project/session deletion (T08), and Hold/Mute controls. This is a prototype, not a production service.
@@ -42,9 +43,22 @@ Use Meta mode for live behavior; research and unsolicited contributions are not 
 1. **Create a project.** Describe a plan with a real tension, such as keeping notes only on one phone while expecting recovery after losing it. Continue normally, then pause without asking for a risk assessment: the background Deliberator may raise a relevant checked remark.
 2. **Let it research on its own.** State a plan that rests on a public fact you have not checked, for example: "I will host the database on the Supabase free tier and rely on its automatic daily backups." Then wait. Sidethought may start a background check by itself, say what it verified, and then offer its own idea, citing that research. None of this is guaranteed on cue.
 3. **Ask for a check.** Type “Check whether …” about a concrete public question. Watch for the **Checking…** line and then a finding card. Open its sources and distinguish verified quotes from citation-only claims; a check can be inconclusive or fail.
-4. **Correct the plan.** Change a requirement while a dependent check is running, or correct an earlier point. Inspect the project state and finding: obsolete work should be dropped or marked stale rather than presented as current.
-5. **Save a lesson in project A.** Select a source user message in **Reviewed cross-project lessons**, review its quote, write a lesson and applicability terms, and explicitly confirm sharing.
-6. **Try project B.** Create a separate project, turn cross-project recall ON, and describe a matching situation without repeating the source fact. The Deliberator can raise the lesson unprompted with its source; it is experience to consider, not evidence or a decision. A foreground reply may mention it instead and is not proof of an asynchronous contribution. Check **Recently supplied** for provenance.
+4. **Try correcting the plan (known limitation).** For example, say "Actually, we will use the Supabase Pro
+   plan from day one." Inspect **Project** and the finding cards, not just the reply. In two live tests,
+   the reply acknowledged Pro but the stored free-tier option did not change; old findings stayed current
+   and obsolete free-tier remarks still arrived. Do not treat a conversational acknowledgment as verified
+   withdrawal of earlier advice.
+5. **Save a lesson in project A.** Enter a distinctive experience, for example: "Our field-notes pilot lost
+   exactly 47 minutes of observations when the only tablet failed. We learned to verify a second independent
+   copy before fieldwork." In **Reviewed cross-project lessons**, select that user message, review its exact
+   quote and lesson text, enter applicability terms such as `fieldwork, field notes, tablet`, and explicitly
+   confirm sharing. Saving is manual; the conversation alone does not share a lesson.
+6. **Try project B.** Create a separate project, turn cross-project recall ON, and describe a matching situation
+   without repeating the source fact: "We will record all our field notes on a single tablet and copy them to
+   the office computer after we get back." A live test recalled the 47-minute loss with attribution to project A
+   in the foreground reply. Check **Recently supplied** for context-supply provenance, not proof of useful use.
+   The lesson is experience to consider, not evidence or a decision. An unprompted lesson remark is possible
+   but was not observed in this test; an attributed reply does not prove asynchronous initiative.
 7. **Read aloud.** Turn on **Read aloud** in the header to hear new replies and delivered unprompted remarks (browser speech; off by default). Typing stops it. It never reads cards, web quotes or history, and it can lag behind the text: delivery is tracked by displayed text, not finished speech.
 
 ## How it uses Meta
@@ -65,7 +79,37 @@ A deterministic single-writer reducer owns each project's versioned state, with 
 
 ## Limitations
 
-Live model quality, timing and initiative vary; the five-minute sequence is not a guaranteed outcome. In live runs on 2026-11-03 (scenario scripts, Meta Spark), Sidethought started its own research every time it woke; a verified research remark was spoken in 3 of 3 Supabase runs. After prompt tuning on 2026-11-04, a research-backed idea was spoken in 4 of 5 Supabase runs and 0 of 2 Windows-on-ARM runs (inconclusive research there). These are small samples, not a benchmark; the rest stayed cards because the final checks are strict. The Nov 1 live lesson test showed recall in a reply, not an independently delivered lesson contribution or an improved decision; the unsolicited lesson path was tested synthetically. The fetch-before-structuring research path passed two live script runs on 2026-11-02 (4 of 4 and 6 of 6 claims quoted from fetched pages, about $0.06 each); results inside the app vary by question and site. Some sites block fetching, and JavaScript-rendered pages and PDFs are not extracted. Quote and consistency checks are imperfect; not every source or claim will verify. Voice input, general deletion and Hold/Mute are not built (read-aloud is output only and untested on iOS); there are no temporary sessions. Run one server per database.
+Live model quality, timing and initiative vary; the five-minute sequence is not a guaranteed outcome.
+In live runs on 2026-11-03 (scenario scripts, Meta Spark), Sidethought started its own research every time
+it woke; a verified research remark was spoken in 3 of 3 Supabase runs. After prompt tuning on 2026-11-04,
+a research-backed idea was spoken in 4 of 5 Supabase runs and 0 of 2 Windows-on-ARM runs (inconclusive
+research there). These are small samples, not a benchmark; the rest stayed cards because the final checks
+are strict.
+
+**Corrections are not reliable end to end.** Two isolated live API tour tests on 2026-11-04 changed
+Supabase Free to Pro, once during research and once after a finding. Both replies acknowledged the change,
+but neither updated the stored option or marked its finding stale; obsolete free-tier remarks were
+subsequently delivered. Offline journal replay found a partial-clause quote rejection in one correction
+and a disallowed proposed-to-superseded transition in the other. Dependency checks cannot suppress advice
+when the correction never changes its stored basis. Inspect Project state and findings; a fluent reply
+is not confirmation that outdated advice has been withdrawn.
+
+**Reviewed memory works in replies; live unsolicited lesson delivery remains unverified.** The Nov 1
+live lesson test showed recall in a reply. A fresh two-project live API test on 2026-11-04 again recalled
+a source-only fact (47 minutes) with the source project named. The audit recorded supply to both Responder
+and Deliberator, but the Deliberator nominated nothing and no unprompted lesson remark arrived during
+180 seconds after the target message. This proves attributed recall, not improved decisions or asynchronous
+lesson delivery; the unsolicited lesson path has synthetic test coverage only.
+
+The fetch-before-structuring research path passed two live script runs on 2026-11-02 (4 of 4 and 6 of 6
+claims quoted from fetched pages, about $0.06 each); results inside the app vary by question and site.
+Some sites block fetching, and JavaScript-rendered pages and PDFs are not extracted. Quote and consistency
+checks are imperfect; not every source or claim will verify. In the correction tour, even a mixed finding's
+conflicting sources did not prevent an uncaveated free-tier remark: quote verification is not factual
+confirmation, and source caveats can be lost in delivery.
+
+Voice input, general deletion and Hold/Mute are not built (read-aloud is output only and untested on iOS);
+there are no temporary sessions. Run one server per database.
 
 ## Tests
 
