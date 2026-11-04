@@ -111,7 +111,7 @@ it('shows only the whole-word delivered interruption prefix to the next Interpre
   const dispatch = result.effects.find(item => item.type === 'llm.call') as CallEffect;
   const prompt = assembleContext(result.state, dispatch);
   const input = JSON.parse(prompt.input);
-  expect(prompt.instructions).toContain('[sidethought-interpreter-v1]');
+  expect(prompt.instructions).toContain('[sidethought-interpreter-v3]');
   expect(prompt.instructions).toContain('quote is the authoritative exact source wording');
   expect(input.recentWindow.map((turn: { text: string }) => turn.text)).toEqual([
     'Use local storage.',

@@ -61,9 +61,9 @@ describe('Meta configuration and policy inventory', () => {
 
   it('uses the existing output-cap inventory and architecture list prices', () => {
     const config = loadConfig();
-    expect(config.interpreterMaxOutputTokens).toBe(1200);
+    expect(config.interpreterMaxOutputTokens).toBe(2400);
     expect(config.responderMaxOutputTokens).toBe(800);
-    expect(Math.ceil(config.interpreterMaxOutputTokens * config.structuredRetryTokenMultiplier)).toBe(1800);
+    expect(Math.ceil(config.interpreterMaxOutputTokens * config.structuredRetryTokenMultiplier)).toBe(3600);
     expect(modelConfiguration({ MODEL_API_KEY: sentinel }).meta?.prices).toEqual({
       inputPerMillion: 1.25,
       cachedInputPerMillion: 0.15,

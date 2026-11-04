@@ -6,6 +6,7 @@ import type { ModelEffect, ModelExecutor, RawEvent } from '../../runtime/model-p
 import type { MetaPrices } from './config.js';
 import { requestBody } from './request.js';
 import { normalizeInterpreterWire } from './schema.js';
+import { repairInterpreterSpans } from './interpreter-spans.js';
 import { object, readEvents } from './stream.js';
 import { tokenUsage, type TokenUsage } from './usage.js';
 
@@ -225,11 +226,15 @@ export class MetaModel implements ModelExecutor {
     }
     const type = role === 'interpreter' ? 'interpretation.ready'
       : role === 'deliberator' ? 'deliberation.ready' : 'check.ready';
+    const readyOutput = role === 'interpreter'
+      ? repairInterpreterSpans(InterpreterOutputSchema.parse(result.data),
+        attempt.ctx.state.domain.call?.quoteWitness.sources ?? [])
+      : result.data;
     this.emit(attempt, 'ready', type, {
       ...this.identity(attempt),
       ...(role === 'deliberator' && attempt.suppliedLessons
         ? { suppliedLessons: attempt.suppliedLessons } : {}),
-      output: result.data,
+      output: readyOutput,
     });
   }
 
