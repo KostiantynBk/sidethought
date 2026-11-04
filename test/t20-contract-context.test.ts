@@ -96,6 +96,12 @@ it('supplies finding id and caveats to a depth-1 Deliberator with prompt v4 cita
   expect(context.instructions).toContain('deliberator-v4');
   expect(context.instructions).toContain('Insight fields: insight, lessonIds, findingIds.');
   expect(context.instructions).toContain('Cite findingIds when an insight builds on your finished research');
+  expect(context.instructions).toContain('exact IDs copied from projectSnapshot.items[].id');
+  expect(context.instructions).toContain('Never use triggeringInputIds');
+  expect(context.instructions).toContain('if the suggestion was already made');
+  expect(context.instructions).toContain('one or two short, quotable sentences');
+  expect(JSON.parse(context.input).task.instruction).toContain('not a recap or prior advice');
+  expect(JSON.parse(context.input).task.instruction).toContain('use [] when no items exist');
   expect(JSON.parse(context.input).researchState.findings).toEqual([{
     id: setup.finding.id,
     caveats: researchOutput.caveats,
@@ -112,8 +118,12 @@ it('supplies finding id and caveats to a depth-1 Deliberator with prompt v4 cita
 
 it('explains research-backed suggestions and inconclusive caveats in Checker v3', () => {
   expect(CHECKER_PROMPT).toContain('checker-v3');
-  expect(CHECKER_PROMPT).toContain("('I checked: …')");
-  expect(CHECKER_PROMPT).toContain("('so I'd …')");
+  expect(CHECKER_PROMPT).toContain("('so I would ...')");
+  expect(CHECKER_PROMPT).toContain('Prefer copying a short supported sentence');
+  expect(CHECKER_PROMPT).toContain('claimsUsed; never return an empty list');
+  expect(CHECKER_PROMPT).toContain('Keep support/applicability analysis in reason, not utterance');
+  expect(CHECKER_PROMPT).toContain('Preserve material uncertainty and source-quality caveats');
+  expect(CHECKER_PROMPT).toContain('rather than dropping the caveat');
   expect(CHECKER_PROMPT).toContain('With verdict inconclusive');
   expect(CHECKER_PROMPT).toContain('using the caveats');
   expect(CHECKER_PROMPT).toContain('or the insight text when it names an option as a suggestion');

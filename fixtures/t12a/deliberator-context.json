@@ -2,6 +2,6 @@
   "role": "deliberator",
   "promptVersion": "deliberator-v4",
   "itemText": "Use a local interface.",
-  "instruction": "What matters that hasn't been said?",
+  "instruction": "What matters that hasn't been said? Copy depItemIds only from projectSnapshot.items[].id; use [] if no items exist. triggeringInputIds are not item IDs.",
   "causalDepth": 0
 }

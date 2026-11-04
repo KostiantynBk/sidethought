@@ -46,8 +46,11 @@ export function contributionContext(state: State, effect: CallEffect, items: Ite
       task: {
         role: 'deliberator',
         instruction: call.causalDepth >= 1
-          ? 'Research you started has finished (see researchState). As a colleague, what is your idea now?'
-          : "What matters that hasn't been said?",
+          ? 'Research you started has finished. Suggest one new concrete next step, not a recap or prior advice. '
+            + 'Use a topic naming that step and exact researchState finding IDs. Keep the insight to two short '
+            + 'sentences. Copy depItemIds only from projectSnapshot.items[].id, or use [] when no items exist.'
+          : "What matters that hasn't been said? Copy depItemIds only from projectSnapshot.items[].id; "
+            + 'use [] if no items exist. triggeringInputIds are not item IDs.',
         causalDepth: call.causalDepth,
         triggeringInputIds: call.inputIds,
       },
@@ -72,9 +75,15 @@ function checkerContext(state: State, effect: CallEffect, items: Item[]): RolePr
         role: 'checker',
         candidateId: candidate.id,
         contract: candidate.payload === 'evidence'
-          ? 'Each claimsUsed ID needs its OWN verified quote and semantic support; preserve all qualifiers.'
+          ? 'State one relevant verified claim using its own words, with all qualifiers. Each claimsUsed ID '
+            + 'needs its OWN verified quote and semantic support; claimsUsed must not be empty. '
+            + 'At most two short sentences; no new commentary or stronger claims.'
           : candidate.payload === 'inference'
-            ? 'Reason from cited items, lessons and supplied research; attribute sources and suggest, never decide.'
+            ? 'Check current applicability, then copy the supported idea in at most two short sentences. '
+              + 'Use only candidate wording and its cited items, lessons and verified research. Attribute '
+              + 'lessons, suggest rather than decide, and list research claim IDs actually stated. '
+              + 'Add no NEW source/retrieval commentary or terminology; preserve material uncertainty '
+              + 'and source-quality caveats already in candidate.text. Do not drop a caveat to shorten it.'
             : 'Ask the supplied clarification without factual additions; claimsUsed must be empty.',
       },
     }, null, 2),
