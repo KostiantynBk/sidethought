@@ -21,7 +21,9 @@ export function FindingCard({ finding }: { finding: Finding }) {
     {finding.claims.map((claim, index) => <div key={index}>
       <p>{claim.text} — {claim.support.some(support => support.quoteVerified) ? 'Verified' : 'Citation only'}</p>
       {claim.support.map((support, supportIndex) => <div key={supportIndex}>
-        <span>{support.quoteVerified ? 'Verified' : 'Citation only'}</span>
+        <span className={support.quoteVerified ? 'badge verified' : 'badge citation'}>
+          {support.quoteVerified ? 'Verified' : 'Citation only'}
+        </span>
         {support.quote && <blockquote>{support.quote}</blockquote>}
         {safeLink(support.url) && <a href={safeLink(support.url)} rel="noopener noreferrer">
           {support.title ?? support.url}

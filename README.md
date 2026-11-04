@@ -24,7 +24,11 @@ Copy `.env.example` to `.env` and configure the following **server-side** variab
 
 - Required: `SIDETHOUGHT_PASSCODE`, `SIDETHOUGHT_COOKIE_SECRET` (at least 32 characters), `SIDETHOUGHT_ALLOWED_ORIGINS` (comma-separated exact origins).
 - For Meta: `MODEL_API_KEY`, optionally `SIDETHOUGHT_MODEL`. Without a key, the default dev model is network-free and synthetic; it cannot demonstrate live research or real model quality. An explicit dev selection remains network-free even if a key is present.
-- Optional: `PORT`, `SIDETHOUGHT_DB_PATH`, `META_API_BASE_URL`, `META_INPUT_USD_PER_MILLION`, `META_CACHED_INPUT_USD_PER_MILLION`, `META_OUTPUT_USD_PER_MILLION`, `NODE_ENV`. For **local HTTP on 127.0.0.1 only**, enable `SIDETHOUGHT_DEV_INSECURE_COOKIE`; never enable it for public or tailnet access. See `.env.example` for the variable names.
+- Optional: `PORT`, `SIDETHOUGHT_DB_PATH`, `SIDETHOUGHT_BANNER` (plain-text workspace notice, up to 300
+  characters), `META_API_BASE_URL`, `META_INPUT_USD_PER_MILLION`, `META_CACHED_INPUT_USD_PER_MILLION`,
+  `META_OUTPUT_USD_PER_MILLION`, `NODE_ENV`. For **local HTTP on 127.0.0.1 only**, enable
+  `SIDETHOUGHT_DEV_INSECURE_COOKIE`; never enable it for public or tailnet access. See `.env.example`
+  for the variable names.
 
 ```sh
 npm run build

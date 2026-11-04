@@ -50,6 +50,7 @@ export function Workspace() {
   const [projectId, setProjectId] = useState('local');
   const [name, setName] = useState('');
   const [model, setModel] = useState('');
+  const [banner, setBanner] = useState('');
   const [error, setError] = useState('');
   useEffect(() => {
     speech.setEnabled(readAloud);
@@ -65,10 +66,11 @@ export function Workspace() {
   }, [speech]);
   useEffect(() => {
     let active = true;
-    projectApi<{ projects: ProjectSpace[]; model: string }>('/projects').then(result => {
+    projectApi<{ projects: ProjectSpace[]; model: string; banner?: string }>('/projects').then(result => {
       if (!active) return;
       setProjects(result.projects);
       setModel(result.model);
+      setBanner(result.banner ?? '');
     }).catch(() => { if (active) setError('Could not load projects. Please refresh.'); });
     return () => { active = false; };
   }, []);
@@ -96,6 +98,8 @@ export function Workspace() {
   }
   const project = projects.find(candidate => candidate.id === projectId);
   return <main>
+    {banner && <p className="instance-banner">{banner}</p>}
+    <header className="app-header">
     <h1>Sidethought <small>
       {model === 'meta' ? 'Meta Spark' : model === 'dev' ? 'dev model: no real AI' : ''}
     </small></h1>
@@ -108,8 +112,9 @@ export function Workspace() {
         try { localStorage.setItem('sidethought.readAloud', enabled ? 'on' : 'off'); } catch { /* optional */ }
       }} /> Read aloud</label>
     {!speech.available && <p>This browser can't read aloud</p>}
+    </header>
     {error && <p role="alert">{error}</p>}
-    <section aria-label="Project workspace">
+    <section className="project-bar" aria-label="Project workspace">
       <label>Active project<select value={projectId} onChange={e => {
         if (e.target.value !== projectId) speech.switchProject();
         setProjectId(e.target.value);

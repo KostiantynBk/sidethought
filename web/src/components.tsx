@@ -37,13 +37,13 @@ export function Login({ onSuccess }: LoginProps) {
 function TranscriptEntry({ view, kind, id }: { view: View; kind: 'input' | 'delivery'; id: string }) {
   if (kind === 'input') {
     const input = view.inputs.find(item => item.id === id);
-    return input && <p><strong>You:</strong> {input.text}</p>;
+    return input && <p className="message message-user"><strong>You:</strong> {input.text}</p>;
   }
   const delivery = view.deliveries[id];
   const prefix = view.prefixes[id];
   const contribution = view.contributions.find(item => item.deliveryId === id);
   const text = delivery ? contiguousText(delivery.chunks).slice(0, delivery.visibleLimit) : prefix?.text ?? '';
-  return <p>
+  return <p className={`message ${contribution ? 'message-contribution' : 'message-assistant'}`}>
     <strong>{contribution ? 'Sidethought — unprompted:' : 'Assistant:'}</strong>{' '}
     {contribution && <><span>{contributionLabel(contribution)}</span>{' '}
       <a href={`#contribution-${contribution.candidateId}`}>View card</a>{' '}</>}
@@ -57,7 +57,7 @@ function TranscriptEntry({ view, kind, id }: { view: View; kind: 'input' | 'deli
 }
 
 export function Conversation({ view }: { view: View }) {
-  return <section aria-label="Conversation">
+  return <section className="conversation" aria-label="Conversation">
     {view.timeline.map(entry => <TranscriptEntry
       key={`${entry.kind}-${entry.id}`}
       view={view}
@@ -79,7 +79,7 @@ type ComposerProps = {
 };
 
 export function Composer({ draft, onTyping, onBlur, onCommit }: ComposerProps) {
-  return <form onSubmit={event => {
+  return <form className="composer" onSubmit={event => {
     event.preventDefault();
     onCommit();
   }}>

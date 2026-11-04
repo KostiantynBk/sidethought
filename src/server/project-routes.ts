@@ -38,6 +38,7 @@ export async function registerProjectRoutes(app: FastifyInstance, config: Server
         upgradeStatus: ports.projectStatus?.(project.id),
       })),
       model: config.model,
+      ...(config.banner ? { banner: config.banner } : {}),
     }));
     api.post('/projects', async request => {
       const { name } = ProjectInput.parse(request.body);

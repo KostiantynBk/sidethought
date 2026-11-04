@@ -45,6 +45,17 @@ const json = (body: unknown) => new Response(JSON.stringify(body), {
   headers: { 'content-type': 'application/json' },
 });
 
+describe('T23 workspace banner', () => {
+  it('renders banner as escaped text', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({
+      projects: [], model: 'dev', banner: '<img src=x onerror=alert(1)>',
+    })));
+    await act(async () => root.render(<Workspace />));
+    expect(container.querySelector('.instance-banner')?.textContent).toBe('<img src=x onerror=alert(1)>');
+    expect(container.querySelector('.instance-banner img')).toBeNull();
+  });
+});
+
 describe('T13 project and memory UI', () => {
   it('switches to an isolated connection and ignores late packets from the previous project', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
