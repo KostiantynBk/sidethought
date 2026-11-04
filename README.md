@@ -65,7 +65,7 @@ A deterministic single-writer reducer owns each project's versioned state, with 
 
 ## Limitations
 
-Live model quality, timing and initiative vary; the five-minute sequence is not a guaranteed outcome. In live runs on 2026-11-03 (scenario scripts, Meta Spark), Sidethought started its own research every time it woke; a verified research remark was spoken in 3 of 3 Supabase runs, and a research-backed idea was spoken in 1 of 3 runs. The rest stayed cards because the final checks are strict or a model reply hit its output limit. The Nov 1 live lesson test showed recall in a reply, not an independently delivered lesson contribution or an improved decision; the unsolicited lesson path was tested synthetically. The fetch-before-structuring research path passed two live script runs on 2026-11-02 (4 of 4 and 6 of 6 claims quoted from fetched pages, about $0.06 each); results inside the app vary by question and site. Some sites block fetching, and JavaScript-rendered pages and PDFs are not extracted. Quote and consistency checks are imperfect; not every source or claim will verify. Voice input, general deletion and Hold/Mute are not built (read-aloud is output only and untested on iOS); there are no temporary sessions. Run one server per database.
+Live model quality, timing and initiative vary; the five-minute sequence is not a guaranteed outcome. In live runs on 2026-11-03 (scenario scripts, Meta Spark), Sidethought started its own research every time it woke; a verified research remark was spoken in 3 of 3 Supabase runs. After prompt tuning on 2026-11-04, a research-backed idea was spoken in 4 of 5 Supabase runs and 0 of 2 Windows-on-ARM runs (inconclusive research there). These are small samples, not a benchmark; the rest stayed cards because the final checks are strict. The Nov 1 live lesson test showed recall in a reply, not an independently delivered lesson contribution or an improved decision; the unsolicited lesson path was tested synthetically. The fetch-before-structuring research path passed two live script runs on 2026-11-02 (4 of 4 and 6 of 6 claims quoted from fetched pages, about $0.06 each); results inside the app vary by question and site. Some sites block fetching, and JavaScript-rendered pages and PDFs are not extracted. Quote and consistency checks are imperfect; not every source or claim will verify. Voice input, general deletion and Hold/Mute are not built (read-aloud is output only and untested on iOS); there are no temporary sessions. Run one server per database.
 
 ## Tests
 
@@ -75,7 +75,7 @@ npx vitest run --maxWorkers=2
 npm run build
 ```
 
-On 2026-11-03, after `npm ci --ignore-scripts`, typecheck, the full Vitest run (**131 test files / 1,429 tests**) and the production build passed. Automated tests do not establish live usefulness or safety in every case.
+On 2026-11-04, after `npm ci --ignore-scripts`, typecheck, the full Vitest run (**132 test files / 1,447 tests**) and the production build passed. Automated tests do not establish live usefulness or safety in every case.
 
 ## Event work and license
 
