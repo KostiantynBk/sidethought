@@ -37,7 +37,7 @@ describe('Meta request and schema contracts', () => {
       stream: true,
       store: false,
       reasoning: { effort: 'minimal' },
-      max_output_tokens: 1200,
+      max_output_tokens: 2400,
       instructions: 'synthetic instructions',
       input: 'synthetic input',
       text: {

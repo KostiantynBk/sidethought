@@ -7,8 +7,9 @@ Sidethought is a text-first thinking partner for solo builders that remembers na
 **Built:** text conversation; named projects; reviewed cross-project lessons; a background Deliberator that starts its
 own research and turns finished research into its own idea ("I checked: … so I'd …"); unprompted contributions
 gated by a final Checker, with each unprompted remark saying why it spoke now; web research with independently
-fetched page quotes; finding cards; dependency-based stale checks (natural-language corrections are unreliable;
-see Limitations); old-project upgrade by journal replay; and optional
+fetched page quotes; finding cards; dependency-based stale checks, including plain-language corrections
+such as "Actually, we'll use Pro" (saved in 5 of 7 live tests; see Limitations); old-project upgrade by
+journal replay; and optional
 read-aloud of new replies and unprompted remarks (browser speech synthesis).
 
 **Planned:** voice input and spoken turn-taking, broad automatic memory, general project/session deletion (T08), and Hold/Mute controls. This is a prototype, not a production service.
@@ -47,11 +48,11 @@ Use Meta mode for live behavior; research and unsolicited contributions are not 
 1. **Create a project.** Describe a plan with a real tension, such as keeping notes only on one phone while expecting recovery after losing it. Continue normally, then pause without asking for a risk assessment: the background Deliberator may raise a relevant checked remark.
 2. **Let it research on its own.** State a plan that rests on a public fact you have not checked, for example: "I will host the database on the Supabase free tier and rely on its automatic daily backups." Then wait. Sidethought may start a background check by itself, say what it verified, and then offer its own idea, citing that research. None of this is guaranteed on cue.
 3. **Ask for a check.** Type “Check whether …” about a concrete public question. Watch for the **Checking…** line and then a finding card. Open its sources and distinguish verified quotes from citation-only claims; a check can be inconclusive or fail.
-4. **Try correcting the plan (known limitation).** For example, say "Actually, we will use the Supabase Pro
-   plan from day one." Inspect **Project** and the finding cards, not just the reply. In two live tests,
-   the reply acknowledged Pro but the stored free-tier option did not change; old findings stayed current
-   and obsolete free-tier remarks still arrived. Do not treat a conversational acknowledgment as verified
-   withdrawal of earlier advice.
+4. **Try correcting the plan.** For example, say "Actually, we will use the Supabase Pro plan from day one."
+   Inspect **Project** and the finding cards, not just the reply: the free-tier item should show as rejected
+   or superseded, a Pro decision should appear, and findings built on the free tier should be marked stale
+   (or their research cancelled). This worked in 5 of 7 live tests; when it does not, older advice can stay
+   current, so trust the Project panel rather than a conversational acknowledgment.
 5. **Save a lesson in project A.** Enter a distinctive experience, for example: "Our field-notes pilot lost
    exactly 47 minutes of observations when the only tablet failed. We learned to verify a second independent
    copy before fieldwork." In **Reviewed cross-project lessons**, select that user message, review its exact
@@ -90,13 +91,17 @@ a research-backed idea was spoken in 4 of 5 Supabase runs and 0 of 2 Windows-on-
 research there). These are small samples, not a benchmark; the rest stayed cards because the final checks
 are strict.
 
-**Corrections are not reliable end to end.** Two isolated live API tour tests on 2026-11-04 changed
-Supabase Free to Pro, once during research and once after a finding. Both replies acknowledged the change,
-but neither updated the stored option or marked its finding stale; obsolete free-tier remarks were
-subsequently delivered. Offline journal replay found a partial-clause quote rejection in one correction
-and a disallowed proposed-to-superseded transition in the other. Dependency checks cannot suppress advice
-when the correction never changes its stored basis. Inspect Project state and findings; a fluent reply
-is not confirmation that outdated advice has been withdrawn.
+**Corrections usually, but not always, reach the stored plan.** Before the Nov 4 fix, two live tour tests
+that changed Supabase Free to Pro failed: the stored option never changed and obsolete free-tier remarks
+were delivered (a partial-clause quote rejection and a disallowed proposed-to-superseded transition).
+The Interpreter now chooses the operation by the item's status (reject + create for a proposed item,
+supersede for a stated one) and quotes whole clauses; its output cap was raised after live outputs hit it.
+In seven later live tests (during research or after a finding) the correction was saved in five: three
+marked an existing free-tier finding stale and two cancelled the free-tier research before it finished.
+The misses were an output-cap failure (since raised; the next three runs all saved the correction) and a
+first message whose free-tier plan was never stored, leaving nothing to correct. No obsolete free-tier
+remark was delivered after a correction in any of these eight runs. These are small samples. Inspect
+Project state and findings; a fluent reply is not confirmation that outdated advice has been withdrawn.
 
 **Reviewed memory works in replies; live unsolicited lesson delivery remains unverified.** The Nov 1
 live lesson test showed recall in a reply. A fresh two-project live API test on 2026-11-04 again recalled
@@ -123,7 +128,7 @@ npx vitest run --maxWorkers=2
 npm run build
 ```
 
-On 2026-11-04, after `npm ci --ignore-scripts`, typecheck, the full Vitest run (**132 test files / 1,447 tests**) and the production build passed. Automated tests do not establish live usefulness or safety in every case.
+On 2026-11-04, after `npm ci --ignore-scripts`, typecheck, the full Vitest run (**135 test files / 1,486 tests**) and the production build passed. Automated tests do not establish live usefulness or safety in every case.
 
 ## Event work and license
 

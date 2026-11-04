@@ -87,7 +87,8 @@ export const ConfigSchema = z.strictObject({
   maxDeliberatorRunsPerInput: int(3, 10), // Bound repeated reasoning.
   maxDeliberatorRunsPerMinute: int(4, 20), // Bound rate and cost.
   maxDeliberatorNominations: int(3, MAX_DELIBERATOR_NOMINATIONS), // Contract ceiling.
-  interpreterMaxOutputTokens: int(1200, 4800), // At most four times default.
+  // Raised Nov 4: live outputs used 1,050-1,200 tokens; 1,200 cut off 6/7 first attempts (T24/T25 journals).
+  interpreterMaxOutputTokens: int(2400, 4800), // At most twice default.
   responderMaxOutputTokens: int(800, 3200), // At most four times default.
   deliberatorMaxOutputTokens: int(6000, 12000), // At most twice default; v4 follow-ups used 3000+ (2026-11-02).
   investigatorSearchMaxOutputTokens: int(4000, 16000), // Four times default; max 16k.

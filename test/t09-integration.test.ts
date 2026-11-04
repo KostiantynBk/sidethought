@@ -154,7 +154,7 @@ describe('real Meta composition root with fake HTTP', () => {
       test.commit();
       await waitForType(test.messages, 'project.changed');
       expect(test.requests).toHaveLength(2);
-      expect(test.requests.map(request => request.max_output_tokens)).toEqual([1200, 1800]);
+      expect(test.requests.map(request => request.max_output_tokens)).toEqual([2400, 3600]);
       const first = (JSON.parse(test.requests[0]!.input) as Task).task;
       const second = (JSON.parse(test.requests[1]!.input) as Task).task;
       expect(first.requestId).toBe(second.requestId);
