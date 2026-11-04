@@ -28,6 +28,7 @@ export function contributionView(candidate: Contribution) {
     text: candidate.text,
     ...(candidate.source.lessons?.length ? { lessons: candidate.source.lessons } : {}),
     ...(candidate.source.findingId ? { findingId: candidate.source.findingId } : {}),
+    ...(candidate.source.findingIds?.length ? { findingIds: candidate.source.findingIds } : {}),
     ...(candidate.jobId ? { jobId: candidate.jobId } : {}),
     ...(candidate.deliveryId ? { deliveryId: candidate.deliveryId } : {}),
   };

@@ -1,10 +1,13 @@
+import type { Finding } from '../../src/contract/models.js';
 import type { ContributionView } from './logic/view.js';
 import type { ResearchJob } from './ResearchPanel.js';
 import { contributionLabel } from './contribution-label.js';
+import { whyNow } from './logic/why-now.js';
 
 export function ContributionPanel(props: {
   contributions: ContributionView[];
   jobs: ResearchJob[];
+  findings?: Finding[];
   onApprove: (jobId: string) => void;
   onDecline: (jobId: string) => void;
 }) {
@@ -18,6 +21,7 @@ export function ContributionPanel(props: {
       return <article id={`contribution-${item.candidateId}`} key={item.candidateId}>
         <h3>{item.topic}</h3>
         <p>{contributionLabel(item)}</p>
+        <p className="why-now">{whyNow(item, { jobs: props.jobs, findings: props.findings ?? [] })}</p>
         {item.text && <p>{item.text}</p>}
         {item.lessons?.map(lesson => <p key={lesson.lessonId}>
           <strong>Experience — from your project {lesson.sourceProjectName}:</strong> {lesson.text}

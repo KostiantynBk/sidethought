@@ -5,6 +5,7 @@ input { padding: .4rem; margin: .4rem; }
 button { padding: .4rem .7rem; }
 small { font-size: .6em; color: #666; }
 .uncertain { color: #666; background: #eee; padding: .6rem; }
+.why-now { display: block; color: #666; font-size: .85em; }
 article { border-bottom: 1px solid #eee; }
 mark { margin-right: .3rem; }
 [id^="delivery-"] { white-space: pre-wrap; overflow-wrap: anywhere; }

@@ -4,7 +4,11 @@ Sidethought is a text-first thinking partner for solo builders that remembers na
 
 ## Built and planned
 
-**Built:** text conversation; named projects; reviewed cross-project lessons; a background Deliberator that starts its own research and turns finished research into its own idea ("I checked: … so I'd …"); unprompted contributions gated by a final Checker; web research with independently fetched page quotes; finding cards; stale-advice suppression; old-project upgrade by journal replay; and optional read-aloud of new replies and unprompted remarks (browser speech synthesis).
+**Built:** text conversation; named projects; reviewed cross-project lessons; a background Deliberator that starts its
+own research and turns finished research into its own idea ("I checked: … so I'd …"); unprompted contributions
+gated by a final Checker, with each unprompted remark saying why it spoke now; web research with independently
+fetched page quotes; finding cards; stale-advice suppression; old-project upgrade by journal replay; and optional
+read-aloud of new replies and unprompted remarks (browser speech synthesis).
 
 **Planned:** voice input and spoken turn-taking, broad automatic memory, general project/session deletion (T08), and Hold/Mute controls. This is a prototype, not a production service.
 

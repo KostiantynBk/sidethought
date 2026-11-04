@@ -23,6 +23,7 @@ function ProjectChat({ project, speech }: { project: ProjectSpace; speech: ReadA
     <ContributionPanel
       contributions={connection.view.contributions}
       jobs={connection.view.jobs}
+      findings={connection.view.findings}
       onApprove={jobId => { connection.send('job.approve', { jobId }); }}
       onDecline={jobId => { connection.send('job.decline', { jobId }); }}
     />

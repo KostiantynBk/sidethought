@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { contiguousText } from './logic/transcript.js';
 import type { Item, View } from './logic/view.js';
 import { contributionLabel } from './contribution-label.js';
+import { whyNow } from './logic/why-now.js';
 
 type LoginProps = {
   onSuccess: () => void;
@@ -51,6 +52,7 @@ function TranscriptEntry({ view, kind, id }: { view: View; kind: 'input' | 'deli
       {' '}Experience — from your project {lesson.sourceProjectName}: {lesson.text}
     </span>)}
     {(delivery?.stopped || prefix?.interrupted) && <em> interrupted</em>}
+    {contribution && <span className="why-now">{whyNow(contribution, view)}</span>}
   </p>;
 }
 

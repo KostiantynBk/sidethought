@@ -303,6 +303,7 @@ export const ClientMessageSchema = z.discriminatedUnion('type', [
     text: z.string(),
     lessons: z.array(SuppliedLessonSchema).optional(),
     findingId: id.optional(),
+    findingIds: z.array(id).optional(),
     jobId: id.optional(),
     deliveryId: id.optional(),
   }),
